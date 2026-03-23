@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Tabi no Kiroku — Journey Log</title>
     <meta name="theme-color" content="#020617" />
-    <link rel="stylesheet" href="styles.css?v=20260323c" />
+    <link rel="stylesheet" href="styles.css?v=20260323d" />
   </head>
   <body>
     <main class="app-shell">
@@ -377,9 +377,9 @@
     </main>
 
 
-    <input id="coverArtPicker" type="file" accept="image/*" hidden />
-    <input id="bannerArtPicker" type="file" accept="image/*" hidden />
-    <input id="importDataInput" type="file" accept="application/json" hidden />
+    <input id="coverArtPicker" class="visually-hidden-file-input" type="file" accept="image/*" aria-hidden="true" tabindex="-1" />
+    <input id="bannerArtPicker" class="visually-hidden-file-input" type="file" accept="image/*" aria-hidden="true" tabindex="-1" />
+    <input id="importDataInput" class="visually-hidden-file-input" type="file" accept="application/json" aria-hidden="true" tabindex="-1" />
 
     <div id="artCropModal" class="crop-modal" hidden>
       <div class="crop-modal-backdrop" data-close-crop-modal></div>
@@ -475,6 +475,6 @@
       </div>
     </div>
 
-    <script type="module" src="./app.js?v=20260323c"></script>
+    <script type="module" src="./app.js?v=20260323d"></script>
   </body>
 </html>

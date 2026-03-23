@@ -326,7 +326,7 @@ function bindEvents() {
   );
 
   exportDataButton?.addEventListener("click", handleExportData);
-  importDataButton?.addEventListener("click", () => importDataInput?.click());
+  importDataButton?.addEventListener("click", () => openFilePicker(importDataInput));
   clearDataButton?.addEventListener("click", handleClearData);
   importDataInput?.addEventListener("change", handleImportData);
 
@@ -405,9 +405,42 @@ function setActiveScreen(screenId, options = {}) {
     }
   }
 
+  applyScreenHash(nextScreenId);
+
   if (scrollToTop && isMobileViewport()) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+}
+
+function applyScreenHash(screenId) {
+  const screen = appScreens.find((entry) => entry.dataset.screen === screenId);
+  if (!screen?.id) return;
+
+  try {
+    window.history.replaceState(null, "", `#${screen.id}`);
+  } catch (error) {
+    // Ignore history update failures.
+  }
+}
+
+function scrollScreenIntoView(screenId) {
+  const screen = appScreens.find((entry) => entry.dataset.screen === screenId);
+  screen?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function openFilePicker(input) {
+  if (!(input instanceof HTMLInputElement)) return;
+
+  if (typeof input.showPicker === "function") {
+    try {
+      input.showPicker();
+      return;
+    } catch (error) {
+      // Fall back to click for browsers that reject showPicker.
+    }
+  }
+
+  input.click();
 }
 
 async function repairGamesIfNeeded() {
@@ -441,11 +474,15 @@ async function handleAddGame(event) {
   }
 
   try {
-    const [coverImage, bannerImage, existingGames] = await Promise.all([
-      optimizeUploadedImage(coverImageInput.files?.[0], "cover"),
-      optimizeUploadedImage(bannerImageInput.files?.[0], "banner"),
-      getAllGames(db),
-    ]);
+    const existingGames = await getAllGames(db);
+    const coverImage = await optimizeUploadedImage(
+      coverImageInput.files?.[0],
+      "cover"
+    );
+    const bannerImage = await optimizeUploadedImage(
+      bannerImageInput.files?.[0],
+      "banner"
+    );
 
     const normalizedGames = enforceMainGameRules(
       existingGames.map((game) => normalizeGameRecord(game))
@@ -643,13 +680,13 @@ async function handleListClick(event) {
 
     if (action === "pick-cover-art") {
       pendingArtTarget = { gameId: id, kind: "cover" };
-      coverArtPickerInput.click();
+      openFilePicker(coverArtPickerInput);
       return;
     }
 
     if (action === "pick-banner-art") {
       pendingArtTarget = { gameId: id, kind: "banner" };
-      bannerArtPickerInput.click();
+      openFilePicker(bannerArtPickerInput);
       return;
     }
 
@@ -1417,7 +1454,9 @@ function renderGameCard(game, sessionStats) {
         }
       </div>
 
-      <div class="game-actions">
+      <div class="game-actions" aria-label="Game actions for ${escapeAttribute(
+        game.title
+      )}">
         ${renderGameActions(game)}
       </div>
     </article>

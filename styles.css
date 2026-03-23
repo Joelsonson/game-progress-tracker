@@ -34,6 +34,8 @@ body {
     var(--bg);
   color: var(--text);
   min-height: 100vh;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 button,
@@ -43,8 +45,23 @@ select {
   font: inherit;
 }
 
+.visually-hidden-file-input {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .app-shell {
   width: min(1120px, calc(100% - 32px));
+  max-width: 100%;
   margin: 0 auto;
   padding: 32px 0 48px;
 }
@@ -79,6 +96,7 @@ select {
   padding: 20px;
   box-shadow: var(--shadow);
   margin-bottom: 20px;
+  min-width: 0;
 }
 
 .panel h2,
@@ -264,6 +282,38 @@ textarea {
   border-radius: 18px;
   padding: 18px;
   box-shadow: var(--shadow);
+}
+
+.mobile-screen-group,
+.mobile-screen,
+.journey-home-shell,
+.journey-home-top,
+.journey-home-copy,
+.journey-home-meters,
+.journey-shell,
+.journey-hero,
+.journey-hero-top,
+.journey-resource-grid,
+.journey-class-grid,
+.journey-stat-grid,
+.journey-log-grid,
+.journey-utility-row,
+.games-section,
+.game-card,
+.session-card,
+.completion-card,
+.settings-card,
+.journey-side-card,
+.journey-resource-card,
+.journey-stat-card,
+.journey-log-card,
+.game-card-body,
+.game-card-info,
+.quest-hero-content,
+.quest-hero-text,
+.completion-card-content,
+.completion-card-heading {
+  min-width: 0;
 }
 
 .stat-label {
@@ -675,6 +725,17 @@ textarea {
 .crop-actions {
   justify-content: flex-end;
   margin-top: 18px;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  padding-top: 12px;
+  padding-bottom: max(4px, env(safe-area-inset-bottom));
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0),
+    rgba(15, 23, 42, 0.92) 26%,
+    rgba(15, 23, 42, 0.98)
+  );
 }
 
 .summary-row {
@@ -903,6 +964,11 @@ textarea {
   position: fixed;
   inset: 0;
   z-index: 50;
+  overflow: auto;
+  padding:
+    max(16px, env(safe-area-inset-top))
+    12px
+    max(16px, env(safe-area-inset-bottom));
 }
 
 .crop-modal-backdrop {
@@ -914,8 +980,10 @@ textarea {
 
 .crop-modal-dialog {
   position: relative;
-  width: min(920px, calc(100% - 24px));
-  margin: 32px auto;
+  width: min(920px, 100%);
+  margin: 0 auto;
+  max-height: calc(100dvh - max(32px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+  overflow: auto;
   border-radius: 22px;
   border: 1px solid var(--border);
   background: linear-gradient(
@@ -1258,8 +1326,8 @@ textarea {
   }
 
   .crop-modal-dialog {
-    margin: 16px auto;
-    max-height: calc(100vh - 32px);
+    margin: 0 auto;
+    max-height: calc(100dvh - max(24px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
     overflow: auto;
   }
 
@@ -1454,14 +1522,21 @@ textarea {
   }
 
   .game-actions {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding-bottom: 6px;
-    scrollbar-width: thin;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    overflow: visible;
+    padding-bottom: 0;
+    scrollbar-width: auto;
   }
 
   .game-actions > * {
-    flex: 0 0 auto;
+    flex: initial;
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    white-space: normal;
+    text-align: center;
   }
 
   .game-card-banner {
@@ -1514,6 +1589,7 @@ textarea {
   }
 
   .game-actions {
+    grid-template-columns: 1fr;
     padding: 0 14px 14px;
   }
 
