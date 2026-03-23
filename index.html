@@ -2,9 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Game Progress Tracker</title>
-    <link rel="stylesheet" href="styles.css" />
+    <meta name="theme-color" content="#020617" />
+    <link rel="stylesheet" href="styles.css?v=20260323b" />
   </head>
   <body>
     <main class="app-shell">
@@ -42,7 +43,7 @@
       </section>
 
       <div class="mobile-screen-group">
-        <section class="mobile-screen is-active" data-screen="home">
+        <section id="screenHome" class="mobile-screen is-active" data-screen="home">
           <section class="panel player-panel">
             <div class="player-panel-header">
               <div>
@@ -141,7 +142,7 @@
           </section>
         </section>
 
-        <section class="mobile-screen" data-screen="journey">
+        <section id="screenJourney" class="mobile-screen" data-screen="journey">
           <section id="journeyPanel" class="panel journey-panel">
             <div class="section-header">
               <div>
@@ -158,7 +159,7 @@
           </section>
         </section>
 
-        <section class="mobile-screen" data-screen="tracker">
+        <section id="screenTracker" class="mobile-screen" data-screen="tracker">
           <section class="panel">
             <div class="section-header">
               <div>
@@ -171,7 +172,7 @@
           </section>
         </section>
 
-        <section class="mobile-screen" data-screen="sessions">
+        <section id="screenSessions" class="mobile-screen" data-screen="sessions">
           <section class="panel">
             <h2>Log a play session</h2>
             <p class="muted-text compact-note">
@@ -237,7 +238,7 @@
           </section>
         </section>
 
-        <section class="mobile-screen" data-screen="add">
+        <section id="screenAdd" class="mobile-screen" data-screen="add">
           <details id="addGamePanel" class="panel add-game-panel" open>
             <summary>Add a game</summary>
 
@@ -492,6 +493,6 @@
       </div>
     </div>
 
-    <script type="module" src="./app.js"></script>
+    <script type="module" src="./app.js?v=20260323b"></script>
   </body>
 </html>

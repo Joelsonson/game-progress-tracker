@@ -225,6 +225,13 @@ let activeScreenId = "home";
 const MOBILE_BREAKPOINT_PX = 900;
 const SCREEN_STORAGE_KEY = "gameTracker.activeScreen";
 const DEFAULT_SCREEN_ID = "home";
+const SCREEN_SECTION_IDS = {
+  home: "screenHome",
+  journey: "screenJourney",
+  tracker: "screenTracker",
+  sessions: "screenSessions",
+  add: "screenAdd",
+};
 
 const gameForm = document.querySelector("#gameForm");
 const addGamePanel = document.querySelector("#addGamePanel");
@@ -294,6 +301,8 @@ const appScreens = Array.from(document.querySelectorAll("[data-screen]"));
 const screenNavButtons = Array.from(
   document.querySelectorAll("[data-screen-target]")
 );
+const rootElement = document.documentElement;
+const bodyElement = document.body;
 
 document.addEventListener("DOMContentLoaded", init);
 
@@ -302,7 +311,9 @@ async function init() {
     db = await openDB();
     await repairGamesIfNeeded();
     bindEvents();
+    syncViewportMode();
     setActiveScreen(getPreferredScreenId());
+    applyScreenHash(activeScreenId);
     await renderApp();
   } catch (error) {
     console.error("Failed to initialize app:", error);
@@ -342,7 +353,10 @@ function bindEvents() {
   }
 
   window.addEventListener("resize", handleViewportResize);
+  window.addEventListener("orientationchange", handleViewportResize);
+  window.addEventListener("pageshow", handleViewportResize);
 }
+
 
 function handleScreenNavClick(event) {
   const targetScreenId = event.currentTarget?.dataset.screenTarget;
@@ -352,17 +366,60 @@ function handleScreenNavClick(event) {
     addGamePanel.open = true;
   }
 
+  const mobileLayoutActive = isMobileViewport();
+
   setActiveScreen(targetScreenId, {
     store: true,
-    scrollToTop: isMobileViewport(),
+    scrollToTop: mobileLayoutActive,
   });
+
+  applyScreenHash(targetScreenId);
+
+  if (!mobileLayoutActive) {
+    scrollScreenIntoView(targetScreenId);
+  }
 }
 
 function handleViewportResize() {
+  syncViewportMode();
   setActiveScreen(activeScreenId || getPreferredScreenId());
 }
 
+function syncViewportMode() {
+  const mobileLayoutActive = isMobileViewport();
+  rootElement?.classList.toggle("is-mobile-layout", mobileLayoutActive);
+  bodyElement?.classList.toggle("is-mobile-layout", mobileLayoutActive);
+}
+
+function applyScreenHash(screenId) {
+  const sectionId = SCREEN_SECTION_IDS[screenId];
+  if (!sectionId) return;
+
+  try {
+    window.history.replaceState(null, "", `#${sectionId}`);
+  } catch (error) {
+    window.location.hash = sectionId;
+  }
+}
+
+function scrollScreenIntoView(screenId) {
+  const sectionId = SCREEN_SECTION_IDS[screenId];
+  const targetElement = sectionId
+    ? document.getElementById(sectionId)
+    : null;
+
+  if (!targetElement) return;
+
+  targetElement.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+}
+
 function getPreferredScreenId() {
+  const hashScreenId = getScreenIdFromHash();
+  if (hashScreenId) return hashScreenId;
+
   try {
     const storedScreenId = window.localStorage.getItem(SCREEN_STORAGE_KEY);
     return isValidScreenId(storedScreenId) ? storedScreenId : DEFAULT_SCREEN_ID;
@@ -371,18 +428,38 @@ function getPreferredScreenId() {
   }
 }
 
+function getScreenIdFromHash() {
+  const currentHash = String(window.location.hash || "").replace(/^#/, "");
+  const matchingEntry = Object.entries(SCREEN_SECTION_IDS).find(
+    ([, sectionId]) => sectionId === currentHash
+  );
+
+  return matchingEntry?.[0] || "";
+}
+
 function isValidScreenId(screenId) {
   return appScreens.some((screen) => screen.dataset.screen === screenId);
 }
 
 function isMobileViewport() {
-  return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`).matches;
+  const mediaMatch = window.matchMedia(
+    `(max-width: ${MOBILE_BREAKPOINT_PX}px)`
+  ).matches;
+  const visualViewportWidth = Math.round(window.visualViewport?.width || 0);
+  const layoutViewportWidth = Math.round(window.innerWidth || 0);
+  const screenWidth = Math.round(window.screen?.width || 0);
+  const smallestKnownWidth = [visualViewportWidth, layoutViewportWidth, screenWidth]
+    .filter(Boolean)
+    .reduce((smallest, width) => Math.min(smallest, width), Infinity);
+
+  return mediaMatch || smallestKnownWidth <= MOBILE_BREAKPOINT_PX;
 }
 
 function setActiveScreen(screenId, options = {}) {
   const { store = false, scrollToTop = false } = options;
   const nextScreenId = isValidScreenId(screenId) ? screenId : DEFAULT_SCREEN_ID;
 
+  syncViewportMode();
   activeScreenId = nextScreenId;
 
   for (const screen of appScreens) {
@@ -492,6 +569,7 @@ async function handleAddGame(event) {
       store: true,
       scrollToTop: isMobileViewport(),
     });
+    applyScreenHash("tracker");
   } catch (error) {
     if (isCropCancelError(error)) {
       showMessage(formMessage, "Image crop cancelled.", true);
