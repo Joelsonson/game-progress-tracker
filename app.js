@@ -225,13 +225,6 @@ let activeScreenId = "home";
 const MOBILE_BREAKPOINT_PX = 900;
 const SCREEN_STORAGE_KEY = "gameTracker.activeScreen";
 const DEFAULT_SCREEN_ID = "home";
-const SCREEN_SECTION_IDS = {
-  home: "screenHome",
-  journey: "screenJourney",
-  tracker: "screenTracker",
-  sessions: "screenSessions",
-  add: "screenAdd",
-};
 
 const gameForm = document.querySelector("#gameForm");
 const addGamePanel = document.querySelector("#addGamePanel");
@@ -275,6 +268,7 @@ const recentSessionsSummaryEl = document.querySelector(
 const recentSessionsListEl = document.querySelector("#recentSessionsList");
 const journeyContentEl = document.querySelector("#journeyContent");
 const journeyMessageEl = document.querySelector("#journeyMessage");
+const homeJourneyContentEl = document.querySelector("#homeJourneyContent");
 
 const coverArtPickerInput = document.querySelector("#coverArtPicker");
 const bannerArtPickerInput = document.querySelector("#bannerArtPicker");
@@ -301,8 +295,6 @@ const appScreens = Array.from(document.querySelectorAll("[data-screen]"));
 const screenNavButtons = Array.from(
   document.querySelectorAll("[data-screen-target]")
 );
-const rootElement = document.documentElement;
-const bodyElement = document.body;
 
 document.addEventListener("DOMContentLoaded", init);
 
@@ -311,9 +303,7 @@ async function init() {
     db = await openDB();
     await repairGamesIfNeeded();
     bindEvents();
-    syncViewportMode();
     setActiveScreen(getPreferredScreenId());
-    applyScreenHash(activeScreenId);
     await renderApp();
   } catch (error) {
     console.error("Failed to initialize app:", error);
@@ -327,6 +317,7 @@ function bindEvents() {
   gamesListEl.addEventListener("click", handleListClick);
   completionSpotlightEl.addEventListener("click", handleListClick);
   journeyContentEl?.addEventListener("click", handleJourneyClick);
+  homeJourneyContentEl?.addEventListener("click", handleHomeJourneyClick);
   coverArtPickerInput.addEventListener("change", () =>
     handleArtPickerChange("cover")
   );
@@ -353,10 +344,7 @@ function bindEvents() {
   }
 
   window.addEventListener("resize", handleViewportResize);
-  window.addEventListener("orientationchange", handleViewportResize);
-  window.addEventListener("pageshow", handleViewportResize);
 }
-
 
 function handleScreenNavClick(event) {
   const targetScreenId = event.currentTarget?.dataset.screenTarget;
@@ -366,60 +354,17 @@ function handleScreenNavClick(event) {
     addGamePanel.open = true;
   }
 
-  const mobileLayoutActive = isMobileViewport();
-
   setActiveScreen(targetScreenId, {
     store: true,
-    scrollToTop: mobileLayoutActive,
+    scrollToTop: isMobileViewport(),
   });
-
-  applyScreenHash(targetScreenId);
-
-  if (!mobileLayoutActive) {
-    scrollScreenIntoView(targetScreenId);
-  }
 }
 
 function handleViewportResize() {
-  syncViewportMode();
   setActiveScreen(activeScreenId || getPreferredScreenId());
 }
 
-function syncViewportMode() {
-  const mobileLayoutActive = isMobileViewport();
-  rootElement?.classList.toggle("is-mobile-layout", mobileLayoutActive);
-  bodyElement?.classList.toggle("is-mobile-layout", mobileLayoutActive);
-}
-
-function applyScreenHash(screenId) {
-  const sectionId = SCREEN_SECTION_IDS[screenId];
-  if (!sectionId) return;
-
-  try {
-    window.history.replaceState(null, "", `#${sectionId}`);
-  } catch (error) {
-    window.location.hash = sectionId;
-  }
-}
-
-function scrollScreenIntoView(screenId) {
-  const sectionId = SCREEN_SECTION_IDS[screenId];
-  const targetElement = sectionId
-    ? document.getElementById(sectionId)
-    : null;
-
-  if (!targetElement) return;
-
-  targetElement.scrollIntoView({
-    behavior: "smooth",
-    block: "start",
-  });
-}
-
 function getPreferredScreenId() {
-  const hashScreenId = getScreenIdFromHash();
-  if (hashScreenId) return hashScreenId;
-
   try {
     const storedScreenId = window.localStorage.getItem(SCREEN_STORAGE_KEY);
     return isValidScreenId(storedScreenId) ? storedScreenId : DEFAULT_SCREEN_ID;
@@ -428,38 +373,18 @@ function getPreferredScreenId() {
   }
 }
 
-function getScreenIdFromHash() {
-  const currentHash = String(window.location.hash || "").replace(/^#/, "");
-  const matchingEntry = Object.entries(SCREEN_SECTION_IDS).find(
-    ([, sectionId]) => sectionId === currentHash
-  );
-
-  return matchingEntry?.[0] || "";
-}
-
 function isValidScreenId(screenId) {
   return appScreens.some((screen) => screen.dataset.screen === screenId);
 }
 
 function isMobileViewport() {
-  const mediaMatch = window.matchMedia(
-    `(max-width: ${MOBILE_BREAKPOINT_PX}px)`
-  ).matches;
-  const visualViewportWidth = Math.round(window.visualViewport?.width || 0);
-  const layoutViewportWidth = Math.round(window.innerWidth || 0);
-  const screenWidth = Math.round(window.screen?.width || 0);
-  const smallestKnownWidth = [visualViewportWidth, layoutViewportWidth, screenWidth]
-    .filter(Boolean)
-    .reduce((smallest, width) => Math.min(smallest, width), Infinity);
-
-  return mediaMatch || smallestKnownWidth <= MOBILE_BREAKPOINT_PX;
+  return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`).matches;
 }
 
 function setActiveScreen(screenId, options = {}) {
   const { store = false, scrollToTop = false } = options;
   const nextScreenId = isValidScreenId(screenId) ? screenId : DEFAULT_SCREEN_ID;
 
-  syncViewportMode();
   activeScreenId = nextScreenId;
 
   for (const screen of appScreens) {
@@ -569,7 +494,6 @@ async function handleAddGame(event) {
       store: true,
       scrollToTop: isMobileViewport(),
     });
-    applyScreenHash("tracker");
   } catch (error) {
     if (isCropCancelError(error)) {
       showMessage(formMessage, "Image crop cancelled.", true);
@@ -1006,6 +930,7 @@ async function renderApp() {
     xpSummary
   );
 
+  renderHomeJourney(idleJourney, xpSummary);
   renderPlayerProgress(xpSummary);
   renderStats(sortedGames, sessions);
   renderIdleJourney(idleJourney, sortedGames, sessions, xpSummary);
@@ -2791,6 +2716,111 @@ function rollFocusPenalty({ selectedGame, allGames, meaningfulProgress, minutes 
     penaltyXp: -penalty,
     reason: `${meta.label} away from ${mainGame.title}`,
   };
+}
+
+function handleHomeJourneyClick(event) {
+  const button = event.target.closest("button[data-home-action]");
+  if (!button) return;
+
+  if (button.dataset.homeAction === "open-journey") {
+    setActiveScreen("journey", {
+      store: true,
+      scrollToTop: isMobileViewport(),
+    });
+    applyScreenHash("journey");
+
+    if (!isMobileViewport()) {
+      scrollScreenIntoView("journey");
+    }
+  }
+}
+
+function renderHomeJourney(state, xpSummary) {
+  if (!homeJourneyContentEl) return;
+
+  const journeyLevel = getJourneyLevel(state, xpSummary.level);
+  const journeyStats = buildJourneyDerived(state, journeyLevel);
+  const boss = getJourneyBoss(state.bossIndex);
+  const progress = getJourneySegmentProgress(state.totalDistance, state.bossIndex);
+  const hpPercent = clamp((state.currentHp / journeyStats.maxHp) * 100, 0, 100);
+  const hungerPercent = clamp(
+    (state.currentHunger / journeyStats.maxHunger) * 100,
+    0,
+    100
+  );
+  const nextBossEtaHours =
+    progress.remainingDistance / Math.max(0.01, journeyStats.speedPerHour);
+
+  homeJourneyContentEl.innerHTML = `
+    <div class="journey-home-shell">
+      <div class="journey-home-top">
+        <div class="journey-home-copy">
+          <p class="eyebrow">Journey at a glance</p>
+          <h2>Parallel expedition</h2>
+          <p class="muted-text">
+            ${escapeHtml(getJourneyActivityText(state, boss, progress, journeyStats))}
+          </p>
+
+          <div class="journey-progress-track">
+            <div class="journey-progress-fill" style="width: ${progress.percent}%"></div>
+          </div>
+
+          <div class="journey-progress-meta">
+            <span>${progress.currentLabel}</span>
+            <span>${progress.remainingLabel}</span>
+          </div>
+
+          <div class="summary-row">
+            <span class="summary-pill">Boss gate: ${escapeHtml(boss.name)}</span>
+            <span class="summary-pill">Bosses beaten: ${state.bossIndex}</span>
+            <span class="summary-pill">Class: ${escapeHtml(
+              JOURNEY_CLASS_META[state.classType].label
+            )}</span>
+            <span class="summary-pill">ETA: ${escapeHtml(
+              state.status === "recovering"
+                ? getRecoveryText(state)
+                : formatDurationHours(nextBossEtaHours)
+            )}</span>
+          </div>
+        </div>
+
+        <div class="journey-home-meters">
+          <div>
+            <p class="journey-overline">Expedition condition</p>
+            <h3>Lv. ${journeyLevel} ${escapeHtml(
+              JOURNEY_CLASS_META[state.classType].label
+            )}</h3>
+          </div>
+
+          <div class="journey-home-meter">
+            <div class="resource-meta">
+              <span>Health</span>
+              <span>${Math.round(state.currentHp)} / ${journeyStats.maxHp}</span>
+            </div>
+            <div class="resource-track">
+              <div class="resource-fill resource-fill-health" style="width: ${hpPercent}%"></div>
+            </div>
+          </div>
+
+          <div class="journey-home-meter">
+            <div class="resource-meta">
+              <span>Hunger</span>
+              <span>${Math.round(state.currentHunger)} / ${journeyStats.maxHunger}</span>
+            </div>
+            <div class="resource-track">
+              <div class="resource-fill resource-fill-hunger" style="width: ${hungerPercent}%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="journey-home-actions">
+        <button type="button" class="secondary-button" data-home-action="open-journey">
+          Open full journey
+        </button>
+      </div>
+    </div>
+  `;
 }
 
 async function handleJourneyClick(event) {

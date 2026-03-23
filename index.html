@@ -3,17 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Game Progress Tracker</title>
+    <title>Tabi no Kiroku — Journey Log</title>
     <meta name="theme-color" content="#020617" />
-    <link rel="stylesheet" href="styles.css?v=20260323b" />
+    <link rel="stylesheet" href="styles.css?v=20260323c" />
   </head>
   <body>
     <main class="app-shell">
       <header class="hero">
         <p class="eyebrow">Prototype v0.8</p>
-        <h1>Game Progress Tracker</h1>
+        <h1><span class="brand-title-main">Tabi no Kiroku</span><span class="brand-title-divider"> — </span><span class="brand-title-sub">Journey Log</span></h1>
         <p class="hero-text">
-          Build momentum, protect your focus, and finish more games.
+          Track your play, power your expedition, and keep moving toward the finish line.
         </p>
       </header>
 
@@ -44,6 +44,10 @@
 
       <div class="mobile-screen-group">
         <section id="screenHome" class="mobile-screen is-active" data-screen="home">
+          <section id="homeJourneyPanel" class="panel journey-panel home-journey-panel">
+            <div id="homeJourneyContent" class="journey-home-shell"></div>
+          </section>
+
           <section class="panel player-panel">
             <div class="player-panel-header">
               <div>
@@ -372,28 +376,6 @@
       </div>
     </main>
 
-    <nav class="mobile-tabbar" aria-label="Primary">
-      <button type="button" class="mobile-tab-button is-active" data-screen-target="home">
-        <span class="mobile-tab-icon">🏠</span>
-        <span class="mobile-tab-label">Home</span>
-      </button>
-      <button type="button" class="mobile-tab-button" data-screen-target="journey">
-        <span class="mobile-tab-icon">🧭</span>
-        <span class="mobile-tab-label">Journey</span>
-      </button>
-      <button type="button" class="mobile-tab-button" data-screen-target="tracker">
-        <span class="mobile-tab-icon">🎮</span>
-        <span class="mobile-tab-label">Tracker</span>
-      </button>
-      <button type="button" class="mobile-tab-button" data-screen-target="sessions">
-        <span class="mobile-tab-icon">⏱️</span>
-        <span class="mobile-tab-label">Sessions</span>
-      </button>
-      <button type="button" class="mobile-tab-button" data-screen-target="add">
-        <span class="mobile-tab-icon">➕</span>
-        <span class="mobile-tab-label">Add</span>
-      </button>
-    </nav>
 
     <input id="coverArtPicker" type="file" accept="image/*" hidden />
     <input id="bannerArtPicker" type="file" accept="image/*" hidden />
@@ -493,6 +475,6 @@
       </div>
     </div>
 
-    <script type="module" src="./app.js?v=20260323b"></script>
+    <script type="module" src="./app.js?v=20260323c"></script>
   </body>
 </html>
