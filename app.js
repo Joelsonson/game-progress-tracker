@@ -220,6 +220,11 @@ const JOURNEY_BOSS_NAMES = [
 let db;
 let pendingArtTarget = null;
 let cropSession = null;
+let activeScreenId = "home";
+
+const MOBILE_BREAKPOINT_PX = 900;
+const SCREEN_STORAGE_KEY = "gameTracker.activeScreen";
+const DEFAULT_SCREEN_ID = "home";
 
 const gameForm = document.querySelector("#gameForm");
 const addGamePanel = document.querySelector("#addGamePanel");
@@ -285,6 +290,10 @@ const cropFocusYRange = document.querySelector("#cropFocusYRange");
 const cropResetButton = document.querySelector("#cropResetButton");
 const cropCancelButton = document.querySelector("#cropCancelButton");
 const cropConfirmButton = document.querySelector("#cropConfirmButton");
+const appScreens = Array.from(document.querySelectorAll("[data-screen]"));
+const screenNavButtons = Array.from(
+  document.querySelectorAll("[data-screen-target]")
+);
 
 document.addEventListener("DOMContentLoaded", init);
 
@@ -293,6 +302,7 @@ async function init() {
     db = await openDB();
     await repairGamesIfNeeded();
     bindEvents();
+    setActiveScreen(getPreferredScreenId());
     await renderApp();
   } catch (error) {
     console.error("Failed to initialize app:", error);
@@ -326,6 +336,76 @@ function bindEvents() {
   cropConfirmButton?.addEventListener("click", confirmCropSelection);
   artCropModal?.addEventListener("click", handleCropModalClick);
   document.addEventListener("keydown", handleGlobalKeyDown);
+
+  for (const button of screenNavButtons) {
+    button.addEventListener("click", handleScreenNavClick);
+  }
+
+  window.addEventListener("resize", handleViewportResize);
+}
+
+function handleScreenNavClick(event) {
+  const targetScreenId = event.currentTarget?.dataset.screenTarget;
+  if (!targetScreenId) return;
+
+  if (targetScreenId === "add" && addGamePanel) {
+    addGamePanel.open = true;
+  }
+
+  setActiveScreen(targetScreenId, {
+    store: true,
+    scrollToTop: isMobileViewport(),
+  });
+}
+
+function handleViewportResize() {
+  setActiveScreen(activeScreenId || getPreferredScreenId());
+}
+
+function getPreferredScreenId() {
+  try {
+    const storedScreenId = window.localStorage.getItem(SCREEN_STORAGE_KEY);
+    return isValidScreenId(storedScreenId) ? storedScreenId : DEFAULT_SCREEN_ID;
+  } catch (error) {
+    return DEFAULT_SCREEN_ID;
+  }
+}
+
+function isValidScreenId(screenId) {
+  return appScreens.some((screen) => screen.dataset.screen === screenId);
+}
+
+function isMobileViewport() {
+  return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`).matches;
+}
+
+function setActiveScreen(screenId, options = {}) {
+  const { store = false, scrollToTop = false } = options;
+  const nextScreenId = isValidScreenId(screenId) ? screenId : DEFAULT_SCREEN_ID;
+
+  activeScreenId = nextScreenId;
+
+  for (const screen of appScreens) {
+    screen.classList.toggle("is-active", screen.dataset.screen === nextScreenId);
+  }
+
+  for (const button of screenNavButtons) {
+    const isActive = button.dataset.screenTarget === nextScreenId;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-current", isActive ? "page" : "false");
+  }
+
+  if (store) {
+    try {
+      window.localStorage.setItem(SCREEN_STORAGE_KEY, nextScreenId);
+    } catch (error) {
+      // Ignore localStorage write failures.
+    }
+  }
+
+  if (scrollToTop && isMobileViewport()) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 }
 
 async function repairGamesIfNeeded() {
@@ -408,6 +488,10 @@ async function handleAddGame(event) {
     }
 
     await renderApp();
+    setActiveScreen("tracker", {
+      store: true,
+      scrollToTop: isMobileViewport(),
+    });
   } catch (error) {
     if (isCropCancelError(error)) {
       showMessage(formMessage, "Image crop cancelled.", true);

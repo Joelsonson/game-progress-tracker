@@ -9,307 +9,390 @@
   <body>
     <main class="app-shell">
       <header class="hero">
-        <p class="eyebrow">Prototype v0.7</p>
+        <p class="eyebrow">Prototype v0.8</p>
         <h1>Game Progress Tracker</h1>
         <p class="hero-text">
           Build momentum, protect your focus, and finish more games.
         </p>
       </header>
 
-      <section class="panel player-panel">
-        <div class="player-panel-header">
-          <div>
-            <p class="eyebrow">Player progression</p>
-            <h2 id="playerRank">Side Quest Starter</h2>
-            <p id="xpProgressText" class="muted-text">
-              0 / 100 XP to next level
-            </p>
-          </div>
-          <div class="level-chip">Lvl <span id="playerLevel">1</span></div>
-        </div>
-
-        <div class="xp-bar">
-          <div id="xpProgressFill" class="xp-bar-fill" style="width: 0%"></div>
-        </div>
-
-        <div class="summary-row">
-          <span class="summary-pill">Total XP: <strong id="totalXp">0</strong></span>
-          <span class="summary-pill">Today: <strong id="todayXp">0</strong></span>
-          <span class="summary-pill">
-            Next level: <strong id="xpToNextLevel">100 XP</strong>
-          </span>
+      <section class="panel mobile-quick-switch" aria-label="Quick navigation">
+        <div class="quick-switch-grid">
+          <button type="button" class="nav-chip-button is-active" data-screen-target="home">
+            <span class="nav-chip-icon">🏠</span>
+            <span>Home</span>
+          </button>
+          <button type="button" class="nav-chip-button" data-screen-target="journey">
+            <span class="nav-chip-icon">🧭</span>
+            <span>Journey</span>
+          </button>
+          <button type="button" class="nav-chip-button" data-screen-target="tracker">
+            <span class="nav-chip-icon">🎮</span>
+            <span>Tracker</span>
+          </button>
+          <button type="button" class="nav-chip-button" data-screen-target="sessions">
+            <span class="nav-chip-icon">⏱️</span>
+            <span>Sessions</span>
+          </button>
+          <button type="button" class="nav-chip-button" data-screen-target="add">
+            <span class="nav-chip-icon">➕</span>
+            <span>Add</span>
+          </button>
         </div>
       </section>
 
-      <section class="stats-grid">
-        <article class="stat-card">
-          <p class="stat-label">Total games</p>
-          <p id="totalGames" class="stat-value">0</p>
-        </article>
-
-        <article class="stat-card">
-          <p class="stat-label">In progress</p>
-          <p id="inProgressCount" class="stat-value">0</p>
-        </article>
-
-        <article class="stat-card">
-          <p class="stat-label">Completed</p>
-          <p id="completedCount" class="stat-value">0</p>
-        </article>
-
-        <article class="stat-card">
-          <p class="stat-label">Total sessions</p>
-          <p id="totalSessions" class="stat-value">0</p>
-        </article>
-
-        <article class="stat-card">
-          <p class="stat-label">Main game</p>
-          <p id="mainGameName" class="stat-value">None yet</p>
-        </article>
-
-        <article class="stat-card">
-          <p class="stat-label">Current streak</p>
-          <p id="currentStreak" class="stat-value">0 days</p>
-        </article>
-      </section>
-
-
-      <section id="journeyPanel" class="panel journey-panel">
-        <div class="section-header">
-          <div>
-            <p class="eyebrow">Idle expedition</p>
-            <h2>Parallel journey</h2>
-            <p class="muted-text">
-              Your character keeps travelling in real time. Your tracker XP fuels their growth.
-            </p>
-          </div>
-        </div>
-
-        <div id="journeyContent" class="journey-shell"></div>
-        <p id="journeyMessage" class="form-message"></p>
-      </section>
-
-      <section
-        id="completionSpotlight"
-        class="panel completion-spotlight"
-        hidden
-      ></section>
-
-      <section class="top-layout">
-        <section id="mainQuestPanel" class="panel">
-          <p class="eyebrow">Main quest</p>
-          <h2>No active quest yet</h2>
-          <p class="muted-text">
-            Move one game into In Progress and make it your Main Game.
-          </p>
-        </section>
-
-        <section class="panel">
-          <h2>Log a play session</h2>
-          <p class="muted-text compact-note">
-            Session logging is for in-progress games and completed replays.
-            Backlog, paused, and dropped games should be moved first.
-          </p>
-
-          <form id="sessionForm" class="stack-form">
-            <div class="field">
-              <label for="sessionGame">Game</label>
-              <select id="sessionGame" name="sessionGame"></select>
+      <div class="mobile-screen-group">
+        <section class="mobile-screen is-active" data-screen="home">
+          <section class="panel player-panel">
+            <div class="player-panel-header">
+              <div>
+                <p class="eyebrow">Player progression</p>
+                <h2 id="playerRank">Side Quest Starter</h2>
+                <p id="xpProgressText" class="muted-text">
+                  0 / 100 XP to next level
+                </p>
+              </div>
+              <div class="level-chip">Lvl <span id="playerLevel">1</span></div>
             </div>
 
-            <div class="field">
-              <label for="sessionMinutes">Minutes played</label>
-              <input
-                id="sessionMinutes"
-                name="sessionMinutes"
-                type="number"
-                min="1"
-                step="1"
-                placeholder="60"
-                required
-              />
+            <div class="xp-bar">
+              <div id="xpProgressFill" class="xp-bar-fill" style="width: 0%"></div>
             </div>
 
-            <div class="field">
-              <label for="sessionNote">Session note</label>
-              <textarea
-                id="sessionNote"
-                name="sessionNote"
-                rows="3"
-                placeholder="What did you get done? Where did you stop?"
-              ></textarea>
-            </div>
-
-            <label class="checkbox-row">
-              <input
-                id="meaningfulProgress"
-                name="meaningfulProgress"
-                type="checkbox"
-                checked
-              />
-              <span>This session felt like meaningful progress</span>
-            </label>
-
-            <button type="submit" class="primary-button">Log session</button>
-            <p id="sessionMessage" class="form-message"></p>
-          </form>
-        </section>
-      </section>
-
-      <section class="panel">
-        <div class="section-header">
-          <div>
-            <h2>Your tracker</h2>
-            <p id="listSummary" class="muted-text">No games saved yet.</p>
-          </div>
-        </div>
-
-        <div id="gamesList" class="dashboard-sections"></div>
-      </section>
-
-      <section class="panel">
-        <div class="section-header">
-          <div>
-            <h2>Recent sessions</h2>
-            <p id="recentSessionsSummary" class="muted-text">
-              No sessions logged yet.
-            </p>
-          </div>
-        </div>
-
-        <div id="recentSessionsList" class="sessions-list"></div>
-      </section>
-
-      <details id="addGamePanel" class="panel add-game-panel">
-        <summary>Add a game</summary>
-
-        <form id="gameForm" class="stack-form">
-          <div class="field">
-            <label for="title">Game title</label>
-            <input
-              id="title"
-              name="title"
-              type="text"
-              placeholder="Elden Ring"
-              required
-            />
-          </div>
-
-          <div class="field">
-            <label for="platform">Platform</label>
-            <input
-              id="platform"
-              name="platform"
-              type="text"
-              placeholder="PC, PS5, Switch..."
-            />
-          </div>
-
-          <div class="field">
-            <label for="gameStatus">Starting status</label>
-            <select id="gameStatus" name="gameStatus">
-              <option value="backlog" selected>Backlog</option>
-              <option value="in-progress">In Progress</option>
-              <option value="paused">Paused</option>
-              <option value="completed">Completed</option>
-              <option value="dropped">Dropped</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="notes">Current objective</label>
-            <textarea
-              id="notes"
-              name="notes"
-              rows="3"
-              placeholder="Where you left off, your current goal, next objective..."
-            ></textarea>
-          </div>
-
-          <div class="art-upload-grid">
-            <div class="field">
-              <label for="coverImage">Cover art</label>
-              <input
-                id="coverImage"
-                name="coverImage"
-                type="file"
-                accept="image/*"
-              />
-              <p class="field-hint">
-                Portrait art looks best. Recommended upload: 900×1200 or larger.
-                The app crops it to a 3:4 card frame after upload.
-              </p>
-            </div>
-
-            <div class="field">
-              <label for="bannerImage">Banner art</label>
-              <input
-                id="bannerImage"
-                name="bannerImage"
-                type="file"
-                accept="image/*"
-              />
-              <p class="field-hint">
-                Wide artwork works best. Recommended upload: 1600×900 or larger.
-                The app crops it to a 16:9 hero frame after upload.
-              </p>
-            </div>
-          </div>
-
-          <button type="submit" class="primary-button">Add game</button>
-          <p id="formMessage" class="form-message"></p>
-        </form>
-      </details>
-
-      <details id="settingsPanel" class="panel settings-panel">
-        <summary>Settings & data</summary>
-
-        <div class="settings-grid">
-          <article class="settings-card">
-            <p class="eyebrow">Artwork guide</p>
-            <h3>Better-looking cards start with the right framing</h3>
-            <p class="muted-text">
-              Covers should be portrait and readable even when small. Banners
-              should keep the subject near the center so the hero panels and
-              deck cards still look clean on smaller screens.
-            </p>
             <div class="summary-row">
-              <span class="summary-pill">Cover: 3:4 portrait</span>
-              <span class="summary-pill">Banner: 16:9 wide</span>
-              <span class="summary-pill">Crop editor included</span>
+              <span class="summary-pill">Total XP: <strong id="totalXp">0</strong></span>
+              <span class="summary-pill">Today: <strong id="todayXp">0</strong></span>
+              <span class="summary-pill">
+                Next level: <strong id="xpToNextLevel">100 XP</strong>
+              </span>
             </div>
-          </article>
+          </section>
 
-          <article class="settings-card">
-            <p class="eyebrow">Local backup</p>
-            <h3>Move your tracker to another device</h3>
+          <section class="panel quick-actions-panel">
+            <div class="section-header">
+              <div>
+                <h2>Quick actions</h2>
+                <p class="muted-text">
+                  Jump straight to the part of the tracker you want instead of scrolling through everything.
+                </p>
+              </div>
+            </div>
+
+            <div class="quick-action-grid">
+              <button type="button" class="secondary-button quick-action-button" data-screen-target="sessions">
+                Log session
+              </button>
+              <button type="button" class="secondary-button quick-action-button" data-screen-target="tracker">
+                View tracker
+              </button>
+              <button type="button" class="secondary-button quick-action-button" data-screen-target="journey">
+                Open journey
+              </button>
+              <button type="button" class="primary-button quick-action-button" data-screen-target="add">
+                Add game
+              </button>
+            </div>
+          </section>
+
+          <section class="stats-grid">
+            <article class="stat-card">
+              <p class="stat-label">Total games</p>
+              <p id="totalGames" class="stat-value">0</p>
+            </article>
+
+            <article class="stat-card">
+              <p class="stat-label">In progress</p>
+              <p id="inProgressCount" class="stat-value">0</p>
+            </article>
+
+            <article class="stat-card">
+              <p class="stat-label">Completed</p>
+              <p id="completedCount" class="stat-value">0</p>
+            </article>
+
+            <article class="stat-card">
+              <p class="stat-label">Total sessions</p>
+              <p id="totalSessions" class="stat-value">0</p>
+            </article>
+
+            <article class="stat-card">
+              <p class="stat-label">Main game</p>
+              <p id="mainGameName" class="stat-value">None yet</p>
+            </article>
+
+            <article class="stat-card">
+              <p class="stat-label">Current streak</p>
+              <p id="currentStreak" class="stat-value">0 days</p>
+            </article>
+          </section>
+
+          <section
+            id="completionSpotlight"
+            class="panel completion-spotlight"
+            hidden
+          ></section>
+
+          <section id="mainQuestPanel" class="panel">
+            <p class="eyebrow">Main quest</p>
+            <h2>No active quest yet</h2>
             <p class="muted-text">
-              Export saves your games, sessions, XP progress, artwork, and idle journey into
-              one JSON backup. Import replaces the current local tracker with the
-              backup you choose.
+              Move one game into In Progress and make it your Main Game.
+            </p>
+          </section>
+        </section>
+
+        <section class="mobile-screen" data-screen="journey">
+          <section id="journeyPanel" class="panel journey-panel">
+            <div class="section-header">
+              <div>
+                <p class="eyebrow">Idle expedition</p>
+                <h2>Parallel journey</h2>
+                <p class="muted-text">
+                  Your character keeps travelling in real time. Your tracker XP fuels their growth.
+                </p>
+              </div>
+            </div>
+
+            <div id="journeyContent" class="journey-shell"></div>
+            <p id="journeyMessage" class="form-message"></p>
+          </section>
+        </section>
+
+        <section class="mobile-screen" data-screen="tracker">
+          <section class="panel">
+            <div class="section-header">
+              <div>
+                <h2>Your tracker</h2>
+                <p id="listSummary" class="muted-text">No games saved yet.</p>
+              </div>
+            </div>
+
+            <div id="gamesList" class="dashboard-sections"></div>
+          </section>
+        </section>
+
+        <section class="mobile-screen" data-screen="sessions">
+          <section class="panel">
+            <h2>Log a play session</h2>
+            <p class="muted-text compact-note">
+              Session logging is for in-progress games and completed replays.
+              Backlog, paused, and dropped games should be moved first.
             </p>
 
-            <div class="settings-actions">
-              <button id="exportDataButton" type="button" class="secondary-button">
-                Export progress
-              </button>
-              <button id="importDataButton" type="button" class="secondary-button">
-                Import progress
-              </button>
-              <button
-                id="clearDataButton"
-                type="button"
-                class="secondary-button action-danger"
-              >
-                Clear all data
-              </button>
+            <form id="sessionForm" class="stack-form">
+              <div class="field">
+                <label for="sessionGame">Game</label>
+                <select id="sessionGame" name="sessionGame"></select>
+              </div>
+
+              <div class="field">
+                <label for="sessionMinutes">Minutes played</label>
+                <input
+                  id="sessionMinutes"
+                  name="sessionMinutes"
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="60"
+                  required
+                />
+              </div>
+
+              <div class="field">
+                <label for="sessionNote">Session note</label>
+                <textarea
+                  id="sessionNote"
+                  name="sessionNote"
+                  rows="3"
+                  placeholder="What did you get done? Where did you stop?"
+                ></textarea>
+              </div>
+
+              <label class="checkbox-row">
+                <input
+                  id="meaningfulProgress"
+                  name="meaningfulProgress"
+                  type="checkbox"
+                  checked
+                />
+                <span>This session felt like meaningful progress</span>
+              </label>
+
+              <button type="submit" class="primary-button">Log session</button>
+              <p id="sessionMessage" class="form-message"></p>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="section-header">
+              <div>
+                <h2>Recent sessions</h2>
+                <p id="recentSessionsSummary" class="muted-text">
+                  No sessions logged yet.
+                </p>
+              </div>
             </div>
 
-            <p id="settingsMessage" class="form-message"></p>
-          </article>
-        </div>
-      </details>
+            <div id="recentSessionsList" class="sessions-list"></div>
+          </section>
+        </section>
+
+        <section class="mobile-screen" data-screen="add">
+          <details id="addGamePanel" class="panel add-game-panel" open>
+            <summary>Add a game</summary>
+
+            <form id="gameForm" class="stack-form">
+              <div class="field">
+                <label for="title">Game title</label>
+                <input
+                  id="title"
+                  name="title"
+                  type="text"
+                  placeholder="Elden Ring"
+                  required
+                />
+              </div>
+
+              <div class="field">
+                <label for="platform">Platform</label>
+                <input
+                  id="platform"
+                  name="platform"
+                  type="text"
+                  placeholder="PC, PS5, Switch..."
+                />
+              </div>
+
+              <div class="field">
+                <label for="gameStatus">Starting status</label>
+                <select id="gameStatus" name="gameStatus">
+                  <option value="backlog" selected>Backlog</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="paused">Paused</option>
+                  <option value="completed">Completed</option>
+                  <option value="dropped">Dropped</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="notes">Current objective</label>
+                <textarea
+                  id="notes"
+                  name="notes"
+                  rows="3"
+                  placeholder="Where you left off, your current goal, next objective..."
+                ></textarea>
+              </div>
+
+              <div class="art-upload-grid">
+                <div class="field">
+                  <label for="coverImage">Cover art</label>
+                  <input
+                    id="coverImage"
+                    name="coverImage"
+                    type="file"
+                    accept="image/*"
+                  />
+                  <p class="field-hint">
+                    Portrait art looks best. Recommended upload: 900×1200 or larger.
+                    The app crops it to a 3:4 card frame after upload.
+                  </p>
+                </div>
+
+                <div class="field">
+                  <label for="bannerImage">Banner art</label>
+                  <input
+                    id="bannerImage"
+                    name="bannerImage"
+                    type="file"
+                    accept="image/*"
+                  />
+                  <p class="field-hint">
+                    Wide artwork works best. Recommended upload: 1600×900 or larger.
+                    The app crops it to a 16:9 hero frame after upload.
+                  </p>
+                </div>
+              </div>
+
+              <button type="submit" class="primary-button">Add game</button>
+              <p id="formMessage" class="form-message"></p>
+            </form>
+          </details>
+
+          <details id="settingsPanel" class="panel settings-panel">
+            <summary>Settings &amp; data</summary>
+
+            <div class="settings-grid">
+              <article class="settings-card">
+                <p class="eyebrow">Artwork guide</p>
+                <h3>Better-looking cards start with the right framing</h3>
+                <p class="muted-text">
+                  Covers should be portrait and readable even when small. Banners
+                  should keep the subject near the center so the hero panels and
+                  deck cards still look clean on smaller screens.
+                </p>
+                <div class="summary-row">
+                  <span class="summary-pill">Cover: 3:4 portrait</span>
+                  <span class="summary-pill">Banner: 16:9 wide</span>
+                  <span class="summary-pill">Crop editor included</span>
+                </div>
+              </article>
+
+              <article class="settings-card">
+                <p class="eyebrow">Local backup</p>
+                <h3>Move your tracker to another device</h3>
+                <p class="muted-text">
+                  Export saves your games, sessions, XP progress, artwork, and idle journey into
+                  one JSON backup. Import replaces the current local tracker with the
+                  backup you choose.
+                </p>
+
+                <div class="settings-actions">
+                  <button id="exportDataButton" type="button" class="secondary-button">
+                    Export progress
+                  </button>
+                  <button id="importDataButton" type="button" class="secondary-button">
+                    Import progress
+                  </button>
+                  <button
+                    id="clearDataButton"
+                    type="button"
+                    class="secondary-button action-danger"
+                  >
+                    Clear all data
+                  </button>
+                </div>
+
+                <p id="settingsMessage" class="form-message"></p>
+              </article>
+            </div>
+          </details>
+        </section>
+      </div>
     </main>
+
+    <nav class="mobile-tabbar" aria-label="Primary">
+      <button type="button" class="mobile-tab-button is-active" data-screen-target="home">
+        <span class="mobile-tab-icon">🏠</span>
+        <span class="mobile-tab-label">Home</span>
+      </button>
+      <button type="button" class="mobile-tab-button" data-screen-target="journey">
+        <span class="mobile-tab-icon">🧭</span>
+        <span class="mobile-tab-label">Journey</span>
+      </button>
+      <button type="button" class="mobile-tab-button" data-screen-target="tracker">
+        <span class="mobile-tab-icon">🎮</span>
+        <span class="mobile-tab-label">Tracker</span>
+      </button>
+      <button type="button" class="mobile-tab-button" data-screen-target="sessions">
+        <span class="mobile-tab-icon">⏱️</span>
+        <span class="mobile-tab-label">Sessions</span>
+      </button>
+      <button type="button" class="mobile-tab-button" data-screen-target="add">
+        <span class="mobile-tab-icon">➕</span>
+        <span class="mobile-tab-label">Add</span>
+      </button>
+    </nav>
 
     <input id="coverArtPicker" type="file" accept="image/*" hidden />
     <input id="bannerArtPicker" type="file" accept="image/*" hidden />
