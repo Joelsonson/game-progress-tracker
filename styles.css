@@ -1134,6 +1134,13 @@ textarea {
   align-content: start;
 }
 
+.journey-alert-card {
+  border: 1px solid rgba(251, 191, 36, 0.28);
+  background:
+    linear-gradient(180deg, rgba(69, 26, 3, 0.3), rgba(15, 23, 42, 0.72)),
+    rgba(15, 23, 42, 0.78);
+}
+
 .journey-progress-track,
 .resource-track {
   position: relative;
@@ -1206,6 +1213,12 @@ textarea {
   color: #d1fae5;
 }
 
+.journey-chip.is-warning {
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.24);
+  color: #fde68a;
+}
+
 .journey-stat-card {
   display: grid;
   gap: 8px;
@@ -1245,6 +1258,164 @@ textarea {
   font-size: 0.82rem;
 }
 
+.journey-event-list,
+.journey-class-list,
+.journey-lock-list {
+  display: grid;
+  gap: 10px;
+}
+
+.journey-event-button {
+  width: 100%;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.journey-event-button span {
+  display: block;
+}
+
+.journey-event-kicker {
+  color: var(--warning);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.journey-event-summary,
+.journey-inline-copy {
+  margin: 0;
+  color: var(--muted);
+}
+
+.journey-class-list .secondary-button,
+.journey-lock-list .journey-locked-class {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.journey-locked-class {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px dashed rgba(148, 163, 184, 0.28);
+  background: rgba(15, 23, 42, 0.52);
+}
+
+.journey-locked-class strong {
+  font-size: 0.96rem;
+}
+
+.journey-locked-class span {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.journey-story-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.journey-story-stat {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.journey-story-stat span {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.journey-story-stat strong {
+  font-size: 1.15rem;
+}
+
+.journey-event-modal[hidden] {
+  display: none;
+}
+
+.journey-event-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
+
+.journey-event-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.76);
+  backdrop-filter: blur(10px);
+}
+
+.journey-event-dialog {
+  position: relative;
+  width: min(720px, calc(100% - 28px));
+  max-height: calc(100dvh - 36px);
+  overflow: auto;
+  margin: 18px auto;
+  border-radius: 24px;
+  border: 1px solid rgba(96, 165, 250, 0.28);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(15, 23, 42, 0.88)),
+    radial-gradient(circle at top left, rgba(96, 165, 250, 0.16), transparent 32%);
+  box-shadow: var(--shadow);
+}
+
+.journey-event-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 22px 22px 0;
+}
+
+.journey-event-body {
+  display: grid;
+  gap: 16px;
+  padding: 18px 22px 22px;
+}
+
+.journey-event-panel {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(15, 23, 42, 0.62);
+}
+
+.journey-event-panel p {
+  margin: 0;
+}
+
+.journey-event-choice-list {
+  display: grid;
+  gap: 12px;
+}
+
+.journey-event-choice {
+  display: grid;
+  gap: 8px;
+  text-align: left;
+}
+
+.journey-event-choice strong {
+  font-size: 0.98rem;
+}
+
+.journey-event-choice span {
+  color: var(--muted);
+  font-weight: 500;
+}
+
 .session-xp-negative {
   background: rgba(248, 113, 113, 0.14);
   color: #fecaca;
@@ -1262,6 +1433,7 @@ textarea {
   .summary-grid,
   .art-upload-grid,
   .settings-grid,
+  .journey-story-stats,
   .journey-resource-grid,
   .journey-class-grid,
   .journey-stat-grid,
@@ -1286,6 +1458,7 @@ textarea {
   .summary-grid,
   .art-upload-grid,
   .settings-grid,
+  .journey-story-stats,
   .journey-resource-grid,
   .journey-class-grid,
   .journey-stat-grid,
@@ -1329,6 +1502,11 @@ textarea {
     margin: 0 auto;
     max-height: calc(100dvh - max(24px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
     overflow: auto;
+  }
+
+  .journey-event-dialog {
+    margin: 14px auto;
+    max-height: calc(100dvh - 28px);
   }
 
   .crop-preview-panel {
@@ -1560,6 +1738,7 @@ textarea {
   .journey-resource-card,
   .journey-stat-card,
   .journey-log-card,
+  .journey-event-panel,
   .settings-card,
   .completion-card {
     border-radius: 16px;
@@ -1707,6 +1886,10 @@ textarea {
   .journey-home-actions {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .journey-event-header {
+    flex-direction: column;
   }
 
   .summary-row {

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Tabi no Kiroku — Journey Log</title>
     <meta name="theme-color" content="#020617" />
-    <link rel="stylesheet" href="styles.css?v=20260323d" />
+    <link rel="stylesheet" href="styles.css?v=20260324a" />
   </head>
   <body>
     <main class="app-shell">
@@ -150,10 +150,10 @@
           <section id="journeyPanel" class="panel journey-panel">
             <div class="section-header">
               <div>
-                <p class="eyebrow">Idle expedition</p>
-                <h2>Parallel journey</h2>
+                <p class="eyebrow">Idle survival story</p>
+                <h2>Another world, day by day</h2>
                 <p class="muted-text">
-                  Your character keeps travelling in real time. Your tracker XP fuels their growth.
+                  You started weak, lost, and unprepared. Time, choices, and your tracker progress slowly turn survival into a real journey.
                 </p>
               </div>
             </div>
@@ -475,6 +475,37 @@
       </div>
     </div>
 
-    <script type="module" src="./app.js?v=20260323d"></script>
+    <div id="journeyEventModal" class="journey-event-modal" hidden>
+      <div class="journey-event-backdrop" data-close-journey-event></div>
+
+      <div
+        class="journey-event-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="journeyEventTitle"
+      >
+        <div class="journey-event-header">
+          <div>
+            <p class="eyebrow">Something happened</p>
+            <h2 id="journeyEventTitle">Journey event</h2>
+            <p id="journeyEventMeta" class="muted-text">
+              A new situation is waiting for your decision.
+            </p>
+          </div>
+          <button
+            id="journeyEventCloseButton"
+            type="button"
+            class="secondary-button"
+            data-close-journey-event
+          >
+            Close
+          </button>
+        </div>
+
+        <div id="journeyEventBody" class="journey-event-body"></div>
+      </div>
+    </div>
+
+    <script type="module" src="./app.js?v=20260324a"></script>
   </body>
 </html>
