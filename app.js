@@ -139,10 +139,11 @@ const JOURNEY_BOSS_DISTANCE = 100;
 const JOURNEY_TICK_MS = 1000 * 60 * 30;
 const JOURNEY_LOG_LIMIT = 7;
 const JOURNEY_PENDING_EVENT_LIMIT = 2;
+const JOURNEY_DEBUG_HISTORY_LIMIT = 6;
 const JOURNEY_STORY_XP_PER_LEVEL = 100;
 const JOURNEY_BASE_CLASS = "stranded";
 const JOURNEY_STAT_KEYS = ["might", "finesse", "arcana", "vitality", "resolve"];
-const JOURNEY_FLAG_KEYS = ["foundWeapon", "boarDefeated"];
+const JOURNEY_FLAG_KEYS = ["foundWeapon", "boarDefeated", "slimeSapped"];
 
 const FOCUS_TAX_META = {
   sideQuest: {
@@ -254,6 +255,16 @@ const JOURNEY_AMBIENT_INTERACTIONS = {
     "You are not comfortable out here yet, but you are no longer completely helpless.",
   ],
 };
+
+const JOURNEY_STARTER_ITEMS = [
+  "dead phone",
+  "cheap wristwatch",
+  "school backpack",
+  "blunt pocket knife",
+  "lucky coin",
+  "cracked lighter",
+  "old notebook",
+];
 
 let db;
 let pendingArtTarget = null;
@@ -2880,13 +2891,14 @@ function renderHomeJourney(state, xpSummary) {
   const advancedClassCount = state.unlockedClasses.filter(
     (classKey) => classKey !== JOURNEY_BASE_CLASS
   ).length;
+  const displayName = getJourneyDisplayName(state);
 
   homeJourneyContentEl.innerHTML = `
     <div class="journey-home-shell">
       <div class="journey-home-top">
         <div class="journey-home-copy">
           <p class="eyebrow">Journey at a glance</p>
-          <h2>Surviving the first days</h2>
+          <h2>${escapeHtml(displayName)}</h2>
           <p class="muted-text">
             ${escapeHtml(getJourneyActivityText(state, boss, progress, journeyStats))}
           </p>
@@ -2902,7 +2914,7 @@ function renderHomeJourney(state, xpSummary) {
 
           <div class="summary-row">
             <span class="summary-pill">Current threat: ${escapeHtml(boss.name)}</span>
-            <span class="summary-pill">Hard fights survived: ${state.bossIndex}</span>
+            <span class="summary-pill">Road cleared: ${state.bossIndex}</span>
             <span class="summary-pill">Discipline: ${escapeHtml(
               JOURNEY_CLASS_META[state.classType].label
             )}</span>
@@ -2922,7 +2934,7 @@ function renderHomeJourney(state, xpSummary) {
               JOURNEY_CLASS_META[state.classType].label
             )}</h3>
             <p class="journey-inline-copy">
-              Story XP ${state.storyXp} • ${getJourneyStatusLabel(state.status)}
+              Started with a ${escapeHtml(state.starterItem)} • ${getJourneyStatusLabel(state.status)}
             </p>
           </div>
 
@@ -3006,6 +3018,22 @@ async function handleJourneyClick(event) {
       return;
     }
 
+    if (action === "save-name") {
+      const nameInput = document.querySelector("#journeyCharacterNameInput");
+      const nextName =
+        nameInput instanceof HTMLInputElement ? nameInput.value.trim() : "";
+      state.characterName = nextName.slice(0, 30);
+      await setMeta(db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
+      showMessage(
+        journeyMessageEl,
+        state.characterName
+          ? `Character name set to ${state.characterName}.`
+          : "Character name cleared."
+      );
+      await renderApp();
+      return;
+    }
+
     if (action === "set-class") {
       const classType = button.dataset.class;
       if (!JOURNEY_CLASS_META[classType] || !hasJourneyClassUnlocked(state, classType)) {
@@ -3053,6 +3081,63 @@ async function handleJourneyClick(event) {
         `${JOURNEY_STAT_META[statKey].label} increased.`
       );
       await renderApp();
+      return;
+    }
+
+    if (action === "debug-advance") {
+      const hours = Math.max(1, Number(button.dataset.hours) || 1);
+      pushJourneyDebugSnapshot(state);
+      state.lastUpdatedAt = new Date(
+        Date.now() - hours * 60 * 60 * 1000
+      ).toISOString();
+      await setMeta(db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
+      showMessage(journeyMessageEl, `Advanced journey time by ${hours}h.`);
+      await renderApp();
+      return;
+    }
+
+    if (action === "debug-undo") {
+      const previousSnapshot = state.debugHistory?.[0];
+      if (!previousSnapshot) {
+        showMessage(journeyMessageEl, "No debug snapshot to restore.", true);
+        return;
+      }
+
+      const remainingHistory = state.debugHistory.slice(1);
+      const restoredState = normalizeJourneyState({
+        ...previousSnapshot,
+        debugHistory: remainingHistory,
+      });
+      await setMeta(db, IDLE_JOURNEY_META_KEY, restoredState);
+      showMessage(journeyMessageEl, "Restored the previous debug snapshot.");
+      await renderApp();
+      return;
+    }
+
+    if (action === "debug-event") {
+      const journeyContext = buildJourneyContext(games, sessions);
+      const candidates = getJourneyEventCandidates(
+        state,
+        journeyLevel,
+        new Date(),
+        journeyContext
+      );
+
+      if (!candidates.length) {
+        showMessage(journeyMessageEl, "No event candidates are available right now.", true);
+        return;
+      }
+
+      pushJourneyDebugSnapshot(state);
+      const forcedEvent = candidates[randomInt(0, candidates.length - 1)].build();
+      state.pendingEvents = [forcedEvent, ...state.pendingEvents].slice(
+        0,
+        JOURNEY_PENDING_EVENT_LIMIT
+      );
+      await setMeta(db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
+      showMessage(journeyMessageEl, `Forced event: ${forcedEvent.title}.`);
+      await renderApp();
+      openJourneyEventModal(forcedEvent);
       return;
     }
 
@@ -3226,6 +3311,7 @@ async function resolveJourneyEventChoice(eventId, choiceId) {
 async function syncJourneyState(rawState, games, sessions, xpSummary) {
   const now = new Date();
   const state = normalizeJourneyState(rawState);
+  const journeyContext = buildJourneyContext(games, sessions);
   let changed = !rawState;
 
   if (xpSummary.level > state.highestTrackerLevel) {
@@ -3261,7 +3347,7 @@ async function syncJourneyState(rawState, games, sessions, xpSummary) {
   );
 
   if (elapsedMs >= 1000) {
-    simulateJourneyState(state, elapsedMs, journeyStats);
+    simulateJourneyState(state, elapsedMs, journeyStats, journeyContext);
     changed = true;
   }
 
@@ -3294,13 +3380,16 @@ function renderIdleJourney(state, games, sessions, xpSummary) {
     100
   );
   const storyLevelBonus = getJourneyStoryLevelBonus(state.storyXp);
+  const displayName = getJourneyDisplayName(state);
+  const inventoryItems = getJourneyInventoryItems(state, supplies);
+  const knownNotes = getJourneyKnownNotes(state);
   const pendingEventsMarkup = state.pendingEvents.length
     ? `
         <article class="journey-side-card journey-alert-card">
           <p class="journey-overline">Event queue</p>
           <h4>Something happened</h4>
           <p class="muted-text">
-            Surviving another world is not just about time passing. These moments need decisions.
+            The road has a way of forcing decisions on you.
           </p>
           <div class="journey-event-list">
             ${state.pendingEvents
@@ -3329,7 +3418,7 @@ function renderIdleJourney(state, games, sessions, xpSummary) {
           <p class="journey-overline">Quiet stretch</p>
           <h4>No immediate event</h4>
           <p class="muted-text">
-            Right now the struggle is simpler: keep moving, stay fed, and survive the next bad turn.
+            Nothing urgent is waiting. For now, the road is only asking you to keep moving.
           </p>
         </article>
       `;
@@ -3338,9 +3427,9 @@ function renderIdleJourney(state, games, sessions, xpSummary) {
     <section class="journey-hero">
       <div class="journey-hero-top">
         <div class="journey-side-card">
-          <p class="journey-overline">Survival arc</p>
+          <p class="journey-overline">Current stretch</p>
           <div class="journey-title-row">
-            <h3>${escapeHtml(JOURNEY_CLASS_META[state.classType].label)} Lv. ${journeyLevel}</h3>
+            <h3>${escapeHtml(displayName)} • Lv. ${journeyLevel}</h3>
             <span class="journey-chip is-active">${escapeHtml(getJourneyZoneName(state.bossIndex))}</span>
             <span class="journey-chip">${escapeHtml(getJourneyStatusLabel(state.status))}</span>
             ${
@@ -3359,19 +3448,39 @@ function renderIdleJourney(state, games, sessions, xpSummary) {
           </div>
           <div class="summary-row">
             <span class="summary-pill">Current threat: ${escapeHtml(boss.name)}</span>
-            <span class="summary-pill">Hard fights survived: ${state.bossIndex}</span>
+            <span class="summary-pill">Road cleared: ${state.bossIndex}</span>
             <span class="summary-pill">Retreats: ${state.townVisits}</span>
             <span class="summary-pill">Pace: ${journeyStats.speedPerHour.toFixed(1)}/hr</span>
           </div>
         </div>
 
-        <div class="journey-side-card">
-          <p class="journey-overline">Tracker link</p>
-          <h4>${escapeHtml(xpSummary.rankTitle)}</h4>
-          <p class="muted-text">
-            Your tracker level still matters, but this version of the journey also grows through hardship, choices, and the story XP you earn out here.
-          </p>
+        <article class="journey-side-card journey-character-card">
+          <p class="journey-overline">Character</p>
+          <div class="journey-title-row">
+            <h4>${escapeHtml(displayName)}</h4>
+            <span class="journey-chip">${escapeHtml(JOURNEY_CLASS_META[state.classType].label)}</span>
+          </div>
+          <div class="journey-character-name-row">
+            <input
+              id="journeyCharacterNameInput"
+              type="text"
+              maxlength="30"
+              placeholder="Name your character"
+              value="${escapeAttribute(state.characterName)}"
+            />
+            <button
+              type="button"
+              class="secondary-button"
+              data-journey-action="save-name"
+            >
+              Save name
+            </button>
+          </div>
           <div class="journey-story-stats">
+            <div class="journey-story-stat">
+              <span>Journey level</span>
+              <strong>${journeyLevel}</strong>
+            </div>
             <div class="journey-story-stat">
               <span>Tracker level</span>
               <strong>${xpSummary.level}</strong>
@@ -3381,14 +3490,29 @@ function renderIdleJourney(state, games, sessions, xpSummary) {
               <strong>${state.storyXp}</strong>
             </div>
             <div class="journey-story-stat">
-              <span>Story bonus</span>
+              <span>Extra levels</span>
               <strong>+${storyLevelBonus}</strong>
             </div>
             <div class="journey-story-stat">
               <span>Skill points left</span>
               <strong>${unspentSkillPoints}</strong>
             </div>
+            <div class="journey-story-stat">
+              <span>Power</span>
+              <strong>${journeyStats.power.toFixed(0)}</strong>
+            </div>
+            <div class="journey-story-stat">
+              <span>Regen</span>
+              <strong>${journeyStats.regenPerHour.toFixed(1)}/hr</strong>
+            </div>
+            <div class="journey-story-stat">
+              <span>Hunger drain</span>
+              <strong>${journeyStats.hungerDrainPerHour.toFixed(1)}/hr</strong>
+            </div>
           </div>
+          <p class="muted-text">
+            Extra levels come from story XP earned by events, hardship, and major moments on the road.
+          </p>
           <p class="muted-text">
             ${
               state.status === "recovering"
@@ -3396,7 +3520,7 @@ function renderIdleJourney(state, games, sessions, xpSummary) {
                 : `Next threat ETA: ${formatDurationHours(nextBossEtaHours)}`
             }
           </p>
-        </div>
+        </article>
       </div>
     </section>
 
@@ -3457,29 +3581,47 @@ function renderIdleJourney(state, games, sessions, xpSummary) {
 
     <section class="journey-utility-row">
       <article class="journey-side-card">
-        <p class="journey-overline">Supplies</p>
-        <h4>What your tracker is keeping alive</h4>
+        <p class="journey-overline">Inventory</p>
+        <h4>What you are carrying</h4>
         <div class="summary-row">
           <span class="summary-pill">Rations: ${supplies.availableRations} / ${supplies.earnedRations}</span>
           <span class="summary-pill">Tonics: ${supplies.availableTonics} / ${supplies.earnedTonics}</span>
         </div>
-        <p class="muted-text">
-          Sessions become food and medicine. Some events can also hand you extra supplies or cost you precious time.
-        </p>
+        <div class="journey-character-list">
+          ${inventoryItems
+            .map((item) => `<div class="journey-log-entry"><p>${escapeHtml(item)}</p></div>`)
+            .join("")}
+        </div>
       </article>
 
       <article class="journey-side-card">
-        <p class="journey-overline">Story milestones</p>
-        <h4>How the journey is changing</h4>
-        <div class="summary-row">
-          <span class="summary-pill">${state.storyFlags.foundWeapon ? "Weapon found" : "Still unarmed"}</span>
-          <span class="summary-pill">${state.storyFlags.boarDefeated ? "Boar survived" : "Boar still ahead"}</span>
-          <span class="summary-pill">Unlocked classes: ${state.unlockedClasses.length}</span>
-        </div>
-        <p class="muted-text">
-          Early progress is about getting your bearings, securing food, finding a weapon, and living through the first real fight.
-        </p>
+        <p class="journey-overline">Field notes</p>
+        <h4>What is known so far</h4>
+        ${
+          knownNotes.length
+            ? `
+              <div class="journey-character-list">
+                ${knownNotes
+                  .map((note) => `<div class="journey-log-entry"><p>${escapeHtml(note)}</p></div>`)
+                  .join("")}
+              </div>
+            `
+            : `<p class="muted-text">Very little makes sense yet. Most of what you know has been learned the hard way.</p>`
+        }
       </article>
+    </section>
+
+    <section class="journey-side-card journey-debug-card">
+      <p class="journey-overline">Debug tools</p>
+      <h4>Force the clock</h4>
+      <p class="muted-text">Use these to test passive incidents, travel updates, and queued events.</p>
+      <div class="journey-class-list">
+        <button type="button" class="secondary-button" data-journey-action="debug-advance" data-hours="6">Advance 6h</button>
+        <button type="button" class="secondary-button" data-journey-action="debug-advance" data-hours="24">Advance 24h</button>
+        <button type="button" class="secondary-button" data-journey-action="debug-advance" data-hours="72">Advance 3d</button>
+        <button type="button" class="secondary-button" data-journey-action="debug-event">Force event</button>
+        <button type="button" class="secondary-button" data-journey-action="debug-undo">Undo debug step</button>
+      </div>
     </section>
 
     <section class="journey-stat-grid">
@@ -3531,17 +3673,25 @@ function renderIdleJourney(state, games, sessions, xpSummary) {
       </article>
 
       <article class="journey-log-card">
-        <p class="journey-overline">Survival profile</p>
+        <p class="journey-overline">Character sheet</p>
         <h4>Current build</h4>
         <div class="summary-row">
           <span class="summary-pill">Power ${journeyStats.power.toFixed(0)}</span>
           <span class="summary-pill">Regen ${journeyStats.regenPerHour.toFixed(1)}/hr</span>
           <span class="summary-pill">Hunger drain ${journeyStats.hungerDrainPerHour.toFixed(1)}/hr</span>
-          <span class="summary-pill">Story bonus +${storyLevelBonus}</span>
+          <span class="summary-pill">Extra levels +${storyLevelBonus}</span>
         </div>
-        <p class="muted-text">
-          Growth is intentionally rougher here. You are building a believable survivor first, not a dragon-slayer on day one.
-        </p>
+        <div class="journey-character-list">
+          ${JOURNEY_STAT_KEYS.map((statKey) => {
+            const modifier = state.statModifiers[statKey] || 0;
+            const modifierText = modifier
+              ? ` (${modifier > 0 ? "+" : ""}${modifier} modifier)`
+              : "";
+            return `<div class="journey-log-entry"><p>${escapeHtml(
+              JOURNEY_STAT_META[statKey].label
+            )}: ${journeyStats.stats[statKey]}${escapeHtml(modifierText)}</p></div>`;
+          }).join("")}
+        </div>
       </article>
     </section>
   `;
@@ -3561,6 +3711,10 @@ function normalizeJourneyState(rawState = null) {
     accumulator[key] = Boolean(source.storyFlags?.[key]);
     return accumulator;
   }, {});
+  const statModifiers = JOURNEY_STAT_KEYS.reduce((accumulator, key) => {
+    accumulator[key] = Math.round(Number(source.statModifiers?.[key]) || 0);
+    return accumulator;
+  }, {});
 
   const unlockedClassSet = new Set(
     Array.isArray(source.unlockedClasses) ? source.unlockedClasses : []
@@ -3576,6 +3730,12 @@ function normalizeJourneyState(rawState = null) {
   const classType = unlockedClasses.includes(source.classType)
     ? source.classType
     : JOURNEY_BASE_CLASS;
+  const inferredBoarDefeat =
+    storyFlags.boarDefeated || Math.max(0, Math.floor(Number(source.bossIndex) || 0)) > 0;
+  const inferredWeapon =
+    storyFlags.foundWeapon || inferredBoarDefeat || Boolean(source.weaponName);
+  storyFlags.boarDefeated = inferredBoarDefeat;
+  storyFlags.foundWeapon = inferredWeapon;
 
   return {
     version: 2,
@@ -3583,6 +3743,19 @@ function normalizeJourneyState(rawState = null) {
     unlockedClasses,
     allocatedStats,
     storyFlags,
+    statModifiers,
+    characterName:
+      typeof source.characterName === "string" ? source.characterName.trim() : "",
+    starterItem:
+      typeof source.starterItem === "string" && source.starterItem.trim()
+        ? source.starterItem.trim()
+        : randomJourneyStarterItem(),
+    weaponName:
+      typeof source.weaponName === "string" && source.weaponName.trim()
+        ? source.weaponName.trim()
+        : inferredWeapon
+          ? "Scavenged weapon"
+          : "",
     storyXp: Math.max(0, Math.floor(Number(source.storyXp) || 0)),
     bonusRations: Math.max(0, Math.floor(Number(source.bonusRations) || 0)),
     bonusTonics: Math.max(0, Math.floor(Number(source.bonusTonics) || 0)),
@@ -3604,6 +3777,12 @@ function normalizeJourneyState(rawState = null) {
       ? source.pendingEvents
           .slice(0, JOURNEY_PENDING_EVENT_LIMIT)
           .map((entry) => normalizeJourneyEvent(entry, nowIso))
+          .filter(Boolean)
+      : [],
+    debugHistory: Array.isArray(source.debugHistory)
+      ? source.debugHistory
+          .slice(0, JOURNEY_DEBUG_HISTORY_LIMIT)
+          .map((entry) => createJourneyDebugSnapshot(entry))
           .filter(Boolean)
       : [],
     log: Array.isArray(source.log)
@@ -3664,12 +3843,39 @@ function normalizeJourneyChoice(choice) {
       storyXp: Math.round(Number(effects.storyXp) || 0),
       bonusRations: Math.round(Number(effects.bonusRations) || 0),
       bonusTonics: Math.round(Number(effects.bonusTonics) || 0),
+      weaponName:
+        typeof effects.weaponName === "string" ? effects.weaponName.trim() : "",
       unlockClass: JOURNEY_CLASS_META[effects.unlockClass]
         ? effects.unlockClass
         : "",
       flags: normalizedFlags,
     },
   };
+}
+
+function randomJourneyStarterItem() {
+  return JOURNEY_STARTER_ITEMS[randomInt(0, JOURNEY_STARTER_ITEMS.length - 1)];
+}
+
+function createJourneyDebugSnapshot(rawState) {
+  if (!rawState || typeof rawState !== "object") return null;
+
+  const snapshot = normalizeJourneyState({
+    ...rawState,
+    debugHistory: [],
+  });
+  snapshot.debugHistory = [];
+  return snapshot;
+}
+
+function pushJourneyDebugSnapshot(state) {
+  const snapshot = createJourneyDebugSnapshot(state);
+  if (!snapshot) return;
+
+  state.debugHistory = [snapshot, ...(state.debugHistory || [])].slice(
+    0,
+    JOURNEY_DEBUG_HISTORY_LIMIT
+  );
 }
 
 function buildJourneyDerived(state, journeyLevel) {
@@ -3679,6 +3885,7 @@ function buildJourneyDerived(state, journeyLevel) {
     accumulator[key] =
       2 +
       (classMeta.bonuses[key] || 0) +
+      Math.round(Number(state.statModifiers?.[key]) || 0) +
       Math.max(0, Math.floor(Number(state.allocatedStats[key]) || 0));
     return accumulator;
   }, {});
@@ -3729,7 +3936,51 @@ function buildJourneySupplies(games, sessions, state) {
   };
 }
 
-function simulateJourneyState(state, elapsedMs, journeyStats) {
+function buildJourneyContext(games, sessions) {
+  const mainGame =
+    games.find((game) => game.isMain) ||
+    games.find((game) => game.status === GAME_STATUSES.IN_PROGRESS) ||
+    null;
+  const sortedSessions = [...sessions].sort(
+    (a, b) => new Date(b.playedAt) - new Date(a.playedAt)
+  );
+  const now = Date.now();
+  const recentWindowMs = 1000 * 60 * 60 * 24 * 7;
+  const recentSessions = sortedSessions.filter(
+    (session) => now - new Date(session.playedAt).getTime() <= recentWindowMs
+  );
+  const recentMainSessions = mainGame
+    ? recentSessions.filter((session) => session.gameId === mainGame.id)
+    : [];
+  const recentSideSessions = mainGame
+    ? recentSessions.filter((session) => session.gameId !== mainGame.id)
+    : recentSessions;
+  const lastMainPlayedAt = mainGame
+    ? sortedSessions.find((session) => session.gameId === mainGame.id)?.playedAt || null
+    : null;
+  const daysSinceMainQuest = lastMainPlayedAt
+    ? differenceInDays(now, new Date(lastMainPlayedAt).getTime())
+    : null;
+  const neglectScore = clamp(
+    (daysSinceMainQuest && daysSinceMainQuest > 2 ? daysSinceMainQuest - 2 : 0) +
+      Math.max(0, recentSideSessions.length - recentMainSessions.length),
+    0,
+    10
+  );
+  const momentumScore = recentMainSessions.length + Math.min(2, computeStreak(sessions));
+
+  return {
+    mainGame,
+    lastMainPlayedAt,
+    daysSinceMainQuest,
+    recentMainSessions,
+    recentSideSessions,
+    neglectScore,
+    momentumScore,
+  };
+}
+
+function simulateJourneyState(state, elapsedMs, journeyStats, journeyContext) {
   let remainingMs = elapsedMs;
   let cursor = new Date(state.lastUpdatedAt || new Date().toISOString());
 
@@ -3842,7 +4093,8 @@ function simulateJourneyState(state, elapsedMs, journeyStats) {
       }
 
       maybeAddAmbientJourneyLog(state, nextCursor);
-      maybeQueueJourneyEvent(state, nextCursor, journeyStats.level);
+      maybeApplyJourneyIncident(state, nextCursor, journeyStats, journeyContext);
+      maybeQueueJourneyEvent(state, nextCursor, journeyStats.level, journeyContext);
     }
 
     cursor = nextCursor;
@@ -3915,7 +4167,52 @@ function resolveJourneyBoss(state, journeyStats, atDate) {
   sendJourneyToTown(state, atDate, `Recovering after ${boss.name}.`, 5, 9);
 }
 
-function maybeQueueJourneyEvent(state, atDate, journeyLevel) {
+function maybeApplyJourneyIncident(state, atDate, journeyStats, journeyContext) {
+  const incidentRoll = Math.random();
+
+  if (
+    journeyContext?.neglectScore >= 5 &&
+    !state.storyFlags.slimeSapped &&
+    incidentRoll < 0.06
+  ) {
+    state.storyFlags.slimeSapped = true;
+    state.statModifiers.vitality -= 1;
+    state.currentHp = clamp(state.currentHp - 12, 0, journeyStats.maxHp);
+    addJourneyLog(
+      state,
+      "You mistook a pale slime for something edible. It sapped the life out of you and left you permanently weaker.",
+      atDate.toISOString()
+    );
+    return;
+  }
+
+  if (journeyContext?.neglectScore >= 3 && incidentRoll < 0.14) {
+    state.currentHp = clamp(state.currentHp - 8, 0, journeyStats.maxHp);
+    state.currentHunger = clamp(
+      state.currentHunger - 4,
+      0,
+      journeyStats.maxHunger
+    );
+    addJourneyLog(
+      state,
+      "A goblin chased you through the brush. You escaped, but not cleanly.",
+      atDate.toISOString()
+    );
+    return;
+  }
+
+  if (journeyContext?.momentumScore >= 3 && incidentRoll > 0.9) {
+    state.bonusRations += 1;
+    state.storyXp += 6;
+    addJourneyLog(
+      state,
+      "A passing traveler shared dried meat and better directions after seeing the state you were in.",
+      atDate.toISOString()
+    );
+  }
+}
+
+function maybeQueueJourneyEvent(state, atDate, journeyLevel, journeyContext) {
   if (
     state.status !== "adventuring" ||
     state.pendingEvents.length >= JOURNEY_PENDING_EVENT_LIMIT
@@ -3926,11 +4223,22 @@ function maybeQueueJourneyEvent(state, atDate, journeyLevel) {
   const phase = getJourneyPhase(state);
   const baseChance =
     phase === "arrival" ? 0.12 : phase === "survival" ? 0.09 : 0.06;
-  const eventChance = Math.min(0.22, baseChance + Math.max(0, journeyLevel - 1) * 0.01);
+  const pressureBonus = journeyContext?.neglectScore
+    ? Math.min(0.05, journeyContext.neglectScore * 0.008)
+    : 0;
+  const eventChance = Math.min(
+    0.24,
+    baseChance + Math.max(0, journeyLevel - 1) * 0.01 + pressureBonus
+  );
 
   if (Math.random() > eventChance) return;
 
-  const candidates = getJourneyEventCandidates(state, journeyLevel, atDate);
+  const candidates = getJourneyEventCandidates(
+    state,
+    journeyLevel,
+    atDate,
+    journeyContext
+  );
   if (!candidates.length) return;
 
   const totalWeight = candidates.reduce((total, candidate) => total + candidate.weight, 0);
@@ -3957,7 +4265,7 @@ function maybeQueueJourneyEvent(state, atDate, journeyLevel) {
   );
 }
 
-function getJourneyEventCandidates(state, journeyLevel, atDate) {
+function getJourneyEventCandidates(state, journeyLevel, atDate, journeyContext) {
   const eventTime = atDate.toISOString();
   const candidates = [];
   const pushCandidate = (weight, build) => {
@@ -3983,6 +4291,7 @@ function getJourneyEventCandidates(state, journeyLevel, atDate) {
                 hp: -4,
                 distance: 4,
                 storyXp: 14,
+                weaponName: "Rust-worn belt knife",
                 flags: { foundWeapon: true },
               },
             },
@@ -3995,6 +4304,7 @@ function getJourneyEventCandidates(state, journeyLevel, atDate) {
                 distance: 3,
                 storyXp: 10,
                 bonusRations: 1,
+                weaponName: "Crude spear-club",
                 flags: { foundWeapon: true },
               },
             },
@@ -4306,6 +4616,9 @@ function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
   state.storyXp = Math.max(0, state.storyXp + effects.storyXp);
   state.bonusRations = Math.max(0, state.bonusRations + effects.bonusRations);
   state.bonusTonics = Math.max(0, state.bonusTonics + effects.bonusTonics);
+  if (effects.weaponName) {
+    state.weaponName = effects.weaponName;
+  }
 
   for (const flagKey of JOURNEY_FLAG_KEYS) {
     if (effects.flags?.[flagKey] !== undefined) {
@@ -4359,14 +4672,11 @@ function buildJourneyClassSelectionUi(state) {
   const unlockedClasses = state.unlockedClasses.filter(
     (classKey) => JOURNEY_CLASS_META[classKey]
   );
-  const lockedClasses = Object.keys(JOURNEY_CLASS_META).filter(
-    (classKey) => !unlockedClasses.includes(classKey)
-  );
   const advancedUnlocked = unlockedClasses.filter(
     (classKey) => classKey !== JOURNEY_BASE_CLASS
   );
 
-  const unlockedMarkup = advancedUnlocked.length
+  return advancedUnlocked.length
     ? `
         <div class="journey-class-list">
           ${unlockedClasses
@@ -4387,28 +4697,59 @@ function buildJourneyClassSelectionUi(state) {
             })
             .join("")}
         </div>
+        <p class="muted-text">Other paths are still hidden. They reveal themselves through the road, not the menu.</p>
       `
-    : `<p class="muted-text">You have not unlocked a real discipline yet. Right now you are still just surviving and learning what kind of person you become under pressure.</p>`;
+    : `<p class="muted-text">No discipline has awakened yet. You are still learning the rules of this world the hard way.</p>`;
+}
 
-  const lockedMarkup = lockedClasses.length
-    ? `
-        <div class="journey-lock-list">
-          ${lockedClasses
-            .map((classKey) => {
-              const meta = JOURNEY_CLASS_META[classKey];
-              return `
-                <div class="journey-locked-class">
-                  <strong>${escapeHtml(meta.label)}</strong>
-                  <span>${escapeHtml(meta.unlockHint || "Keep surviving and making choices.")}</span>
-                </div>
-              `;
-            })
-            .join("")}
-        </div>
-      `
-    : "";
+function getJourneyDisplayName(state) {
+  return state.characterName || "Nameless Wanderer";
+}
 
-  return `${unlockedMarkup}${lockedMarkup}`;
+function getJourneyInventoryItems(state, supplies) {
+  const items = [`Starter keepsake: ${state.starterItem}`];
+
+  if (state.weaponName) {
+    items.push(`Weapon: ${state.weaponName}`);
+  }
+
+  if (state.storyFlags.boarDefeated) {
+    items.push("Boar trophy");
+  }
+
+  if (supplies.availableRations > 0) {
+    items.push(`${supplies.availableRations} ration${supplies.availableRations === 1 ? "" : "s"}`);
+  }
+
+  if (supplies.availableTonics > 0) {
+    items.push(`${supplies.availableTonics} tonic${supplies.availableTonics === 1 ? "" : "s"}`);
+  }
+
+  return items;
+}
+
+function getJourneyKnownNotes(state) {
+  const notes = [];
+
+  if (state.storyFlags.foundWeapon) {
+    notes.push("You are no longer completely unarmed.");
+  }
+
+  if (state.storyFlags.boarDefeated) {
+    notes.push("You survived your first brutal hunt in the woods.");
+  }
+
+  if (state.storyFlags.slimeSapped) {
+    notes.push("A bad slime meal left your body permanently worse for wear.");
+  }
+
+  if (state.unlockedClasses.length > 1) {
+    notes.push(
+      `A discipline awakened: ${JOURNEY_CLASS_META[state.classType].label}.`
+    );
+  }
+
+  return notes;
 }
 
 function sendJourneyToTown(state, atDate, message, minHours, maxHours) {
@@ -4481,7 +4822,7 @@ function getJourneySegmentProgress(totalDistance, bossIndex) {
   return {
     percent,
     remainingDistance,
-    currentLabel: `${Math.floor(distanceIntoSegment)} / ${JOURNEY_BOSS_DISTANCE} survival progress`,
+    currentLabel: `${Math.floor(distanceIntoSegment)} / ${JOURNEY_BOSS_DISTANCE} through this stretch`,
     remainingLabel: `${Math.ceil(remainingDistance)} until the next major threat`,
   };
 }
@@ -4534,7 +4875,7 @@ function getRecoveryText(state) {
 }
 
 function getJourneyStatusLabel(status) {
-  return status === "recovering" ? "Recovering" : "Surviving";
+  return status === "recovering" ? "Resting" : "Traveling";
 }
 
 function getJourneyPhase(state) {
@@ -4568,6 +4909,10 @@ function formatDurationHours(hours) {
 function formatDurationMs(ms) {
   if (!Number.isFinite(ms) || ms <= 0) return "under 1h";
   return formatDurationHours(ms / (1000 * 60 * 60));
+}
+
+function differenceInDays(leftMs, rightMs) {
+  return Math.floor(Math.max(0, leftMs - rightMs) / (1000 * 60 * 60 * 24));
 }
 
 function romanize(value) {

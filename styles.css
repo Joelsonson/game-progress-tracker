@@ -1141,6 +1141,12 @@ textarea {
     rgba(15, 23, 42, 0.78);
 }
 
+.journey-character-card,
+.journey-debug-card {
+  display: grid;
+  gap: 12px;
+}
+
 .journey-progress-track,
 .resource-track {
   position: relative;
@@ -1320,6 +1326,22 @@ textarea {
   gap: 10px;
 }
 
+.journey-character-name-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.journey-character-name-row input {
+  min-width: 0;
+}
+
+.journey-character-list {
+  display: grid;
+  gap: 10px;
+}
+
 .journey-story-stat {
   display: grid;
   gap: 4px;
@@ -1444,7 +1466,8 @@ textarea {
   .top-layout,
   .crop-modal-layout,
   .journey-hero-top,
-  .journey-utility-row {
+  .journey-utility-row,
+  .journey-character-name-row {
     grid-template-columns: 1fr;
   }
 
