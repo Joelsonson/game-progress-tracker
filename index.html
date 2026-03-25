@@ -213,6 +213,16 @@
                 ></textarea>
               </div>
 
+              <div class="field">
+                <label for="sessionObjective">Update current objective</label>
+                <textarea
+                  id="sessionObjective"
+                  name="sessionObjective"
+                  rows="2"
+                  placeholder="Optional: update what you want to do next in this game"
+                ></textarea>
+              </div>
+
               <label class="checkbox-row">
                 <input
                   id="meaningfulProgress"
@@ -358,6 +368,13 @@
                   </button>
                   <button id="importDataButton" type="button" class="secondary-button">
                     Import progress
+                  </button>
+                  <button
+                    id="clearJourneyButton"
+                    type="button"
+                    class="secondary-button action-warning"
+                  >
+                    Reset journey only
                   </button>
                   <button
                     id="clearDataButton"
@@ -506,6 +523,6 @@
       </div>
     </div>
 
-    <script type="module" src="./app.js?v=20260324a"></script>
+    <script type="module" src="./app.js?v=20260325a"></script>
   </body>
 </html>

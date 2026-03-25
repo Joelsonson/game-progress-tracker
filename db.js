@@ -1,5 +1,5 @@
 const DB_NAME = "gameTrackerDB";
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 const GAMES_STORE = "games";
 const SESSIONS_STORE = "sessions";
 const META_STORE = "meta";
@@ -39,6 +39,12 @@ export function normalizeGameRecord(game = {}) {
     id: typeof game.id === "string" && game.id ? game.id : crypto.randomUUID(),
     title: typeof game.title === "string" ? game.title.trim() : "Untitled Game",
     platform: game.platform?.trim() || "Unspecified",
+    currentObjective:
+      typeof game.currentObjective === "string"
+        ? game.currentObjective.trim()
+        : typeof game.notes === "string"
+          ? game.notes.trim()
+          : "",
     notes: typeof game.notes === "string" ? game.notes : "",
     coverImage: normalizeImageValue(game.coverImage),
     bannerImage: normalizeImageValue(game.bannerImage),
@@ -129,7 +135,7 @@ export function openDB() {
       }
 
       if (
-        event.oldVersion < 6 &&
+        event.oldVersion < 7 &&
         transaction &&
         db.objectStoreNames.contains(GAMES_STORE)
       ) {
@@ -185,6 +191,7 @@ function isSameGameRecord(a, b) {
     "id",
     "title",
     "platform",
+    "currentObjective",
     "notes",
     "coverImage",
     "bannerImage",

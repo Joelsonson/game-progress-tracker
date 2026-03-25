@@ -140,6 +140,7 @@ const JOURNEY_TICK_MS = 1000 * 60 * 30;
 const JOURNEY_LOG_LIMIT = 7;
 const JOURNEY_PENDING_EVENT_LIMIT = 2;
 const JOURNEY_DEBUG_HISTORY_LIMIT = 6;
+const JOURNEY_RECENT_EVENT_LIMIT = 4;
 const JOURNEY_STORY_XP_PER_LEVEL = 100;
 const JOURNEY_BASE_CLASS = "stranded";
 const JOURNEY_STAT_KEYS = ["might", "finesse", "arcana", "vitality", "resolve"];
@@ -289,6 +290,7 @@ const sessionForm = document.querySelector("#sessionForm");
 const sessionGameSelect = document.querySelector("#sessionGame");
 const sessionMinutesInput = document.querySelector("#sessionMinutes");
 const sessionNoteInput = document.querySelector("#sessionNote");
+const sessionObjectiveInput = document.querySelector("#sessionObjective");
 const meaningfulProgressInput = document.querySelector("#meaningfulProgress");
 const sessionMessage = document.querySelector("#sessionMessage");
 
@@ -324,6 +326,7 @@ const bannerArtPickerInput = document.querySelector("#bannerArtPicker");
 
 const exportDataButton = document.querySelector("#exportDataButton");
 const importDataButton = document.querySelector("#importDataButton");
+const clearJourneyButton = document.querySelector("#clearJourneyButton");
 const clearDataButton = document.querySelector("#clearDataButton");
 const importDataInput = document.querySelector("#importDataInput");
 const settingsMessage = document.querySelector("#settingsMessage");
@@ -381,6 +384,7 @@ function bindEvents() {
 
   exportDataButton?.addEventListener("click", handleExportData);
   importDataButton?.addEventListener("click", () => openFilePicker(importDataInput));
+  clearJourneyButton?.addEventListener("click", handleResetJourneyData);
   clearDataButton?.addEventListener("click", handleClearData);
   importDataInput?.addEventListener("change", handleImportData);
 
@@ -519,7 +523,7 @@ async function handleAddGame(event) {
 
   const title = titleInput.value.trim();
   const platform = platformInput.value.trim();
-  const notes = notesInput.value.trim();
+  const currentObjective = notesInput.value.trim();
   const status = isValidStatus(gameStatusInput.value)
     ? gameStatusInput.value
     : DEFAULT_GAME_STATUS;
@@ -550,7 +554,8 @@ async function handleAddGame(event) {
       id: crypto.randomUUID(),
       title,
       platform: platform || "Unspecified",
-      notes,
+      currentObjective,
+      notes: "",
       coverImage,
       bannerImage,
       artUpdatedAt: coverImage || bannerImage ? now : null,
@@ -604,6 +609,7 @@ async function handleAddSession(event) {
   const gameId = sessionGameSelect.value;
   const minutes = Number(sessionMinutesInput.value);
   const note = sessionNoteInput.value.trim();
+  const updatedObjective = sessionObjectiveInput.value.trim();
   const meaningfulProgress = meaningfulProgressInput.checked;
 
   if (!gameId) {
@@ -668,6 +674,8 @@ async function handleAddSession(event) {
     await addSession(db, newSession);
     await updateGame(db, {
       ...selectedGame,
+      currentObjective:
+        updatedObjective || selectedGame.currentObjective || selectedGame.notes || "",
       updatedAt: now,
     });
 
@@ -685,7 +693,9 @@ async function handleAddSession(event) {
       sessionMessage,
       `Logged ${formatMinutes(minutes)}${replayText} for "${
         selectedGame.title
-      }" • ${xpBreakdown.totalText}${focusText}.`
+      }" • ${xpBreakdown.totalText}${focusText}${
+        updatedObjective ? " • Objective updated." : ""
+      }.`
     );
 
     await renderApp();
@@ -956,6 +966,27 @@ async function handleClearData() {
   }
 }
 
+async function handleResetJourneyData() {
+  const confirmed = window.confirm(
+    "Reset only the idle journey and keep your games, sessions, and records?"
+  );
+
+  if (!confirmed) return;
+
+  try {
+    await setMeta(db, IDLE_JOURNEY_META_KEY, null);
+    showMessage(settingsMessage, "Idle journey reset. Tracker history kept.");
+    await renderApp();
+  } catch (error) {
+    console.error("Failed to reset journey data:", error);
+    showMessage(
+      settingsMessage,
+      getErrorMessage(error, "Could not reset the idle journey."),
+      true
+    );
+  }
+}
+
 function prepareImportPayload(parsed) {
   if (
     !parsed ||
@@ -1132,7 +1163,7 @@ function renderMainQuest(games, sessionStats) {
   }
 
   const stats = sessionStats.get(mainGame.id) || emptySessionStats();
-  const objective = escapeHtml(mainGame.notes || "");
+  const objective = escapeHtml(getGameObjectiveText(mainGame));
   const latestSessionNote = escapeHtml(stats.latestSession?.note || "");
   const bannerStyle = buildArtBackgroundStyle(
     mainGame.bannerImage || mainGame.coverImage
@@ -1427,7 +1458,7 @@ function renderCompletedDeckItem(game, sessionStats) {
 
 function renderGameCard(game, sessionStats) {
   const stats = sessionStats.get(game.id) || emptySessionStats();
-  const safeNotes = escapeHtml(game.notes || "");
+  const safeNotes = escapeHtml(getGameObjectiveText(game));
   const latestSessionNote = escapeHtml(stats.latestSession?.note || "");
   const totalQuestXp =
     stats.totalXp +
@@ -1844,9 +1875,9 @@ function renderCompletionCard(game, stats) {
         </div>
 
         ${
-          game.notes
+          getGameObjectiveText(game)
             ? `<div class="note-block"><p class="note-label">Final note</p><p class="game-notes">${escapeHtml(
-                game.notes
+                getGameObjectiveText(game)
               )}</p></div>`
             : ""
         }
@@ -2163,6 +2194,10 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function getGameObjectiveText(game) {
+  return String(game?.currentObjective || game?.notes || "").trim();
+}
+
 function showMessage(element, message, isError = false) {
   if (!element) return;
   element.textContent = message;
@@ -2174,6 +2209,7 @@ function hasGameChanged(originalGame, updatedGame) {
     "id",
     "title",
     "platform",
+    "currentObjective",
     "notes",
     "coverImage",
     "bannerImage",
@@ -2655,7 +2691,7 @@ async function buildCompletionCardCanvas(game, stats) {
   });
 
   const noteText =
-    game.notes?.trim() ||
+    getGameObjectiveText(game) ||
     stats.latestSession?.note?.trim() ||
     "That finish counts. Keep the completed shelf growing one game at a time.";
 
@@ -3141,6 +3177,19 @@ async function handleJourneyClick(event) {
       return;
     }
 
+    if (action === "reset-journey") {
+      const confirmed = window.confirm(
+        "Reset only the idle journey and keep your games and session history?"
+      );
+
+      if (!confirmed) return;
+
+      await setMeta(db, IDLE_JOURNEY_META_KEY, null);
+      showMessage(journeyMessageEl, "Idle journey reset. Tracker history kept.");
+      await renderApp();
+      return;
+    }
+
     if (action === "use-ration") {
       if (supplies.availableRations <= 0) {
         showMessage(journeyMessageEl, "No rations banked from your tracker yet.", true);
@@ -3241,6 +3290,7 @@ function openJourneyEventModal(eventEntry) {
             >
               <strong>${escapeHtml(choice.label)}</strong>
               <span>${escapeHtml(choice.preview)}</span>
+              <span>${escapeHtml(buildJourneyChoiceImpactText(choice.effects))}</span>
             </button>
           `
         )
@@ -3286,16 +3336,28 @@ async function resolveJourneyEventChoice(eventId, choiceId) {
     }
 
     state.pendingEvents = state.pendingEvents.filter((entry) => entry.id !== eventId);
+    const beforeState = normalizeJourneyState({
+      ...state,
+      pendingEvents: [],
+      debugHistory: [],
+    });
     const resultMessage = applyJourneyChoiceEffects(
       state,
       choice,
       journeyStats,
       new Date().toISOString()
     );
+    if (eventEntry.kind === "aid") {
+      state.aidUrgency = Math.max(0, state.aidUrgency - 2);
+    }
+    const outcomeSummary = buildJourneyOutcomeSummary(beforeState, state);
 
     await setMeta(db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
     closeJourneyEventModal();
-    showMessage(journeyMessageEl, resultMessage);
+    showMessage(
+      journeyMessageEl,
+      outcomeSummary ? `${resultMessage} ${outcomeSummary}.` : resultMessage
+    );
     await renderApp();
   } catch (error) {
     console.error("Failed to resolve journey event:", error);
@@ -3368,6 +3430,7 @@ function renderIdleJourney(state, games, sessions, xpSummary) {
   const journeyStats = buildJourneyDerived(state, journeyLevel);
   const supplies = buildJourneySupplies(games, sessions, state);
   const boss = getJourneyBoss(state.bossIndex);
+  const stretchChallenge = buildJourneyStretchChallenge(state, journeyStats);
   const progress = getJourneySegmentProgress(state.totalDistance, state.bossIndex);
   const unspentSkillPoints = getUnspentSkillPoints(state, journeyLevel);
   const activityText = getJourneyActivityText(state, boss, progress, journeyStats);
@@ -3451,7 +3514,16 @@ function renderIdleJourney(state, games, sessions, xpSummary) {
             <span class="summary-pill">Road cleared: ${state.bossIndex}</span>
             <span class="summary-pill">Retreats: ${state.townVisits}</span>
             <span class="summary-pill">Pace: ${journeyStats.speedPerHour.toFixed(1)}/hr</span>
+            <span class="summary-pill">Stretch odds: ${stretchChallenge.successPercent}%</span>
+            <span class="summary-pill">Risk: ${escapeHtml(stretchChallenge.dangerLabel)}</span>
           </div>
+          <p class="muted-text">
+            ${state.status === "recovering"
+              ? `Mini mission: ${escapeHtml(state.recoveryObjective || getRecoveryText(state))}`
+              : `Estimated clear chance is ${stretchChallenge.successPercent}% based on your current level, condition, and build. On success: ${escapeHtml(
+                  stretchChallenge.rewardsText
+                )}. On failure: heavy health and hunger loss.`}
+          </p>
         </div>
 
         <article class="journey-side-card journey-character-card">
@@ -3621,6 +3693,7 @@ function renderIdleJourney(state, games, sessions, xpSummary) {
         <button type="button" class="secondary-button" data-journey-action="debug-advance" data-hours="72">Advance 3d</button>
         <button type="button" class="secondary-button" data-journey-action="debug-event">Force event</button>
         <button type="button" class="secondary-button" data-journey-action="debug-undo">Undo debug step</button>
+        <button type="button" class="secondary-button action-warning" data-journey-action="reset-journey">Reset journey only</button>
       </div>
     </section>
 
@@ -3738,7 +3811,7 @@ function normalizeJourneyState(rawState = null) {
   storyFlags.foundWeapon = inferredWeapon;
 
   return {
-    version: 2,
+    version: 3,
     classType,
     unlockedClasses,
     allocatedStats,
@@ -3757,6 +3830,10 @@ function normalizeJourneyState(rawState = null) {
           ? "Scavenged weapon"
           : "",
     storyXp: Math.max(0, Math.floor(Number(source.storyXp) || 0)),
+    bonusSkillPoints: Math.max(
+      0,
+      Math.floor(Number(source.bonusSkillPoints) || 0)
+    ),
     bonusRations: Math.max(0, Math.floor(Number(source.bonusRations) || 0)),
     bonusTonics: Math.max(0, Math.floor(Number(source.bonusTonics) || 0)),
     totalDistance: Math.max(0, Number(source.totalDistance) || 0),
@@ -3766,6 +3843,11 @@ function normalizeJourneyState(rawState = null) {
     status: source.status === "recovering" ? "recovering" : "adventuring",
     lastUpdatedAt: source.lastUpdatedAt || nowIso,
     restUntil: source.restUntil || null,
+    recoveryObjective:
+      typeof source.recoveryObjective === "string"
+        ? source.recoveryObjective.trim()
+        : "",
+    aidUrgency: Math.max(0, Math.floor(Number(source.aidUrgency) || 0)),
     townVisits: Math.max(0, Math.floor(Number(source.townVisits) || 0)),
     spentRations: Math.max(0, Math.floor(Number(source.spentRations) || 0)),
     spentTonics: Math.max(0, Math.floor(Number(source.spentTonics) || 0)),
@@ -3778,6 +3860,12 @@ function normalizeJourneyState(rawState = null) {
           .slice(0, JOURNEY_PENDING_EVENT_LIMIT)
           .map((entry) => normalizeJourneyEvent(entry, nowIso))
           .filter(Boolean)
+      : [],
+    recentEventKeys: Array.isArray(source.recentEventKeys)
+      ? source.recentEventKeys
+          .map((entry) => String(entry || "").trim())
+          .filter(Boolean)
+          .slice(0, JOURNEY_RECENT_EVENT_LIMIT)
       : [],
     debugHistory: Array.isArray(source.debugHistory)
       ? source.debugHistory
@@ -3810,6 +3898,10 @@ function normalizeJourneyEvent(eventEntry, nowIso) {
 
   return {
     id: String(eventEntry.id || crypto.randomUUID()),
+    eventKey: String(
+      eventEntry.eventKey || eventEntry.key || eventEntry.title || "journey-event"
+    ),
+    kind: eventEntry.kind === "aid" ? "aid" : "normal",
     title: String(eventEntry.title || "Journey event"),
     teaser: String(eventEntry.teaser || "A choice is waiting."),
     detail: String(eventEntry.detail || eventEntry.teaser || ""),
@@ -3843,6 +3935,7 @@ function normalizeJourneyChoice(choice) {
       storyXp: Math.round(Number(effects.storyXp) || 0),
       bonusRations: Math.round(Number(effects.bonusRations) || 0),
       bonusTonics: Math.round(Number(effects.bonusTonics) || 0),
+      bonusSkillPoints: Math.round(Number(effects.bonusSkillPoints) || 0),
       weaponName:
         typeof effects.weaponName === "string" ? effects.weaponName.trim() : "",
       unlockClass: JOURNEY_CLASS_META[effects.unlockClass]
@@ -3936,6 +4029,141 @@ function buildJourneySupplies(games, sessions, state) {
   };
 }
 
+function buildJourneyStretchChallenge(state, journeyStats) {
+  const boss = getJourneyBoss(state.bossIndex);
+  const conditionPower = state.currentHp * 0.12 + state.currentHunger * 0.08;
+  const weaponBonus = state.storyFlags.foundWeapon ? 8 : -6;
+  const effectivePower = journeyStats.power + conditionPower + weaponBonus;
+  const powerRatio = effectivePower / Math.max(1, boss.power);
+  const successChance = clamp(
+    0.14 + powerRatio * 0.56 + Math.max(0, journeyStats.level - state.bossIndex) * 0.02,
+    0.12,
+    0.9
+  );
+
+  let dangerLabel = "Rough";
+  if (successChance >= 0.72) {
+    dangerLabel = "Favored";
+  } else if (successChance >= 0.52) {
+    dangerLabel = "Manageable";
+  } else if (successChance >= 0.34) {
+    dangerLabel = "Shaky";
+  }
+
+  const rewards = ["1 skill point"];
+  if (!state.storyFlags.foundWeapon) {
+    rewards.push("weapon chance");
+  }
+  rewards.push("rations or tonic chance");
+
+  return {
+    boss,
+    effectivePower,
+    successChance,
+    successPercent: Math.round(successChance * 100),
+    dangerLabel,
+    rewardsText: rewards.join(" • "),
+  };
+}
+
+function buildJourneyRecoveryObjective(state, journeyLevel, journeyStats) {
+  const needsRest = state.currentHp <= journeyStats.maxHp * 0.22;
+  const needsFood = state.currentHunger <= journeyStats.maxHunger * 0.2;
+  const zoneText = getJourneyZoneName(state.bossIndex);
+
+  if (needsFood && !needsRest) {
+    if (journeyLevel <= 2) {
+      return `Scavenge berries and anything edible near ${zoneText} before hunger drops you completely.`;
+    }
+    if (journeyLevel <= 5) {
+      return `Hunt or trade for trail food around ${zoneText} before you make another push.`;
+    }
+    return `Reach a coaching stop or stocked inn near ${zoneText} and refill your supplies.`;
+  }
+
+  if (journeyLevel <= 2) {
+    return `Find a dry cave or hollow, patch yourself up, and rest before trying ${zoneText} again.`;
+  }
+  if (journeyLevel <= 5) {
+    return `Reach a hunter's camp or farmhouse bed near ${zoneText} and recover properly.`;
+  }
+  return `Make for the nearest inn beyond ${zoneText}, rent a room, and recover before the next attempt.`;
+}
+
+function rememberJourneyEventKey(state, eventKey) {
+  const safeKey = String(eventKey || "").trim();
+  if (!safeKey) return;
+
+  state.recentEventKeys = [
+    safeKey,
+    ...(Array.isArray(state.recentEventKeys) ? state.recentEventKeys : []).filter(
+      (entry) => entry !== safeKey
+    ),
+  ].slice(0, JOURNEY_RECENT_EVENT_LIMIT);
+}
+
+function buildJourneyChoiceImpactText(effects) {
+  if (!effects || typeof effects !== "object") return "No major effect.";
+
+  const parts = [];
+
+  if (effects.hp) parts.push(`Health ${formatSignedNumber(effects.hp)}`);
+  if (effects.hunger) parts.push(`Hunger ${formatSignedNumber(effects.hunger)}`);
+  if (effects.distance) parts.push(`Travel ${formatSignedNumber(effects.distance)}`);
+  if (effects.storyXp) parts.push(`Story XP ${formatSignedNumber(effects.storyXp)}`);
+  if (effects.bonusSkillPoints) {
+    parts.push(`Skill points ${formatSignedNumber(effects.bonusSkillPoints)}`);
+  }
+  if (effects.bonusRations) {
+    parts.push(`Rations ${formatSignedNumber(effects.bonusRations)}`);
+  }
+  if (effects.bonusTonics) {
+    parts.push(`Tonics ${formatSignedNumber(effects.bonusTonics)}`);
+  }
+  if (effects.weaponName) parts.push("Weapon found");
+  if (effects.unlockClass) {
+    parts.push(`${JOURNEY_CLASS_META[effects.unlockClass].label} unlocked`);
+  }
+
+  return parts.join(" • ") || "No major effect.";
+}
+
+function buildJourneyOutcomeSummary(beforeState, afterState) {
+  const parts = [];
+  const addDelta = (label, value) => {
+    if (!value) return;
+    parts.push(`${label} ${formatSignedNumber(value)}`);
+  };
+
+  addDelta("Health", Math.round(afterState.currentHp - beforeState.currentHp));
+  addDelta("Hunger", Math.round(afterState.currentHunger - beforeState.currentHunger));
+  addDelta(
+    "Travel",
+    Math.round(afterState.totalDistance - beforeState.totalDistance)
+  );
+  addDelta("Story XP", afterState.storyXp - beforeState.storyXp);
+  addDelta(
+    "Skill points",
+    afterState.bonusSkillPoints - beforeState.bonusSkillPoints
+  );
+  addDelta("Rations", afterState.bonusRations - beforeState.bonusRations);
+  addDelta("Tonics", afterState.bonusTonics - beforeState.bonusTonics);
+
+  if (beforeState.weaponName !== afterState.weaponName && afterState.weaponName) {
+    parts.push(`Weapon ${afterState.weaponName}`);
+  }
+
+  if (beforeState.classType !== afterState.classType) {
+    parts.push(`Class ${JOURNEY_CLASS_META[afterState.classType].label}`);
+  }
+
+  if (beforeState.status !== afterState.status) {
+    parts.push(`Status ${getJourneyStatusLabel(afterState.status)}`);
+  }
+
+  return parts.join(" • ");
+}
+
 function buildJourneyContext(games, sessions) {
   const mainGame =
     games.find((game) => game.isMain) ||
@@ -4004,6 +4232,8 @@ function simulateJourneyState(state, elapsedMs, journeyStats, journeyContext) {
       if (state.restUntil && nextCursor >= new Date(state.restUntil)) {
         state.status = "adventuring";
         state.restUntil = null;
+        state.recoveryObjective = "";
+        state.aidUrgency = Math.max(0, state.aidUrgency - 1);
         state.currentHp = Math.max(state.currentHp, journeyStats.maxHp * 0.58);
         state.currentHunger = Math.max(
           state.currentHunger,
@@ -4015,6 +4245,8 @@ function simulateJourneyState(state, elapsedMs, journeyStats, journeyContext) {
           nextCursor.toISOString()
         );
       }
+
+      maybeQueueJourneyEvent(state, nextCursor, journeyStats.level, journeyContext);
     } else {
       const hpRatio = journeyStats.maxHp ? state.currentHp / journeyStats.maxHp : 0;
       const hungerRatio = journeyStats.maxHunger
@@ -4081,7 +4313,9 @@ function simulateJourneyState(state, elapsedMs, journeyStats, journeyContext) {
           nextCursor,
           "You were in no state to continue and had to crawl back toward safety.",
           4,
-          7
+          7,
+          journeyStats.level,
+          journeyStats
         );
       }
 
@@ -4104,32 +4338,37 @@ function simulateJourneyState(state, elapsedMs, journeyStats, journeyContext) {
 
 function resolveJourneyBoss(state, journeyStats, atDate) {
   const boss = getJourneyBoss(state.bossIndex);
-  const roll =
-    journeyStats.power +
-    randomInt(0, 12 + Math.floor(journeyStats.level * 1.4)) +
-    state.currentHp * 0.08 +
-    state.currentHunger * 0.05;
+  const stretchChallenge = buildJourneyStretchChallenge(state, journeyStats);
+  const success = Math.random() < stretchChallenge.successChance;
 
-  if (roll >= boss.power) {
+  if (success) {
     state.bossIndex += 1;
     state.currentHp = clamp(
-      state.currentHp - randomInt(6, 14 + Math.floor(state.bossIndex / 2)),
+      state.currentHp - randomInt(5, 12 + Math.floor(state.bossIndex / 2)),
       0,
       journeyStats.maxHp
     );
     state.currentHunger = clamp(
-      state.currentHunger - randomInt(5, 11),
+      state.currentHunger - randomInt(4, 10),
       0,
       journeyStats.maxHunger
     );
-    state.storyXp += state.bossIndex === 1 ? 20 : 14;
+    state.storyXp += state.bossIndex === 1 ? 24 : 16;
+    state.bonusSkillPoints += 1;
+    state.aidUrgency = Math.max(0, state.aidUrgency - 1);
+
+    const rewardText = applyJourneyVictoryRewards(
+      state,
+      journeyStats.level,
+      atDate
+    );
 
     if (boss.name === "Cornered Forest Boar") {
       state.storyFlags.boarDefeated = true;
       state.bonusRations += 1;
       addJourneyLog(
         state,
-        "You survived the boar. It was messy, frightening, and enough to prove you might actually make it here.",
+        `You survived the boar and cleared the stretch. Odds were ${stretchChallenge.successPercent}% and you still came out bloodied. Rewards: ${rewardText}.`,
         atDate.toISOString()
       );
       return;
@@ -4137,9 +4376,9 @@ function resolveJourneyBoss(state, journeyStats, atDate) {
 
     addJourneyLog(
       state,
-      `You survived ${boss.name}. The path ahead opened into ${getJourneyZoneName(
+      `You cleared ${boss.name} with a ${stretchChallenge.successPercent}% success chance. The path opened into ${getJourneyZoneName(
         state.bossIndex
-      )}.`,
+      )}. Rewards: ${rewardText}.`,
       atDate.toISOString()
     );
     return;
@@ -4150,21 +4389,67 @@ function resolveJourneyBoss(state, journeyStats, atDate) {
     state.totalDistance - randomInt(8, 18)
   );
   state.currentHp = clamp(
-    state.currentHp - randomInt(12, 22),
+    state.currentHp - randomInt(14, 24),
     0,
     journeyStats.maxHp
   );
   state.currentHunger = clamp(
-    state.currentHunger - randomInt(8, 14),
+    state.currentHunger - randomInt(9, 16),
     0,
     journeyStats.maxHunger
   );
+  state.storyXp += 4;
   addJourneyLog(
     state,
-    `${boss.name} drove you back. Survival came first, pride second.`,
+    `${boss.name} drove you back. The stretch only gave you about a ${stretchChallenge.successPercent}% shot and it went bad fast.`,
     atDate.toISOString()
   );
-  sendJourneyToTown(state, atDate, `Recovering after ${boss.name}.`, 5, 9);
+  sendJourneyToTown(
+    state,
+    atDate,
+    `Recovering after ${boss.name}.`,
+    5,
+    9,
+    journeyStats.level,
+    journeyStats
+  );
+}
+
+function applyJourneyVictoryRewards(state, journeyLevel, atDate) {
+  const rewards = ["1 skill point"];
+
+  if (!state.storyFlags.foundWeapon && Math.random() < 0.58) {
+    const weaponOptions = [
+      "Weathered short sword",
+      "Hardened boar spear",
+      "Traveler's hatchet",
+      "Bandit-cut machete",
+    ];
+    const weaponName =
+      weaponOptions[randomInt(0, weaponOptions.length - 1)];
+    state.storyFlags.foundWeapon = true;
+    state.weaponName = weaponName;
+    rewards.push(weaponName);
+  }
+
+  const rationReward = Math.random() < 0.74 ? randomInt(1, 2) : 0;
+  if (rationReward > 0) {
+    state.bonusRations += rationReward;
+    rewards.push(`${rationReward} ration${rationReward === 1 ? "" : "s"}`);
+  }
+
+  if (journeyLevel >= 2 && Math.random() < 0.48) {
+    state.bonusTonics += 1;
+    rewards.push("1 tonic");
+  }
+
+  addJourneyLog(
+    state,
+    `Victory spoils collected: ${rewards.join(", ")}.`,
+    atDate.toISOString()
+  );
+
+  return rewards.join(", ");
 }
 
 function maybeApplyJourneyIncident(state, atDate, journeyStats, journeyContext) {
@@ -4213,35 +4498,73 @@ function maybeApplyJourneyIncident(state, atDate, journeyStats, journeyContext) 
 }
 
 function maybeQueueJourneyEvent(state, atDate, journeyLevel, journeyContext) {
-  if (
-    state.status !== "adventuring" ||
-    state.pendingEvents.length >= JOURNEY_PENDING_EVENT_LIMIT
-  ) {
+  const aidMode = state.aidUrgency > 0;
+
+  if (state.pendingEvents.length >= JOURNEY_PENDING_EVENT_LIMIT) {
+    return;
+  }
+
+  if (state.status !== "adventuring" && !aidMode) {
     return;
   }
 
   const phase = getJourneyPhase(state);
-  const baseChance =
-    phase === "arrival" ? 0.12 : phase === "survival" ? 0.09 : 0.06;
+  const baseChance = aidMode
+    ? 0.48
+    : phase === "arrival"
+      ? 0.12
+      : phase === "survival"
+        ? 0.09
+        : 0.06;
   const pressureBonus = journeyContext?.neglectScore
     ? Math.min(0.05, journeyContext.neglectScore * 0.008)
     : 0;
   const eventChance = Math.min(
-    0.24,
-    baseChance + Math.max(0, journeyLevel - 1) * 0.01 + pressureBonus
+    aidMode ? 0.72 : 0.24,
+    baseChance +
+      Math.max(0, journeyLevel - 1) * 0.01 +
+      pressureBonus +
+      Math.min(0.18, state.aidUrgency * 0.08)
   );
 
   if (Math.random() > eventChance) return;
 
-  const candidates = getJourneyEventCandidates(
+  let allCandidates = getJourneyEventCandidates(
     state,
     journeyLevel,
     atDate,
     journeyContext
   );
+  if (state.status !== "adventuring") {
+    allCandidates = allCandidates.filter((candidate) => candidate.kind === "aid");
+  }
+  if (!allCandidates.length) return;
+
+  const pendingKeys = new Set(
+    state.pendingEvents.map((entry) => entry.eventKey || entry.title)
+  );
+  const recentKeys = new Set(state.recentEventKeys || []);
+  let candidates = allCandidates.filter(
+    (candidate) => !pendingKeys.has(candidate.key) && !recentKeys.has(candidate.key)
+  );
+
+  if (!candidates.length) {
+    const latestKey = state.recentEventKeys?.[0] || "";
+    candidates = allCandidates.filter(
+      (candidate) => !pendingKeys.has(candidate.key) && candidate.key !== latestKey
+    );
+  }
+
+  if (!candidates.length) {
+    candidates = allCandidates.filter((candidate) => !pendingKeys.has(candidate.key));
+  }
+
   if (!candidates.length) return;
 
-  const totalWeight = candidates.reduce((total, candidate) => total + candidate.weight, 0);
+  const totalWeight = candidates.reduce(
+    (total, candidate) => total + candidate.weight,
+    0
+  );
   let roll = Math.random() * totalWeight;
   let selected = candidates[0];
 
@@ -4253,7 +4576,17 @@ function maybeQueueJourneyEvent(state, atDate, journeyLevel, journeyContext) {
     }
   }
 
-  const nextEvent = selected.build();
+  const nextEvent = normalizeJourneyEvent(
+    {
+      ...selected.build(),
+      eventKey: selected.key,
+      kind: selected.kind,
+    },
+    atDate.toISOString()
+  );
+  if (!nextEvent) return;
+
+  rememberJourneyEventKey(state, selected.key);
   state.pendingEvents = [nextEvent, ...state.pendingEvents].slice(
     0,
     JOURNEY_PENDING_EVENT_LIMIT
@@ -4268,14 +4601,170 @@ function maybeQueueJourneyEvent(state, atDate, journeyLevel, journeyContext) {
 function getJourneyEventCandidates(state, journeyLevel, atDate, journeyContext) {
   const eventTime = atDate.toISOString();
   const candidates = [];
-  const pushCandidate = (weight, build) => {
-    candidates.push({ weight, build });
+  const journeyStats = buildJourneyDerived(state, journeyLevel);
+  const pushCandidate = (key, weight, build, kind = "normal") => {
+    candidates.push({ key, weight, build, kind });
   };
 
+  if (
+    state.aidUrgency > 0 ||
+    state.currentHp <= journeyStats.maxHp * 0.38 ||
+    state.currentHunger <= journeyStats.maxHunger * 0.34
+  ) {
+    pushCandidate(
+      "aid:healer",
+      7 + state.aidUrgency * 2,
+      () => ({
+        title: "A road healer finds you",
+        teaser: "Someone finally notices how rough a state you are in.",
+        detail:
+          "A traveling healer reins in beside you, takes one long look, and decides you are too close to collapsing to be left alone.",
+        createdAt: eventTime,
+        choices: [
+          {
+            label: "Accept proper treatment",
+            preview: "Lose time, but get patched up and restocked.",
+            resultText:
+              "The healer cleans your wounds, forces you to sit still, and presses supplies into your hands before letting you move on.",
+            effects: {
+              hp: 22,
+              hunger: 8,
+              bonusTonics: 1,
+              bonusRations: 1,
+              storyXp: 10,
+            },
+          },
+          {
+            label: "Take supplies and keep moving",
+            preview: "Recover a little without stopping for long.",
+            resultText:
+              "You refuse the full stop, but the healer still hands over enough to keep you upright.",
+            effects: {
+              hp: 12,
+              bonusTonics: 1,
+              storyXp: 6,
+            },
+          },
+        ],
+      }),
+      "aid"
+    );
+
+    pushCandidate(
+      "aid:herbalist",
+      6 + state.aidUrgency,
+      () => ({
+        title: "A traveling herbalist waves you over",
+        teaser: "She has a sharp eye for exhaustion and a pack full of remedies.",
+        detail:
+          "An herbalist sorting roots by the roadside sees you limping and offers a fast trade: listen to her advice, and she will share what you need most.",
+        createdAt: eventTime,
+        choices: [
+          {
+            label: "Take the restorative brew",
+            preview: "Best if your body is the problem.",
+            resultText:
+              "The brew tastes awful, but warmth starts pushing the pain back out of your limbs.",
+            effects: {
+              hp: 18,
+              bonusTonics: 1,
+              storyXp: 8,
+            },
+          },
+          {
+            label: "Take trail food and herbs",
+            preview: "Best if you are running empty.",
+            resultText:
+              "She packs dried roots, bitter leaves, and enough food to get you through the next bad stretch.",
+            effects: {
+              hunger: 16,
+              bonusRations: 2,
+              storyXp: 8,
+            },
+          },
+        ],
+      }),
+      "aid"
+    );
+
+    pushCandidate(
+      "aid:spring",
+      5 + state.aidUrgency,
+      () => ({
+        title: "A glowing spring in the underbrush",
+        teaser: "The water shines faintly even in the shade.",
+        detail:
+          "You spot a spring giving off a pale glow, untouched by mud or rot. The air around it feels unnaturally calm.",
+        createdAt: eventTime,
+        choices: [
+          {
+            label: "Drink deeply",
+            preview: "Recover quickly and trust the strange water.",
+            resultText:
+              "The water leaves your chest lighter, your hunger quieter, and your thoughts clearer.",
+            effects: {
+              hp: 16,
+              hunger: 12,
+              storyXp: 12,
+            },
+          },
+          {
+            label: "Bottle what you can",
+            preview: "Take the blessing with you instead of spending it now.",
+            resultText:
+              "You fill what containers you can and move on with medicine worth more than coin.",
+            effects: {
+              bonusTonics: 1,
+              bonusRations: 1,
+              storyXp: 10,
+            },
+          },
+        ],
+      }),
+      "aid"
+    );
+
+    pushCandidate(
+      "aid:wagon",
+      5 + state.aidUrgency,
+      () => ({
+        title: "A raided wagon left on the roadside",
+        teaser: "The bandits are gone, but not everything useful went with them.",
+        detail:
+          "A supply wagon sits half-turned in the ditch, stripped in a hurry. Under torn canvas you find crates the raiders missed.",
+        createdAt: eventTime,
+        choices: [
+          {
+            label: "Grab food and move",
+            preview: "Quick supplies without lingering.",
+            resultText:
+              "You haul off what trail food you can carry and leave before whoever did this comes back.",
+            effects: {
+              hunger: 10,
+              bonusRations: 2,
+              storyXp: 7,
+            },
+          },
+          {
+            label: "Search for proper medicine",
+            preview: "Risk a longer stop for better recovery.",
+            resultText:
+              "Buried under broken boards you find bandages, a tonic, and just enough luck to matter.",
+            effects: {
+              hp: 10,
+              bonusTonics: 1,
+              bonusRations: 1,
+              storyXp: 9,
+            },
+          },
+        ],
+      }),
+      "aid"
+    );
+  }
+
   if (!state.storyFlags.foundWeapon) {
-    pushCandidate(4, () =>
-      normalizeJourneyEvent(
-        {
+    pushCandidate("survival:weapon-cart", 4, () => ({
           title: "A broken cart in the brush",
           teaser: "There may be scraps worth risking a closer look for.",
           detail:
@@ -4320,16 +4809,12 @@ function getJourneyEventCandidates(state, journeyLevel, atDate, journeyContext) 
               },
             },
           ],
-        },
-        eventTime
-      )
+        })
     );
   }
 
   if (state.bossIndex === 0) {
-    pushCandidate(3, () =>
-      normalizeJourneyEvent(
-        {
+    pushCandidate("arrival:berries", 3, () => ({
           title: "A patch of unfamiliar berries",
           teaser: "It could be food. It could also be a mistake.",
           detail:
@@ -4369,14 +4854,10 @@ function getJourneyEventCandidates(state, journeyLevel, atDate, journeyContext) 
               },
             },
           ],
-        },
-        eventTime
-      )
+        })
     );
 
-    pushCandidate(3, () =>
-      normalizeJourneyEvent(
-        {
+    pushCandidate("arrival:tracks", 3, () => ({
           title: "Heavy tracks near the creek",
           teaser: "Something big has been moving through this area.",
           detail:
@@ -4416,16 +4897,12 @@ function getJourneyEventCandidates(state, journeyLevel, atDate, journeyContext) 
               },
             },
           ],
-        },
-        eventTime
-      )
+        })
     );
   }
 
   if (getJourneyPhase(state) !== "frontier") {
-    pushCandidate(2, () =>
-      normalizeJourneyEvent(
-        {
+    pushCandidate("weather:cold-rain", 2, () => ({
           title: "Cold rain before dusk",
           teaser: "You need to decide whether to stop or suffer through it.",
           detail:
@@ -4466,16 +4943,12 @@ function getJourneyEventCandidates(state, journeyLevel, atDate, journeyContext) 
               },
             },
           ],
-        },
-        eventTime
-      )
+        })
     );
   }
 
   if (journeyLevel >= 3 && state.storyFlags.boarDefeated && !hasJourneyClassUnlocked(state, "warrior")) {
-    pushCandidate(4, () =>
-      normalizeJourneyEvent(
-        {
+    pushCandidate("class:warrior-guard", 4, () => ({
           title: "A guard by a roadside fire",
           teaser: "He notices how you hold yourself and offers a little training.",
           detail:
@@ -4504,16 +4977,12 @@ function getJourneyEventCandidates(state, journeyLevel, atDate, journeyContext) 
               },
             },
           ],
-        },
-        eventTime
-      )
+        })
     );
   }
 
   if (journeyLevel >= 4 && state.storyFlags.boarDefeated && !hasJourneyClassUnlocked(state, "mage")) {
-    pushCandidate(3, () =>
-      normalizeJourneyEvent(
-        {
+    pushCandidate("class:mage-shrine", 3, () => ({
           title: "A whispering shrine",
           teaser: "The stones hum when you get close.",
           detail:
@@ -4543,16 +5012,12 @@ function getJourneyEventCandidates(state, journeyLevel, atDate, journeyContext) 
               },
             },
           ],
-        },
-        eventTime
-      )
+        })
     );
   }
 
   if (journeyLevel >= 3 && state.storyFlags.foundWeapon && !hasJourneyClassUnlocked(state, "thief")) {
-    pushCandidate(4, () =>
-      normalizeJourneyEvent(
-        {
+    pushCandidate("class:thief-forager", 4, () => ({
           title: "A quiet forager on the trail",
           teaser: "You did not hear her arrive, which is probably the lesson.",
           detail:
@@ -4580,9 +5045,7 @@ function getJourneyEventCandidates(state, journeyLevel, atDate, journeyContext) 
               },
             },
           ],
-        },
-        eventTime
-      )
+        })
     );
   }
 
@@ -4614,6 +5077,10 @@ function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
   );
   state.totalDistance = Math.max(0, state.totalDistance + effects.distance);
   state.storyXp = Math.max(0, state.storyXp + effects.storyXp);
+  state.bonusSkillPoints = Math.max(
+    0,
+    state.bonusSkillPoints + effects.bonusSkillPoints
+  );
   state.bonusRations = Math.max(0, state.bonusRations + effects.bonusRations);
   state.bonusTonics = Math.max(0, state.bonusTonics + effects.bonusTonics);
   if (effects.weaponName) {
@@ -4642,7 +5109,9 @@ function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
       new Date(atIso),
       "The aftermath forced you to stop and recover before you could go any farther.",
       3,
-      6
+      6,
+      journeyStats.level,
+      journeyStats
     );
   }
 
@@ -4752,14 +5221,33 @@ function getJourneyKnownNotes(state) {
   return notes;
 }
 
-function sendJourneyToTown(state, atDate, message, minHours, maxHours) {
+function sendJourneyToTown(
+  state,
+  atDate,
+  message,
+  minHours,
+  maxHours,
+  journeyLevel,
+  journeyStats
+) {
+  const currentJourneyLevel =
+    journeyLevel || getJourneyLevel(state, state.highestTrackerLevel || 1);
+  const currentJourneyStats =
+    journeyStats || buildJourneyDerived(state, currentJourneyLevel);
+
   state.status = "recovering";
   state.townVisits += 1;
+  state.aidUrgency = Math.min(4, state.aidUrgency + 2);
   state.restUntil = new Date(
     atDate.getTime() + randomInt(minHours, maxHours) * 60 * 60 * 1000
   ).toISOString();
   state.currentHp = Math.max(state.currentHp, 16);
   state.currentHunger = Math.max(state.currentHunger, 12);
+  state.recoveryObjective = buildJourneyRecoveryObjective(
+    state,
+    currentJourneyLevel,
+    currentJourneyStats
+  );
   addJourneyLog(state, message, atDate.toISOString());
 }
 
@@ -4787,7 +5275,10 @@ function getUnspentSkillPoints(state, journeyLevel) {
     (total, key) => total + (state.allocatedStats[key] || 0),
     0
   );
-  return Math.max(0, journeyLevel - 1 - spentPoints);
+  return Math.max(
+    0,
+    journeyLevel - 1 + (state.bonusSkillPoints || 0) - spentPoints
+  );
 }
 
 function getJourneyBoss(index) {
@@ -4829,7 +5320,7 @@ function getJourneySegmentProgress(totalDistance, bossIndex) {
 
 function getJourneyActivityText(state, boss, progress, journeyStats) {
   if (state.status === "recovering") {
-    return getRecoveryText(state);
+    return state.recoveryObjective || getRecoveryText(state);
   }
 
   if (state.bossIndex === 0) {
@@ -4866,12 +5357,18 @@ function getJourneyActivityText(state, boss, progress, journeyStats) {
 }
 
 function getRecoveryText(state) {
+  const missionText = state.recoveryObjective
+    ? `Mini mission: ${state.recoveryObjective} `
+    : "";
+
   if (!state.restUntil) {
-    return "Recovering in shelter before risking the road again.";
+    return `${missionText}Recovering in shelter before risking the road again.`.trim();
   }
 
   const remainingMs = Math.max(0, new Date(state.restUntil).getTime() - Date.now());
-  return `Licking your wounds for ${formatDurationMs(remainingMs)} before heading back out.`;
+  return `${missionText}Licking your wounds for ${formatDurationMs(
+    remainingMs
+  )} before heading back out.`.trim();
 }
 
 function getJourneyStatusLabel(status) {
@@ -4892,6 +5389,11 @@ function randomInt(min, max) {
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
+}
+
+function formatSignedNumber(value) {
+  const numericValue = Math.round(Number(value) || 0);
+  return `${numericValue >= 0 ? "+" : ""}${numericValue}`;
 }
 
 function formatDurationHours(hours) {
