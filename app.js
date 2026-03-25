@@ -348,6 +348,13 @@ const journeyEventTitleEl = document.querySelector("#journeyEventTitle");
 const journeyEventMetaEl = document.querySelector("#journeyEventMeta");
 const journeyEventBodyEl = document.querySelector("#journeyEventBody");
 const journeyEventCloseButton = document.querySelector("#journeyEventCloseButton");
+const journeyOutcomeModal = document.querySelector("#journeyOutcomeModal");
+const journeyOutcomeTitleEl = document.querySelector("#journeyOutcomeTitle");
+const journeyOutcomeMetaEl = document.querySelector("#journeyOutcomeMeta");
+const journeyOutcomeBodyEl = document.querySelector("#journeyOutcomeBody");
+const journeyOutcomeCloseButton = document.querySelector(
+  "#journeyOutcomeCloseButton"
+);
 const appScreens = Array.from(document.querySelectorAll("[data-screen]"));
 const screenNavButtons = Array.from(
   document.querySelectorAll("[data-screen-target]")
@@ -397,6 +404,8 @@ function bindEvents() {
   artCropModal?.addEventListener("click", handleCropModalClick);
   journeyEventModal?.addEventListener("click", handleJourneyEventModalClick);
   journeyEventCloseButton?.addEventListener("click", closeJourneyEventModal);
+  journeyOutcomeModal?.addEventListener("click", handleJourneyOutcomeModalClick);
+  journeyOutcomeCloseButton?.addEventListener("click", closeJourneyOutcomeModal);
   document.addEventListener("keydown", handleGlobalKeyDown);
 
   for (const button of screenNavButtons) {
@@ -2306,7 +2315,7 @@ function openImageCropper(image, kind, preset) {
   cropSession = nextSession;
   resetCropControls();
   artCropModal.hidden = false;
-  document.body.style.overflow = "hidden";
+  syncBodyScrollLock();
   renderCropPreview();
 
   return new Promise((resolve, reject) => {
@@ -2365,9 +2374,23 @@ function handleGlobalKeyDown(event) {
     return;
   }
 
+  if (event.key === "Escape" && journeyOutcomeModal && !journeyOutcomeModal.hidden) {
+    closeJourneyOutcomeModal();
+    return;
+  }
+
   if (event.key === "Escape" && journeyEventModal && !journeyEventModal.hidden) {
     closeJourneyEventModal();
   }
+}
+
+function syncBodyScrollLock() {
+  document.body.style.overflow =
+    cropSession ||
+    (journeyEventModal && !journeyEventModal.hidden) ||
+    (journeyOutcomeModal && !journeyOutcomeModal.hidden)
+      ? "hidden"
+      : "";
 }
 
 function cancelCropSelection() {
@@ -2413,8 +2436,7 @@ function confirmCropSelection() {
 function closeCropModal() {
   cropSession = null;
   if (artCropModal) artCropModal.hidden = true;
-  document.body.style.overflow =
-    journeyEventModal && !journeyEventModal.hidden ? "hidden" : "";
+  syncBodyScrollLock();
 }
 
 function renderCropPreview() {
@@ -2917,6 +2939,12 @@ function renderHomeJourney(state, xpSummary) {
   const journeyStats = buildJourneyDerived(state, journeyLevel);
   const boss = getJourneyBoss(state.bossIndex);
   const progress = getJourneySegmentProgress(state.totalDistance, state.bossIndex);
+  const stretchPresentation = buildJourneyStretchPresentation(
+    state,
+    boss,
+    progress,
+    journeyStats
+  );
   const hpPercent = clamp((state.currentHp / journeyStats.maxHp) * 100, 0, 100);
   const hungerPercent = clamp(
     (state.currentHunger / journeyStats.maxHunger) * 100,
@@ -2944,12 +2972,17 @@ function renderHomeJourney(state, xpSummary) {
           </div>
 
           <div class="journey-progress-meta">
-            <span>${progress.currentLabel}</span>
-            <span>${progress.remainingLabel}</span>
+            <span>${stretchPresentation.currentLabel}</span>
+            <span>${stretchPresentation.remainingLabel}</span>
           </div>
 
           <div class="summary-row">
-            <span class="summary-pill">Current threat: ${escapeHtml(boss.name)}</span>
+            <span class="summary-pill">Current goal: ${escapeHtml(
+              stretchPresentation.goalTitle
+            )}</span>
+            <span class="summary-pill">${escapeHtml(
+              stretchPresentation.horizonLabel
+            )}: ${escapeHtml(stretchPresentation.horizonValue)}</span>
             <span class="summary-pill">Road cleared: ${state.bossIndex}</span>
             <span class="summary-pill">Discipline: ${escapeHtml(
               JOURNEY_CLASS_META[state.classType].label
@@ -3265,6 +3298,15 @@ async function handleJourneyEventModalClick(event) {
   await resolveJourneyEventChoice(button.dataset.eventId, button.dataset.choiceId);
 }
 
+function handleJourneyOutcomeModalClick(event) {
+  if (
+    event.target instanceof HTMLElement &&
+    event.target.dataset.closeJourneyOutcome !== undefined
+  ) {
+    closeJourneyOutcomeModal();
+  }
+}
+
 function openJourneyEventModal(eventEntry) {
   if (!journeyEventModal || !journeyEventBodyEl || !journeyEventTitleEl || !journeyEventMetaEl) {
     return;
@@ -3290,7 +3332,6 @@ function openJourneyEventModal(eventEntry) {
             >
               <strong>${escapeHtml(choice.label)}</strong>
               <span>${escapeHtml(choice.preview)}</span>
-              <span>${escapeHtml(buildJourneyChoiceImpactText(choice.effects))}</span>
             </button>
           `
         )
@@ -3299,14 +3340,62 @@ function openJourneyEventModal(eventEntry) {
   `;
 
   journeyEventModal.hidden = false;
-  document.body.style.overflow = "hidden";
+  syncBodyScrollLock();
 }
 
 function closeJourneyEventModal() {
   if (!journeyEventModal) return;
   journeyEventModal.hidden = true;
   if (journeyEventBodyEl) journeyEventBodyEl.innerHTML = "";
-  document.body.style.overflow = cropSession ? "hidden" : "";
+  syncBodyScrollLock();
+}
+
+function openJourneyOutcomeModal(eventEntry, choice, resultText, outcomeItems) {
+  if (
+    !journeyOutcomeModal ||
+    !journeyOutcomeBodyEl ||
+    !journeyOutcomeTitleEl ||
+    !journeyOutcomeMetaEl
+  ) {
+    return;
+  }
+
+  journeyOutcomeTitleEl.textContent = eventEntry?.title || "What happened next";
+  journeyOutcomeMetaEl.textContent = choice?.label
+    ? `You chose: ${choice.label}`
+    : "The road answered your choice.";
+  journeyOutcomeBodyEl.innerHTML = `
+    <div class="journey-event-panel journey-outcome-panel">
+      <p>${escapeHtml(resultText)}</p>
+      ${
+        outcomeItems.length
+          ? `
+            <div class="journey-outcome-pill-row">
+              ${outcomeItems
+                .map(
+                  (item) => `
+                    <span class="journey-outcome-pill ${escapeAttribute(
+                      item.className
+                    )}">${escapeHtml(item.label)}</span>
+                  `
+                )
+                .join("")}
+            </div>
+          `
+          : `<p class="muted-text">Nothing shifted in a way you could clearly measure.</p>`
+      }
+    </div>
+  `;
+
+  journeyOutcomeModal.hidden = false;
+  syncBodyScrollLock();
+}
+
+function closeJourneyOutcomeModal() {
+  if (!journeyOutcomeModal) return;
+  journeyOutcomeModal.hidden = true;
+  if (journeyOutcomeBodyEl) journeyOutcomeBodyEl.innerHTML = "";
+  syncBodyScrollLock();
 }
 
 async function resolveJourneyEventChoice(eventId, choiceId) {
@@ -3350,14 +3439,12 @@ async function resolveJourneyEventChoice(eventId, choiceId) {
     if (eventEntry.kind === "aid") {
       state.aidUrgency = Math.max(0, state.aidUrgency - 2);
     }
-    const outcomeSummary = buildJourneyOutcomeSummary(beforeState, state);
+    const outcomeItems = buildJourneyOutcomeItems(beforeState, state);
 
     await setMeta(db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
     closeJourneyEventModal();
-    showMessage(
-      journeyMessageEl,
-      outcomeSummary ? `${resultMessage} ${outcomeSummary}.` : resultMessage
-    );
+    openJourneyOutcomeModal(eventEntry, choice, resultMessage, outcomeItems);
+    showMessage(journeyMessageEl, resultMessage);
     await renderApp();
   } catch (error) {
     console.error("Failed to resolve journey event:", error);
@@ -3430,8 +3517,13 @@ function renderIdleJourney(state, games, sessions, xpSummary) {
   const journeyStats = buildJourneyDerived(state, journeyLevel);
   const supplies = buildJourneySupplies(games, sessions, state);
   const boss = getJourneyBoss(state.bossIndex);
-  const stretchChallenge = buildJourneyStretchChallenge(state, journeyStats);
   const progress = getJourneySegmentProgress(state.totalDistance, state.bossIndex);
+  const stretchPresentation = buildJourneyStretchPresentation(
+    state,
+    boss,
+    progress,
+    journeyStats
+  );
   const unspentSkillPoints = getUnspentSkillPoints(state, journeyLevel);
   const activityText = getJourneyActivityText(state, boss, progress, journeyStats);
   const nextBossEtaHours =
@@ -3506,23 +3598,22 @@ function renderIdleJourney(state, games, sessions, xpSummary) {
             <div class="journey-progress-fill" style="width: ${progress.percent}%"></div>
           </div>
           <div class="journey-progress-meta">
-            <span>${progress.currentLabel}</span>
-            <span>${progress.remainingLabel}</span>
+            <span>${stretchPresentation.currentLabel}</span>
+            <span>${stretchPresentation.remainingLabel}</span>
           </div>
           <div class="summary-row">
-            <span class="summary-pill">Current threat: ${escapeHtml(boss.name)}</span>
+            <span class="summary-pill">Current goal: ${escapeHtml(
+              stretchPresentation.goalTitle
+            )}</span>
+            <span class="summary-pill">${escapeHtml(
+              stretchPresentation.horizonLabel
+            )}: ${escapeHtml(stretchPresentation.horizonValue)}</span>
             <span class="summary-pill">Road cleared: ${state.bossIndex}</span>
             <span class="summary-pill">Retreats: ${state.townVisits}</span>
             <span class="summary-pill">Pace: ${journeyStats.speedPerHour.toFixed(1)}/hr</span>
-            <span class="summary-pill">Stretch odds: ${stretchChallenge.successPercent}%</span>
-            <span class="summary-pill">Risk: ${escapeHtml(stretchChallenge.dangerLabel)}</span>
           </div>
           <p class="muted-text">
-            ${state.status === "recovering"
-              ? `Mini mission: ${escapeHtml(state.recoveryObjective || getRecoveryText(state))}`
-              : `Estimated clear chance is ${stretchChallenge.successPercent}% based on your current level, condition, and build. On success: ${escapeHtml(
-                  stretchChallenge.rewardsText
-                )}. On failure: heavy health and hunger loss.`}
+            ${escapeHtml(stretchPresentation.innerThoughts)}
           </p>
         </div>
 
@@ -4033,37 +4124,157 @@ function buildJourneyStretchChallenge(state, journeyStats) {
   const boss = getJourneyBoss(state.bossIndex);
   const conditionPower = state.currentHp * 0.12 + state.currentHunger * 0.08;
   const weaponBonus = state.storyFlags.foundWeapon ? 8 : -6;
-  const effectivePower = journeyStats.power + conditionPower + weaponBonus;
-  const powerRatio = effectivePower / Math.max(1, boss.power);
+  const powerRatio =
+    (journeyStats.power + conditionPower + weaponBonus) / Math.max(1, boss.power);
   const successChance = clamp(
     0.14 + powerRatio * 0.56 + Math.max(0, journeyStats.level - state.bossIndex) * 0.02,
     0.12,
     0.9
   );
 
-  let dangerLabel = "Rough";
-  if (successChance >= 0.72) {
-    dangerLabel = "Favored";
-  } else if (successChance >= 0.52) {
-    dangerLabel = "Manageable";
-  } else if (successChance >= 0.34) {
-    dangerLabel = "Shaky";
-  }
-
-  const rewards = ["1 skill point"];
-  if (!state.storyFlags.foundWeapon) {
-    rewards.push("weapon chance");
-  }
-  rewards.push("rations or tonic chance");
-
   return {
     boss,
-    effectivePower,
     successChance,
     successPercent: Math.round(successChance * 100),
-    dangerLabel,
-    rewardsText: rewards.join(" • "),
   };
+}
+
+function buildJourneyStretchPresentation(state, boss, progress, journeyStats) {
+  const goalMeta = getJourneyGoalMeta(state, boss, progress);
+
+  return {
+    ...goalMeta,
+    currentLabel:
+      state.status === "recovering"
+        ? `${progress.percent}% of this stretch is behind you.`
+        : `${progress.percent}% of the way to ${goalMeta.goalAction}.`,
+    remainingLabel: getJourneyProgressFeeling(state, progress.percent),
+    innerThoughts: buildJourneyInnerThoughts(state, goalMeta, journeyStats),
+  };
+}
+
+function getJourneyGoalMeta(state, boss, progress) {
+  if (state.status === "recovering") {
+    return {
+      goalTitle: "Recover and regroup",
+      goalAction: "recover and regroup",
+      horizonLabel: "Right now",
+      horizonValue: state.recoveryObjective || "Staying alive matters more than distance.",
+    };
+  }
+
+  if (state.bossIndex === 0) {
+    if (progress.percent < 18) {
+      return {
+        goalTitle: "Find your bearings",
+        goalAction: "finding your bearings",
+        horizonLabel: "Waiting ahead",
+        horizonValue: "Nothing here feels familiar yet.",
+      };
+    }
+
+    if (progress.percent < 38) {
+      return {
+        goalTitle: "Find a path that actually leads somewhere",
+        goalAction: "finding a path that actually leads somewhere",
+        horizonLabel: "Waiting ahead",
+        horizonValue: "You need a trail that actually leads somewhere.",
+      };
+    }
+
+    if (!state.storyFlags.foundWeapon || progress.percent < 56) {
+      return {
+        goalTitle: "Find something you can fight with",
+        goalAction: "finding something you can fight with",
+        horizonLabel: "Waiting ahead",
+        horizonValue: "You cannot stay unarmed forever.",
+      };
+    }
+
+    if (progress.percent < 78) {
+      return {
+        goalTitle: "Find food and steady yourself",
+        goalAction: "finding food and steadying yourself",
+        horizonLabel: "Waiting ahead",
+        horizonValue: "You need enough strength for whatever comes next.",
+      };
+    }
+
+    return {
+      goalTitle: "Follow the boar's trail",
+      goalAction: "following the boar's trail",
+      horizonLabel: "Waiting ahead",
+      horizonValue: "Fresh signs of the boar are all over this part of the forest.",
+    };
+  }
+
+  if (state.bossIndex === 1) {
+    if (progress.percent < 58) {
+      return {
+        goalTitle: "Stay ahead of the wolves",
+        goalAction: "staying ahead of the wolves",
+        horizonLabel: "Waiting ahead",
+        horizonValue: "The pack is somewhere close enough to matter.",
+      };
+    }
+
+    return {
+      goalTitle: "Break through to safer ground",
+      goalAction: "breaking through to safer ground",
+      horizonLabel: "Stretch end",
+      horizonValue: boss.name,
+    };
+  }
+
+  if (progress.percent < 62) {
+    return {
+      goalTitle: `Push through ${getJourneyZoneName(state.bossIndex)}`,
+      goalAction: `pushing through ${getJourneyZoneName(state.bossIndex).toLowerCase()}`,
+      horizonLabel: "Waiting ahead",
+      horizonValue: "The road still feels hostile and half-known.",
+    };
+  }
+
+  return {
+    goalTitle: `Reach ${boss.name}`,
+    goalAction: `reaching ${boss.name.toLowerCase()}`,
+    horizonLabel: "Stretch end",
+    horizonValue: boss.name,
+  };
+}
+
+function getJourneyProgressFeeling(state, progressPercent) {
+  if (state.status === "recovering") {
+    return "Distance can wait until you are steady again.";
+  }
+
+  if (progressPercent < 20) return "You have only just started to get a handle on this.";
+  if (progressPercent < 45) return "It still feels messy, but at least you are moving with some intent.";
+  if (progressPercent < 75) return "The shape of the stretch is starting to reveal itself.";
+  if (progressPercent < 95) return "The end of this stretch feels close now.";
+  return "You are almost through this part of the road.";
+}
+
+function buildJourneyInnerThoughts(state, goalMeta, journeyStats) {
+  if (state.status === "recovering") {
+    return `I need to slow down and ${goalMeta.goalAction} before I even think about pushing any farther.`;
+  }
+
+  const stretchChallenge = buildJourneyStretchChallenge(state, journeyStats);
+
+  if (stretchChallenge.successChance >= 0.74) {
+    return `I think I can handle this. If I keep my head, I should manage ${goalMeta.goalAction} before this stretch turns ugly.`;
+  }
+
+  if (stretchChallenge.successChance >= 0.56) {
+    return `I am not comfortable, but I can probably manage ${goalMeta.goalAction} if I stay focused and do not panic.`;
+  }
+
+  if (stretchChallenge.successChance >= 0.38) {
+    return `I keep second-guessing myself. Maybe I can manage ${goalMeta.goalAction}, but it feels like one mistake could ruin the whole thing.`;
+  }
+
+  return `Things are not looking good. I can barely trust my own sense of direction right now, and ${goalMeta.goalAction} feels farther away every time I look up.`;
 }
 
 function buildJourneyRecoveryObjective(state, journeyLevel, journeyStats) {
@@ -4102,45 +4313,20 @@ function rememberJourneyEventKey(state, eventKey) {
   ].slice(0, JOURNEY_RECENT_EVENT_LIMIT);
 }
 
-function buildJourneyChoiceImpactText(effects) {
-  if (!effects || typeof effects !== "object") return "No major effect.";
-
-  const parts = [];
-
-  if (effects.hp) parts.push(`Health ${formatSignedNumber(effects.hp)}`);
-  if (effects.hunger) parts.push(`Hunger ${formatSignedNumber(effects.hunger)}`);
-  if (effects.distance) parts.push(`Travel ${formatSignedNumber(effects.distance)}`);
-  if (effects.storyXp) parts.push(`Story XP ${formatSignedNumber(effects.storyXp)}`);
-  if (effects.bonusSkillPoints) {
-    parts.push(`Skill points ${formatSignedNumber(effects.bonusSkillPoints)}`);
-  }
-  if (effects.bonusRations) {
-    parts.push(`Rations ${formatSignedNumber(effects.bonusRations)}`);
-  }
-  if (effects.bonusTonics) {
-    parts.push(`Tonics ${formatSignedNumber(effects.bonusTonics)}`);
-  }
-  if (effects.weaponName) parts.push("Weapon found");
-  if (effects.unlockClass) {
-    parts.push(`${JOURNEY_CLASS_META[effects.unlockClass].label} unlocked`);
-  }
-
-  return parts.join(" • ") || "No major effect.";
-}
-
-function buildJourneyOutcomeSummary(beforeState, afterState) {
-  const parts = [];
+function buildJourneyOutcomeItems(beforeState, afterState) {
+  const items = [];
   const addDelta = (label, value) => {
     if (!value) return;
-    parts.push(`${label} ${formatSignedNumber(value)}`);
+
+    items.push({
+      label: `${label} ${formatSignedNumber(value)}`,
+      className: value > 0 ? "is-positive" : "is-negative",
+    });
   };
 
   addDelta("Health", Math.round(afterState.currentHp - beforeState.currentHp));
   addDelta("Hunger", Math.round(afterState.currentHunger - beforeState.currentHunger));
-  addDelta(
-    "Travel",
-    Math.round(afterState.totalDistance - beforeState.totalDistance)
-  );
+  addDelta("Travel", Math.round(afterState.totalDistance - beforeState.totalDistance));
   addDelta("Story XP", afterState.storyXp - beforeState.storyXp);
   addDelta(
     "Skill points",
@@ -4150,18 +4336,27 @@ function buildJourneyOutcomeSummary(beforeState, afterState) {
   addDelta("Tonics", afterState.bonusTonics - beforeState.bonusTonics);
 
   if (beforeState.weaponName !== afterState.weaponName && afterState.weaponName) {
-    parts.push(`Weapon ${afterState.weaponName}`);
+    items.push({
+      label: `Weapon: ${afterState.weaponName}`,
+      className: "is-positive",
+    });
   }
 
   if (beforeState.classType !== afterState.classType) {
-    parts.push(`Class ${JOURNEY_CLASS_META[afterState.classType].label}`);
+    items.push({
+      label: `Class: ${JOURNEY_CLASS_META[afterState.classType].label}`,
+      className: "is-neutral",
+    });
   }
 
   if (beforeState.status !== afterState.status) {
-    parts.push(`Status ${getJourneyStatusLabel(afterState.status)}`);
+    items.push({
+      label: `Status: ${getJourneyStatusLabel(afterState.status)}`,
+      className: afterState.status === "recovering" ? "is-negative" : "is-neutral",
+    });
   }
 
-  return parts.join(" • ");
+  return items;
 }
 
 function buildJourneyContext(games, sessions) {
@@ -4323,6 +4518,18 @@ function simulateJourneyState(state, elapsedMs, journeyStats, journeyContext) {
         state.status === "adventuring" &&
         state.totalDistance >= (state.bossIndex + 1) * JOURNEY_BOSS_DISTANCE
       ) {
+        if (state.pendingEvents.length) {
+          autoResolvePendingJourneyEvents(
+            state,
+            journeyStats,
+            nextCursor.toISOString()
+          );
+
+          if (state.status !== "adventuring") {
+            break;
+          }
+        }
+
         resolveJourneyBoss(state, journeyStats, nextCursor);
       }
 
@@ -4333,6 +4540,34 @@ function simulateJourneyState(state, elapsedMs, journeyStats, journeyContext) {
 
     cursor = nextCursor;
     remainingMs -= sliceMs;
+  }
+}
+
+function autoResolvePendingJourneyEvents(state, journeyStats, atIso) {
+  const pendingEvents = [...state.pendingEvents];
+  if (!pendingEvents.length) return;
+
+  state.pendingEvents = [];
+
+  for (const eventEntry of pendingEvents) {
+    if (!eventEntry.choices.length) continue;
+
+    const randomChoice =
+      eventEntry.choices[randomInt(0, eventEntry.choices.length - 1)];
+    addJourneyLog(
+      state,
+      `You left ${eventEntry.title} unresolved for too long, so fate chose for you.`,
+      atIso
+    );
+    applyJourneyChoiceEffects(state, randomChoice, journeyStats, atIso);
+
+    if (eventEntry.kind === "aid") {
+      state.aidUrgency = Math.max(0, state.aidUrgency - 2);
+    }
+
+    if (state.status !== "adventuring") {
+      break;
+    }
   }
 }
 

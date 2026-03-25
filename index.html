@@ -523,6 +523,37 @@
       </div>
     </div>
 
-    <script type="module" src="./app.js?v=20260325a"></script>
+    <div id="journeyOutcomeModal" class="journey-event-modal" hidden>
+      <div class="journey-event-backdrop" data-close-journey-outcome></div>
+
+      <div
+        class="journey-event-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="journeyOutcomeTitle"
+      >
+        <div class="journey-event-header">
+          <div>
+            <p class="eyebrow">Outcome</p>
+            <h2 id="journeyOutcomeTitle">What happened next</h2>
+            <p id="journeyOutcomeMeta" class="muted-text">
+              The road answered your choice.
+            </p>
+          </div>
+          <button
+            id="journeyOutcomeCloseButton"
+            type="button"
+            class="secondary-button"
+            data-close-journey-outcome
+          >
+            Close
+          </button>
+        </div>
+
+        <div id="journeyOutcomeBody" class="journey-event-body"></div>
+      </div>
+    </div>
+
+    <script type="module" src="./app.js?v=20260325b"></script>
   </body>
 </html>
