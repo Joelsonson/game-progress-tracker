@@ -263,6 +263,12 @@
     scrollbar-width: thin;
   }
 
+  .journey-home-shell .summary-row,
+  .journey-shell .summary-row {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+
   .summary-row::-webkit-scrollbar,
   .stats-grid::-webkit-scrollbar,
   .game-actions::-webkit-scrollbar,
@@ -417,9 +423,12 @@
   flex-wrap: wrap;
 }
 
-.summary-pill {
+.journey-home-shell .summary-pill,
+.journey-shell .summary-pill {
   flex: 0 0 auto;
-  white-space: nowrap;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .mobile-tabbar {

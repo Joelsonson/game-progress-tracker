@@ -11,7 +11,7 @@ import {
   journeyOutcomeTitleEl,
 } from "../../core/dom.js";
 import { JOURNEY_BASE_CLASS, JOURNEY_CLASS_META, JOURNEY_STAT_KEYS, JOURNEY_STAT_META } from "../../core/constants.js";
-import { clamp, escapeAttribute, escapeHtml, formatDateTime, formatDurationHours } from "../../core/formatters.js";
+import { clamp, escapeAttribute, escapeHtml, formatDateTime } from "../../core/formatters.js";
 import { syncBodyScrollLock } from "../../core/ui.js";
 import {
   buildJourneyDerived,
@@ -24,6 +24,7 @@ import {
   getJourneyStatusLabel,
   getJourneyStoryLevelBonus,
   getJourneyZoneName,
+  formatDurationRangeHours,
   getRecoveryText,
   getUnspentSkillPoints,
 } from "./journeyEngine.js";
@@ -409,7 +410,7 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
             ${
               state.status === "recovering"
                 ? escapeHtml(getRecoveryText(state))
-                : `Next threat ETA: ${formatDurationHours(nextBossEtaHours)}`
+                : `Rough ETA to next threat: ${formatDurationRangeHours(nextBossEtaHours)}`
             }
           </p>
         </article>

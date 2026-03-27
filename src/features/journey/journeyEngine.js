@@ -566,30 +566,54 @@ export function simulateJourneyState(state, elapsedMs, journeyStats, journeyCont
     const hours = sliceMs / (1000 * 60 * 60);
 
     if (state.status === "recovering") {
+      const recoveryObjectiveBefore = state.recoveryObjective;
       state.currentHp = clamp(
-        state.currentHp + journeyStats.maxHp * 0.14 * hours,
+        state.currentHp + journeyStats.maxHp * 0.055 * hours,
         0,
         journeyStats.maxHp
       );
       state.currentHunger = clamp(
-        state.currentHunger + 14 * hours,
+        state.currentHunger + 6.5 * hours,
         0,
         journeyStats.maxHunger
       );
+      state.recoveryObjective = buildJourneyRecoveryObjective(
+        state,
+        journeyStats.level,
+        journeyStats
+      );
 
-      if (state.restUntil && nextCursor >= new Date(state.restUntil)) {
+      const recoveredEnough =
+        state.currentHp >= journeyStats.maxHp * 0.52 &&
+        state.currentHunger >= journeyStats.maxHunger * 0.6;
+      const servedFullRecoveryTime =
+        state.restUntil && nextCursor >= new Date(state.restUntil);
+
+      if (recoveredEnough || servedFullRecoveryTime) {
         state.status = "adventuring";
         state.restUntil = null;
         state.recoveryObjective = "";
         state.aidUrgency = Math.max(0, state.aidUrgency - 1);
-        state.currentHp = Math.max(state.currentHp, journeyStats.maxHp * 0.58);
+        state.currentHp = Math.max(state.currentHp, journeyStats.maxHp * 0.46);
         state.currentHunger = Math.max(
           state.currentHunger,
-          journeyStats.maxHunger * 0.68
+          journeyStats.maxHunger * 0.56
         );
         addJourneyLog(
           state,
-          `You left shelter and headed back toward ${getJourneyZoneName(state.bossIndex)}.`,
+          recoveredEnough && !servedFullRecoveryTime
+            ? `You felt steady enough to stop hiding and head back toward ${getJourneyZoneName(
+                state.bossIndex
+              )}.`
+            : `You left shelter and headed back toward ${getJourneyZoneName(
+                state.bossIndex
+              )}.`,
+          nextCursor.toISOString()
+        );
+      } else if (state.recoveryObjective !== recoveryObjectiveBefore) {
+        addJourneyLog(
+          state,
+          state.recoveryObjective,
           nextCursor.toISOString()
         );
       }
@@ -773,18 +797,16 @@ export function resolveJourneyBoss(state, journeyStats, atDate) {
   }
 
   state.totalDistance = Math.max(
-    state.bossIndex * JOURNEY_BOSS_DISTANCE + 34,
-    state.totalDistance - randomInt(8, 18)
+    state.bossIndex * JOURNEY_BOSS_DISTANCE + 22,
+    state.totalDistance - randomInt(18, 34)
   );
-  state.currentHp = clamp(
-    state.currentHp - randomInt(14, 24),
-    0,
-    journeyStats.maxHp
+  state.currentHp = Math.min(
+    clamp(state.currentHp - randomInt(14, 24), 0, journeyStats.maxHp),
+    Math.round(journeyStats.maxHp * 0.42)
   );
-  state.currentHunger = clamp(
-    state.currentHunger - randomInt(9, 16),
-    0,
-    journeyStats.maxHunger
+  state.currentHunger = Math.min(
+    clamp(state.currentHunger - randomInt(9, 16), 0, journeyStats.maxHunger),
+    Math.round(journeyStats.maxHunger * 0.46)
   );
   state.storyXp += 4;
   addJourneyLog(
@@ -1545,8 +1567,14 @@ export function sendJourneyToTown(
   state.restUntil = new Date(
     atDate.getTime() + randomInt(minHours, maxHours) * 60 * 60 * 1000
   ).toISOString();
-  state.currentHp = Math.max(state.currentHp, 16);
-  state.currentHunger = Math.max(state.currentHunger, 12);
+  state.currentHp = Math.max(
+    state.currentHp,
+    Math.max(6, Math.round(currentJourneyStats.maxHp * 0.1))
+  );
+  state.currentHunger = Math.max(
+    state.currentHunger,
+    Math.max(8, Math.round(currentJourneyStats.maxHunger * 0.12))
+  );
   state.recoveryObjective = buildJourneyRecoveryObjective(
     state,
     currentJourneyLevel,
@@ -1653,7 +1681,7 @@ export function getJourneyActivityText(state, boss, progress, journeyStats) {
 
   return `You are moving through ${getJourneyZoneName(
     state.bossIndex
-  )} toward ${boss.name}. About ${formatDurationHours(
+  )} toward ${boss.name}. About ${formatDurationRangeHours(
     progress.remainingDistance / Math.max(0.01, journeyStats.speedPerHour)
   )} away if nothing goes wrong.`;
 }
@@ -1668,7 +1696,7 @@ export function getRecoveryText(state) {
   }
 
   const remainingMs = Math.max(0, new Date(state.restUntil).getTime() - Date.now());
-  return `${missionText}Licking your wounds for ${formatDurationMs(
+  return `${missionText}Licking your wounds for roughly ${formatDurationRangeMs(
     remainingMs
   )} before heading back out.`.trim();
 }
@@ -1710,9 +1738,22 @@ export function formatDurationHours(hours) {
   return `${wholeHours}h ${minutes}m`;
 }
 
+export function formatDurationRangeHours(hours) {
+  if (!Number.isFinite(hours) || hours <= 0.95) return "under 1h";
+
+  const low = Math.max(1, Math.floor(hours));
+  const high = Math.max(low + 1, Math.ceil(hours));
+  return `${low}-${high}h`;
+}
+
 export function formatDurationMs(ms) {
   if (!Number.isFinite(ms) || ms <= 0) return "under 1h";
   return formatDurationHours(ms / (1000 * 60 * 60));
+}
+
+export function formatDurationRangeMs(ms) {
+  if (!Number.isFinite(ms) || ms <= 0) return "under 1h";
+  return formatDurationRangeHours(ms / (1000 * 60 * 60));
 }
 
 export function differenceInDays(leftMs, rightMs) {

@@ -387,9 +387,23 @@
   margin-top: 8px;
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
   gap: 12px;
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.journey-progress-meta > span,
+.journey-zone {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.journey-side-card .summary-pill {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .journey-resource-grid,
