@@ -57,7 +57,7 @@ async function init() {
     await renderApp();
   } catch (error) {
     console.error("Failed to initialize app:", error);
-    showMessage(formMessage, "Could not open local database.", true);
+    showMessage(formMessage, "Could not initialize the app.", true);
   }
 }
 

@@ -1,5 +1,6 @@
 import { setMeta } from "../../data/metaRepo.js";
 import {
+  GAME_STATUSES,
   IDLE_JOURNEY_META_KEY,
   JOURNEY_AMBIENT_INTERACTIONS,
   JOURNEY_BASE_CLASS,
@@ -1607,10 +1608,8 @@ export function getJourneySegmentProgress(totalDistance, bossIndex) {
     JOURNEY_BOSS_DISTANCE
   );
   const remainingDistance = Math.max(0, nextBossDistance - totalDistance);
-  const percent = clamp(
-    (distanceIntoSegment / JOURNEY_BOSS_DISTANCE) * 100,
-    0,
-    100
+  const percent = Math.round(
+    clamp((distanceIntoSegment / JOURNEY_BOSS_DISTANCE) * 100, 0, 100)
   );
 
   return {
