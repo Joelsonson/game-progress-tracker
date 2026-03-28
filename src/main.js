@@ -29,6 +29,7 @@ import {
   journeyOutcomeModal,
   screenNavButtons,
   sessionForm,
+  themePreferenceInput,
   artCropModal,
 } from "./core/dom.js";
 import { IDLE_JOURNEY_META_KEY } from "./core/constants.js";
@@ -59,6 +60,8 @@ async function init() {
   try {
     appState.db = await openDB();
     appState.renderApp = renderApp;
+    appState.themePreference = getStoredThemePreference();
+    applyThemePreference(appState.themePreference);
     await repairGamesIfNeeded();
     bindEvents();
     setActiveScreen(getPreferredScreenId());
@@ -85,6 +88,7 @@ function bindEvents() {
   clearJourneyButton?.addEventListener("click", handleResetJourneyData);
   clearDataButton?.addEventListener("click", handleClearData);
   importDataInput?.addEventListener("change", handleImportData);
+  themePreferenceInput?.addEventListener("change", handleThemePreferenceChange);
 
   cropZoomRange?.addEventListener("input", handleCropControlInput);
   cropFocusXRange?.addEventListener("input", handleCropControlInput);
@@ -147,4 +151,58 @@ export async function renderApp() {
   renderSessionGameOptions(sortedGames);
   renderGames(sortedGames, sessionStats);
   renderRecentSessions(sortedGames, sessions);
+  syncThemePreferenceInput();
+}
+
+function handleThemePreferenceChange(event) {
+  const nextPreference = event.target instanceof HTMLSelectElement
+    ? event.target.value
+    : "system";
+  appState.themePreference = normalizeThemePreference(nextPreference);
+  applyThemePreference(appState.themePreference);
+  syncThemePreferenceInput();
+
+  try {
+    window.localStorage.setItem("gameTracker.themePreference", appState.themePreference);
+  } catch (error) {
+    // Ignore localStorage write failures.
+  }
+}
+
+function getStoredThemePreference() {
+  try {
+    return normalizeThemePreference(
+      window.localStorage.getItem("gameTracker.themePreference")
+    );
+  } catch (error) {
+    return "system";
+  }
+}
+
+function normalizeThemePreference(value) {
+  return value === "light" || value === "dark" ? value : "system";
+}
+
+function applyThemePreference(preference) {
+  const root = document.documentElement;
+  if (!root) return;
+
+  if (preference === "system") {
+    root.removeAttribute("data-theme");
+  } else {
+    root.setAttribute("data-theme", preference);
+  }
+
+  const isDark =
+    preference === "dark" ||
+    (preference === "system" &&
+      window.matchMedia?.("(prefers-color-scheme: dark)").matches);
+  document
+    .querySelector('meta[name="theme-color"]')
+    ?.setAttribute("content", isDark ? "#242424" : "#f8f4f1");
+}
+
+function syncThemePreferenceInput() {
+  if (!themePreferenceInput) return;
+  themePreferenceInput.value = appState.themePreference;
 }

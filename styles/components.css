@@ -1296,6 +1296,10 @@
   background: rgba(var(--ink-rgb), 0.42);
 }
 
+#homeJourneyPanel {
+  border-color: rgba(var(--accent-rgb), 0.22);
+}
+
 .journey-progress-track,
 .resource-track {
   background:

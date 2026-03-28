@@ -54,6 +54,7 @@ export const clearJourneyButton = document.querySelector("#clearJourneyButton");
 export const clearDataButton = document.querySelector("#clearDataButton");
 export const importDataInput = document.querySelector("#importDataInput");
 export const settingsMessage = document.querySelector("#settingsMessage");
+export const themePreferenceInput = document.querySelector("#themePreference");
 
 export const artCropModal = document.querySelector("#artCropModal");
 export const cropPreviewCanvas = document.querySelector("#cropPreviewCanvas");

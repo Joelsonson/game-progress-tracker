@@ -226,6 +226,35 @@
   text-align: center;
 }
 
+.game-actions .secondary-button,
+.game-actions .primary-button {
+  color: var(--text);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.94), rgba(var(--surface-rgb), 0.84)),
+    rgba(var(--panel-rgb), 0.82);
+  border: 1px solid rgba(var(--accent-rgb), 0.14);
+}
+
+.game-actions .primary-button {
+  background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.94), rgba(var(--accent-rgb), 0.78));
+  color: var(--button-text);
+}
+
+.game-actions .action-success {
+  color: var(--success);
+  border-color: rgba(95, 122, 86, 0.24);
+}
+
+.game-actions .action-warning {
+  color: var(--warning);
+  border-color: rgba(164, 118, 63, 0.24);
+}
+
+.game-actions .action-danger {
+  color: var(--danger);
+  border-color: rgba(164, 86, 75, 0.24);
+}
+
 .game-card-banner {
   aspect-ratio: 16 / 7.8;
 }

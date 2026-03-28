@@ -7,5 +7,6 @@ export const appState = {
   activeScreenId: DEFAULT_SCREEN_ID,
   editingCharacterName: false,
   isJourneyEventResolving: false,
+  themePreference: "system",
   renderApp: async () => {},
 };

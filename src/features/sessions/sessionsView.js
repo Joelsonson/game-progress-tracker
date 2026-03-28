@@ -58,14 +58,35 @@ export function renderRecentSessions(games, sessions) {
   const sortedSessions = [...sessions].sort(
     (a, b) => new Date(b.playedAt) - new Date(a.playedAt)
   );
-  const visibleSessions = sortedSessions.slice(0, 8);
+  const visibleSessions = sortedSessions.slice(0, 3);
+  const hiddenSessions = sortedSessions.slice(3);
 
   recentSessionsSummaryEl.textContent =
     sortedSessions.length === 1
       ? "Showing your 1 logged session."
       : `Showing your latest ${visibleSessions.length} of ${sortedSessions.length} sessions.`;
 
-  recentSessionsListEl.innerHTML = visibleSessions
+  recentSessionsListEl.innerHTML = `
+    ${renderSessionCards(visibleSessions, gameMap)}
+    ${
+      hiddenSessions.length
+        ? `
+            <details class="sessions-expand-panel">
+              <summary>Show ${hiddenSessions.length} older session${
+                hiddenSessions.length === 1 ? "" : "s"
+              }</summary>
+              <div class="sessions-expand-list">
+                ${renderSessionCards(hiddenSessions, gameMap)}
+              </div>
+            </details>
+          `
+        : ""
+    }
+  `;
+}
+
+function renderSessionCards(sessions, gameMap) {
+  return sessions
     .map((session) => {
       const relatedGame = gameMap.get(session.gameId);
       const gameTitle = escapeHtml(relatedGame?.title || "Unknown game");

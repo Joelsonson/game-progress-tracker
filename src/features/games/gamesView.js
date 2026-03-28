@@ -474,11 +474,14 @@ export function renderGameCard(game, sessionStats) {
         }
       </div>
 
-      <div class="game-actions" aria-label="Game actions for ${escapeAttribute(
-        game.title
-      )}">
-        ${renderGameActions(game)}
-      </div>
+      <details class="game-actions-menu">
+        <summary class="secondary-button game-actions-toggle">Actions</summary>
+        <div class="game-actions" aria-label="Game actions for ${escapeAttribute(
+          game.title
+        )}">
+          ${renderGameActions(game)}
+        </div>
+      </details>
     </article>
   `;
 }
@@ -679,6 +682,7 @@ export function createActionButton(action, id, options) {
 
   return `
     <button
+      type="button"
       class="${options.className}"
       data-action="${action}"
       data-id="${id}"${statusAttr}

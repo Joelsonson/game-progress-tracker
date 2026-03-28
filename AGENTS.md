@@ -26,6 +26,7 @@ Read this file first before making changes. Use it as the routing map for what t
   - App boot
   - Global event binding
   - Full render pass
+  - stored theme preference sync
 
 ### Data Layer
 
@@ -69,6 +70,7 @@ Read this file first before making changes. Use it as the routing map for what t
   - main quest
   - tracker cards
   - completion spotlight
+  - compact tracker action menus
 
 - `src/features/sessions/sessionsController.js`
   - log session flow
@@ -79,6 +81,7 @@ Read this file first before making changes. Use it as the routing map for what t
     - log session
     - add game panel
     - recent sessions
+  - recent sessions defaults to top 3 with expand-to-see-more
 
 - `src/features/journey/journeyController.js`
   - journey clicks
@@ -205,6 +208,12 @@ Read this file first before making changes. Use it as the routing map for what t
 - Read `src/features/backup/backupController.js`
 - Read `src/data/metaRepo.js`
 - Read `src/data/db.js`
+
+### If the request is about theme, palette, or light/dark mode
+
+- Read `styles/tokens.css` first
+- Read `src/main.js` for stored theme preference behavior
+- Check `index.html` for settings UI
 
 ### If the request is about app-wide progress, summaries, or percentages
 

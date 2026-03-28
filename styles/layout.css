@@ -323,9 +323,9 @@
 }
 
 .badge-main {
-  background: rgba(96, 165, 250, 0.16);
+  background: rgba(var(--accent-rgb), 0.14);
   color: var(--accent-2);
-  border: 1px solid rgba(96, 165, 250, 0.35);
+  border: 1px solid rgba(var(--accent-rgb), 0.24);
 }
 
 .badge-status {
@@ -333,52 +333,52 @@
 }
 
 .status-backlog {
-  background: rgba(156, 163, 175, 0.12);
-  color: #d1d5db;
-  border-color: rgba(156, 163, 175, 0.25);
+  background: rgba(var(--ink-rgb), 0.06);
+  color: var(--muted);
+  border-color: rgba(var(--ink-rgb), 0.12);
 }
 
 .status-in-progress {
-  background: rgba(251, 191, 36, 0.12);
+  background: rgba(164, 118, 63, 0.12);
   color: var(--warning);
-  border-color: rgba(251, 191, 36, 0.25);
+  border-color: rgba(164, 118, 63, 0.22);
 }
 
 .status-paused {
-  background: rgba(192, 132, 252, 0.12);
-  color: #d8b4fe;
-  border-color: rgba(192, 132, 252, 0.25);
+  background: rgba(123, 109, 141, 0.12);
+  color: var(--paused);
+  border-color: rgba(123, 109, 141, 0.22);
 }
 
 .status-completed {
-  background: rgba(52, 211, 153, 0.12);
+  background: rgba(95, 122, 86, 0.12);
   color: var(--success);
-  border-color: rgba(52, 211, 153, 0.25);
+  border-color: rgba(95, 122, 86, 0.22);
 }
 
 .status-dropped {
-  background: rgba(248, 113, 113, 0.12);
-  color: #fecaca;
-  border-color: rgba(248, 113, 113, 0.25);
+  background: rgba(164, 86, 75, 0.12);
+  color: var(--danger);
+  border-color: rgba(164, 86, 75, 0.22);
 }
 
 .badge-progress {
-  background: rgba(52, 211, 153, 0.12);
+  background: rgba(95, 122, 86, 0.12);
   color: var(--success);
-  border: 1px solid rgba(52, 211, 153, 0.25);
+  border: 1px solid rgba(95, 122, 86, 0.22);
 }
 
 .badge-neutral {
-  background: rgba(156, 163, 175, 0.12);
-  color: #d1d5db;
-  border: 1px solid rgba(156, 163, 175, 0.25);
+  background: rgba(var(--ink-rgb), 0.06);
+  color: var(--muted);
+  border: 1px solid rgba(var(--ink-rgb), 0.12);
 }
 
 .session-xp,
 .badge-tier {
-  background: rgba(96, 165, 250, 0.16);
+  background: rgba(var(--accent-rgb), 0.14);
   color: var(--accent-2);
-  border: 1px solid rgba(96, 165, 250, 0.3);
+  border: 1px solid rgba(var(--accent-rgb), 0.24);
 }
 
 .badge-tier.tier-bronze {
@@ -427,7 +427,7 @@
 .game-notes,
 .session-note {
   margin: 0;
-  color: #d1d5db;
+  color: var(--text);
   white-space: pre-wrap;
 }
 
@@ -435,8 +435,11 @@
   margin-top: 14px;
   border-radius: 14px;
   padding: 12px;
-  background: rgba(15, 23, 42, 0.72);
-  border: 1px solid var(--border);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.88), rgba(var(--surface-rgb), 0.76)),
+    rgba(var(--panel-rgb), 0.72);
+  border: 1px solid rgba(var(--accent-rgb), 0.14);
+  backdrop-filter: blur(16px);
 }
 
 .note-label {
@@ -482,9 +485,28 @@
   flex-wrap: wrap;
 }
 
+.game-actions-menu {
+  margin: 16px 16px 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.game-actions-menu summary {
+  list-style: none;
+}
+
+.game-actions-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.game-actions-toggle {
+  width: 100%;
+  justify-content: center;
+}
+
 .game-actions {
-  margin-top: 16px;
-  padding: 0 16px 16px;
+  margin-top: 0;
+  padding: 0;
 }
 
 .settings-actions {
@@ -558,6 +580,38 @@
   text-align: center;
 }
 
+.sessions-expand-panel {
+  border: 1px solid rgba(var(--accent-rgb), 0.14);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.9), rgba(var(--surface-rgb), 0.78)),
+    rgba(var(--panel-rgb), 0.74);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+}
+
+.sessions-expand-panel summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 14px 16px;
+  font-weight: 700;
+  color: var(--accent-2);
+}
+
+.sessions-expand-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.sessions-expand-panel[open] summary {
+  border-bottom: 1px solid rgba(var(--accent-rgb), 0.12);
+}
+
+.sessions-expand-list {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
 /* Book Theme */
 .level-chip,
 .section-count,
@@ -606,6 +660,23 @@
   background:
     linear-gradient(180deg, rgba(var(--panel-rgb), 0.08), rgba(var(--ink-rgb), 0.14)),
     linear-gradient(90deg, rgba(var(--surface-rgb), 0.04), rgba(var(--ink-rgb), 0.08));
+}
+
+.quest-hero-banner {
+  border-color: rgba(var(--accent-rgb), 0.16);
+}
+
+.quest-hero-banner::after {
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.1), rgba(var(--ink-rgb), 0.08)),
+    linear-gradient(90deg, rgba(var(--panel-rgb), 0.18), rgba(var(--panel-rgb), 0.02));
+}
+
+.quest-hero-text h2,
+.completion-card-heading h3,
+.game-title {
+  color: var(--text);
+  text-shadow: 0 1px 0 rgba(var(--panel-rgb), 0.45);
 }
 
 .quest-cover-thumb,

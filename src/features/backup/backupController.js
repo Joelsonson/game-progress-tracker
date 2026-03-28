@@ -80,7 +80,7 @@ export async function handleImportData(event) {
     await replaceAllData(appState.db, { games, sessions, meta });
     gameForm.reset();
     sessionForm.reset();
-    meaningfulProgressInput.checked = true;
+    meaningfulProgressInput.checked = false;
 
     showMessage(
       settingsMessage,
@@ -108,7 +108,7 @@ export async function handleClearData() {
     await clearAllData(appState.db);
     gameForm.reset();
     sessionForm.reset();
-    meaningfulProgressInput.checked = true;
+    meaningfulProgressInput.checked = false;
     showMessage(settingsMessage, "Cleared all local tracker data.");
     await appState.renderApp();
   } catch (error) {
