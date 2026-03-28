@@ -4,9 +4,10 @@ import { appState } from "../../core/state.js";
 
 export function handleScreenNavClick(event) {
   const targetScreenId = event.currentTarget?.dataset.screenTarget;
+  const openPanel = event.currentTarget?.dataset.openPanel;
   if (!targetScreenId) return;
 
-  if (targetScreenId === "add" && addGamePanel) {
+  if (openPanel === "add-game" && addGamePanel) {
     addGamePanel.open = true;
   }
 
@@ -14,6 +15,12 @@ export function handleScreenNavClick(event) {
     store: true,
     scrollToTop: isMobileViewport(),
   });
+
+  if (openPanel === "add-game" && addGamePanel) {
+    window.requestAnimationFrame(() => {
+      addGamePanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
 }
 
 export function handleViewportResize() {

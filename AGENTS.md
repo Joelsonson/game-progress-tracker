@@ -72,6 +72,10 @@ Read this file first before making changes. Use it as the routing map for what t
 - `src/features/sessions/sessionsView.js`
   - recent sessions UI
   - session target dropdown
+  - sessions screen ordering is:
+    - log session
+    - add game panel
+    - recent sessions
 
 - `src/features/journey/journeyController.js`
   - journey clicks
@@ -84,7 +88,8 @@ Read this file first before making changes. Use it as the routing map for what t
   - simulation
 - `src/features/journey/journeyView.js`
   - home journey UI
-  - full journey UI
+  - journey screen UI
+  - character sheet UI
   - journey modals
 - `src/features/journey/journeyEvents.js`
   - event and choice normalization
@@ -120,12 +125,19 @@ Read this file first before making changes. Use it as the routing map for what t
 
 - Read `src/main.js`
 - Read `src/features/navigation/navigation.js`
+- Check `index.html` for the mobile screen order:
+  - Home
+  - Journey
+  - Character
+  - Tracker
+  - Sessions
 - Check `styles/screens.css`
 
 ### If the request is about adding or editing games
 
 - Read `src/features/games/gamesController.js`
 - Read `src/features/games/gamesView.js`
+- Check `index.html` because the add game panel now lives inside the Sessions screen
 - Read `src/data/gamesRepo.js`
 - Check `src/core/formatters.js` for shared summaries or sorting
 
@@ -133,6 +145,7 @@ Read this file first before making changes. Use it as the routing map for what t
 
 - Read `src/features/sessions/sessionsController.js`
 - Read `src/features/sessions/sessionsView.js`
+- Check `index.html` because the Sessions screen now also contains the add game panel and settings panel
 - Read `src/data/sessionsRepo.js`
 - Check `src/core/formatters.js`
 
@@ -146,8 +159,30 @@ Read this file first before making changes. Use it as the routing map for what t
 ### If the request is about journey UI only
 
 - Read `src/features/journey/journeyView.js`
+- Note that the RPG UI is now split:
+  - Journey screen for travel progress, events, and travel log
+  - Character screen for portrait, health, hunger, stats, class, radar chart, and inventory
 - Check `styles/components.css`
 - Check `styles/screens.css`
+
+### If the request is about the character sheet or RPG build UI
+
+- Read `src/features/journey/journeyView.js`
+- Read `src/features/journey/journeyController.js`
+- Read `src/features/journey/journeyEngine.js`
+- Check `styles/components.css`
+- Check `styles/screens.css`
+
+### If the request is about journey sprites or animation previews
+
+- Read `src/features/journey/journeyView.js`
+- Check `styles/components.css`
+- Read `assets/journey/sprites/README.md`
+- The browser runtime should use exported PNG sprite sheets, not `.ase` source files
+- Keep `.ase` files in the repo as editable source when helpful
+- JSON sprite metadata is optional reference data for frame count, frame size, and timing
+- The travel animation preview is wired from `assets/journey/sprites/Walking.png`
+- The character portrait is wired from `assets/journey/sprites/Idlethink.png`
 
 ### If the request is about image cropping, art uploads, or completion cards
 
@@ -177,6 +212,8 @@ Read this file first before making changes. Use it as the routing map for what t
 - Do not put DOM rendering into repo files.
 - If a rule change affects text and numbers, update the engine/helper first, then update the view copy.
 - If UI text references a computed value, verify whether the calculation lives in `src/core/formatters.js` or a feature engine before changing the markup.
+- For journey sprite changes, update the asset in `assets/journey/sprites/` first, then verify any frame count or timing constants in `src/features/journey/journeyView.js`.
+- Keep the journey screen focused on travel-state UI and the character screen focused on character-sheet UI unless the request explicitly merges them again.
 
 ## Prompt Shortcut
 

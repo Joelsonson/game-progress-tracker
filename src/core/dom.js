@@ -42,6 +42,8 @@ export const recentSessionsListEl = document.querySelector("#recentSessionsList"
 export const journeyContentEl = document.querySelector("#journeyContent");
 export const journeyMessageEl = document.querySelector("#journeyMessage");
 export const homeJourneyContentEl = document.querySelector("#homeJourneyContent");
+export const characterContentEl = document.querySelector("#characterContent");
+export const characterMessageEl = document.querySelector("#characterMessage");
 
 export const coverArtPickerInput = document.querySelector("#coverArtPicker");
 export const bannerArtPickerInput = document.querySelector("#bannerArtPicker");

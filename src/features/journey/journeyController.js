@@ -2,7 +2,7 @@ import { normalizeGameRecord, normalizeSessionRecord } from "../../data/db.js";
 import { getAllGames } from "../../data/gamesRepo.js";
 import { getMeta, setMeta } from "../../data/metaRepo.js";
 import { getAllSessions } from "../../data/sessionsRepo.js";
-import { journeyMessageEl } from "../../core/dom.js";
+import { characterMessageEl, journeyMessageEl } from "../../core/dom.js";
 import {
   IDLE_JOURNEY_META_KEY,
   JOURNEY_CLASS_META,
@@ -30,6 +30,11 @@ import {
   syncJourneyState,
 } from "./journeyEngine.js";
 import { closeJourneyEventModal, closeJourneyOutcomeModal, openJourneyEventModal, openJourneyOutcomeModal } from "./journeyView.js";
+
+function showJourneyFeedback(message, isError = false) {
+  showMessage(journeyMessageEl, message, isError);
+  showMessage(characterMessageEl, message, isError);
+}
 
 export async function handleHomeJourneyClick(event) {
   const button = event.target.closest("button[data-home-action]");
@@ -75,11 +80,10 @@ export async function handleHomeJourneyClick(event) {
       return;
     }
 
-    showMessage(journeyMessageEl, "That event is no longer waiting.", true);
+    showJourneyFeedback("That event is no longer waiting.", true);
   } catch (error) {
     console.error("Failed to open journey event:", error);
-    showMessage(
-      journeyMessageEl,
+    showJourneyFeedback(
       getErrorMessage(error, "Could not open that journey event."),
       true
     );
@@ -112,7 +116,7 @@ export async function handleJourneyClick(event) {
       const pendingEvent = state.pendingEvents.find((entry) => entry.id === eventId);
 
       if (!pendingEvent) {
-        showMessage(journeyMessageEl, "That event is no longer waiting.", true);
+        showJourneyFeedback("That event is no longer waiting.", true);
         await appState.renderApp();
         return;
       }
@@ -127,8 +131,7 @@ export async function handleJourneyClick(event) {
         nameInput instanceof HTMLInputElement ? nameInput.value.trim() : "";
       state.characterName = nextName.slice(0, 30);
       await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
-      showMessage(
-        journeyMessageEl,
+      showJourneyFeedback(
         state.characterName
           ? `Character name set to ${state.characterName}.`
           : "Character name cleared."
@@ -140,7 +143,7 @@ export async function handleJourneyClick(event) {
     if (action === "set-class") {
       const classType = button.dataset.class;
       if (!JOURNEY_CLASS_META[classType] || !hasJourneyClassUnlocked(state, classType)) {
-        showMessage(journeyMessageEl, "That discipline has not been unlocked yet.", true);
+        showJourneyFeedback("That discipline has not been unlocked yet.", true);
         return;
       }
 
@@ -151,10 +154,7 @@ export async function handleJourneyClick(event) {
         new Date().toISOString()
       );
       await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
-      showMessage(
-        journeyMessageEl,
-        `${JOURNEY_CLASS_META[classType].label} equipped.`
-      );
+      showJourneyFeedback(`${JOURNEY_CLASS_META[classType].label} equipped.`);
       await appState.renderApp();
       return;
     }
@@ -162,13 +162,13 @@ export async function handleJourneyClick(event) {
     if (action === "spend-stat") {
       const statKey = button.dataset.stat;
       if (!JOURNEY_STAT_KEYS.includes(statKey)) {
-        showMessage(journeyMessageEl, "That stat cannot be increased.", true);
+        showJourneyFeedback("That stat cannot be increased.", true);
         return;
       }
 
       const unspent = getUnspentSkillPoints(state, journeyLevel);
       if (unspent <= 0) {
-        showMessage(journeyMessageEl, "No skill points available right now.", true);
+        showJourneyFeedback("No skill points available right now.", true);
         return;
       }
 
@@ -179,10 +179,7 @@ export async function handleJourneyClick(event) {
         new Date().toISOString()
       );
       await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
-      showMessage(
-        journeyMessageEl,
-        `${JOURNEY_STAT_META[statKey].label} increased.`
-      );
+      showJourneyFeedback(`${JOURNEY_STAT_META[statKey].label} increased.`);
       await appState.renderApp();
       return;
     }
@@ -194,7 +191,7 @@ export async function handleJourneyClick(event) {
         Date.now() - hours * 60 * 60 * 1000
       ).toISOString();
       await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
-      showMessage(journeyMessageEl, `Advanced journey time by ${hours}h.`);
+      showJourneyFeedback(`Advanced journey time by ${hours}h.`);
       await appState.renderApp();
       return;
     }
@@ -202,7 +199,7 @@ export async function handleJourneyClick(event) {
     if (action === "debug-undo") {
       const previousSnapshot = state.debugHistory?.[0];
       if (!previousSnapshot) {
-        showMessage(journeyMessageEl, "No debug snapshot to restore.", true);
+        showJourneyFeedback("No debug snapshot to restore.", true);
         return;
       }
 
@@ -212,7 +209,7 @@ export async function handleJourneyClick(event) {
         debugHistory: remainingHistory,
       });
       await setMeta(appState.db, IDLE_JOURNEY_META_KEY, restoredState);
-      showMessage(journeyMessageEl, "Restored the previous debug snapshot.");
+      showJourneyFeedback("Restored the previous debug snapshot.");
       await appState.renderApp();
       return;
     }
@@ -227,7 +224,7 @@ export async function handleJourneyClick(event) {
       );
 
       if (!candidates.length) {
-        showMessage(journeyMessageEl, "No event candidates are available right now.", true);
+        showJourneyFeedback("No event candidates are available right now.", true);
         return;
       }
 
@@ -238,7 +235,7 @@ export async function handleJourneyClick(event) {
         JOURNEY_PENDING_EVENT_LIMIT
       );
       await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
-      showMessage(journeyMessageEl, `Forced event: ${forcedEvent.title}.`);
+      showJourneyFeedback(`Forced event: ${forcedEvent.title}.`);
       await appState.renderApp();
       openJourneyEventModal(forcedEvent);
       return;
@@ -252,14 +249,14 @@ export async function handleJourneyClick(event) {
       if (!confirmed) return;
 
       await setMeta(appState.db, IDLE_JOURNEY_META_KEY, null);
-      showMessage(journeyMessageEl, "Idle journey reset. Tracker history kept.");
+      showJourneyFeedback("Idle journey reset. Tracker history kept.");
       await appState.renderApp();
       return;
     }
 
     if (action === "use-ration") {
       if (supplies.availableRations <= 0) {
-        showMessage(journeyMessageEl, "No rations banked from your tracker yet.", true);
+        showJourneyFeedback("No rations banked from your tracker yet.", true);
         return;
       }
 
@@ -276,15 +273,14 @@ export async function handleJourneyClick(event) {
         new Date().toISOString()
       );
       await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
-      showMessage(journeyMessageEl, "Used 1 ration to restore hunger.");
+      showJourneyFeedback("Used 1 ration to restore hunger.");
       await appState.renderApp();
       return;
     }
 
     if (action === "use-tonic") {
       if (supplies.availableTonics <= 0) {
-        showMessage(
-          journeyMessageEl,
+        showJourneyFeedback(
           "No tonics earned yet. Meaningful progress and good choices are how you build them.",
           true
         );
@@ -304,13 +300,12 @@ export async function handleJourneyClick(event) {
         new Date().toISOString()
       );
       await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
-      showMessage(journeyMessageEl, "Used 1 tonic to restore health.");
+      showJourneyFeedback("Used 1 tonic to restore health.");
       await appState.renderApp();
     }
   } catch (error) {
     console.error("Failed to update idle journey:", error);
-    showMessage(
-      journeyMessageEl,
+    showJourneyFeedback(
       getErrorMessage(error, "Could not update the idle journey."),
       true
     );
@@ -362,7 +357,7 @@ export async function resolveJourneyEventChoice(eventId, choiceId) {
 
     if (!eventEntry || !choice) {
       closeJourneyEventModal();
-      showMessage(journeyMessageEl, "That event is no longer available.", true);
+      showJourneyFeedback("That event is no longer available.", true);
       await appState.renderApp();
       return;
     }
@@ -387,13 +382,12 @@ export async function resolveJourneyEventChoice(eventId, choiceId) {
     await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
     closeJourneyEventModal();
     openJourneyOutcomeModal(eventEntry, choice, resultMessage, outcomeItems);
-    showMessage(journeyMessageEl, resultMessage);
+    showJourneyFeedback(resultMessage);
     await appState.renderApp();
   } catch (error) {
     console.error("Failed to resolve journey event:", error);
     closeJourneyEventModal();
-    showMessage(
-      journeyMessageEl,
+    showJourneyFeedback(
       getErrorMessage(error, "Could not resolve that event."),
       true
     );

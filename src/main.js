@@ -4,6 +4,7 @@ import { getMeta } from "./data/metaRepo.js";
 import { getAllSessions } from "./data/sessionsRepo.js";
 import {
   bannerArtPickerInput,
+  characterContentEl,
   clearDataButton,
   clearJourneyButton,
   completionSpotlightEl,
@@ -44,6 +45,7 @@ import {
   closeJourneyEventModal,
   closeJourneyOutcomeModal,
   initializeJourneySpritePreviews,
+  renderCharacterSheet,
   renderHomeJourney,
   renderIdleJourney,
 } from "./features/journey/journeyView.js";
@@ -73,6 +75,7 @@ function bindEvents() {
   gamesListEl.addEventListener("click", handleListClick);
   completionSpotlightEl.addEventListener("click", handleListClick);
   journeyContentEl?.addEventListener("click", handleJourneyClick);
+  characterContentEl?.addEventListener("click", handleJourneyClick);
   homeJourneyContentEl?.addEventListener("click", handleHomeJourneyClick);
   coverArtPickerInput.addEventListener("change", () => handleArtPickerChange("cover"));
   bannerArtPickerInput.addEventListener("change", () => handleArtPickerChange("banner"));
@@ -137,6 +140,7 @@ export async function renderApp() {
   renderPlayerProgress(xpSummary);
   renderStats(sortedGames, sessions);
   renderIdleJourney(idleJourney, sortedGames, sessions, xpSummary);
+  renderCharacterSheet(idleJourney, sortedGames, sessions, xpSummary);
   initializeJourneySpritePreviews();
   renderCompletionSpotlight(sortedGames, sessionStats);
   renderMainQuest(sortedGames, sessionStats);

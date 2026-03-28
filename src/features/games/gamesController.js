@@ -30,7 +30,6 @@ import { appState } from "../../core/state.js";
 import { openFilePicker, scrollDeck, showMessage } from "../../core/ui.js";
 import { downloadCompletionCard } from "../art/completionCard.js";
 import { optimizeUploadedImage } from "../art/imageCropper.js";
-import { isMobileViewport, setActiveScreen } from "../navigation/navigation.js";
 
 export async function repairGamesIfNeeded() {
   const games = await getAllGames(appState.db);
@@ -117,10 +116,6 @@ export async function handleAddGame(event) {
     }
 
     await appState.renderApp();
-    setActiveScreen("tracker", {
-      store: true,
-      scrollToTop: isMobileViewport(),
-    });
   } catch (error) {
     if (isCropCancelError(error)) {
       showMessage(formMessage, "Image crop cancelled.", true);

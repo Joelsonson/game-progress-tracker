@@ -6,11 +6,11 @@
     <title>Tabi no Kiroku — Journey Log</title>
     <meta name="theme-color" content="#020617" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20260328a" />
-    <link rel="stylesheet" href="./styles/tokens.css?v=20260327a" />
-    <link rel="stylesheet" href="./styles/base.css?v=20260327a" />
-    <link rel="stylesheet" href="./styles/layout.css?v=20260327a" />
-    <link rel="stylesheet" href="./styles/components.css?v=20260327a" />
-    <link rel="stylesheet" href="./styles/screens.css?v=20260327a" />
+    <link rel="stylesheet" href="./styles/tokens.css?v=20260328b" />
+    <link rel="stylesheet" href="./styles/base.css?v=20260328b" />
+    <link rel="stylesheet" href="./styles/layout.css?v=20260328b" />
+    <link rel="stylesheet" href="./styles/components.css?v=20260328b" />
+    <link rel="stylesheet" href="./styles/screens.css?v=20260328b" />
   </head>
   <body>
     <main class="app-shell">
@@ -32,6 +32,10 @@
             <span class="nav-chip-icon">🧭</span>
             <span>Journey</span>
           </button>
+          <button type="button" class="nav-chip-button" data-screen-target="character">
+            <span class="nav-chip-icon">🧍</span>
+            <span>Character</span>
+          </button>
           <button type="button" class="nav-chip-button" data-screen-target="tracker">
             <span class="nav-chip-icon">🎮</span>
             <span>Tracker</span>
@@ -39,10 +43,6 @@
           <button type="button" class="nav-chip-button" data-screen-target="sessions">
             <span class="nav-chip-icon">⏱️</span>
             <span>Sessions</span>
-          </button>
-          <button type="button" class="nav-chip-button" data-screen-target="add">
-            <span class="nav-chip-icon">➕</span>
-            <span>Add</span>
           </button>
         </div>
       </section>
@@ -92,14 +92,22 @@
               <button type="button" class="secondary-button quick-action-button" data-screen-target="sessions">
                 Log session
               </button>
+              <button
+                type="button"
+                class="secondary-button quick-action-button"
+                data-screen-target="sessions"
+                data-open-panel="add-game"
+              >
+                Add game
+              </button>
               <button type="button" class="secondary-button quick-action-button" data-screen-target="tracker">
                 View tracker
               </button>
               <button type="button" class="secondary-button quick-action-button" data-screen-target="journey">
                 Open journey
               </button>
-              <button type="button" class="primary-button quick-action-button" data-screen-target="add">
-                Add game
+              <button type="button" class="primary-button quick-action-button" data-screen-target="character">
+                Character
               </button>
             </div>
           </section>
@@ -158,13 +166,30 @@
                 <p class="eyebrow">Idle journey</p>
                 <h2>Another world, day by day</h2>
                 <p class="muted-text">
-                  You just got transported to another world with nothing but your clothes and a strange keepsake. Your new life starts today.
+                  Focus this view on the road itself: progress, events, and the latest travel story beats.
                 </p>
               </div>
             </div>
 
             <div id="journeyContent" class="journey-shell"></div>
             <p id="journeyMessage" class="form-message"></p>
+          </section>
+        </section>
+
+        <section id="screenCharacter" class="mobile-screen" data-screen="character">
+          <section class="panel journey-panel">
+            <div class="section-header">
+              <div>
+                <p class="eyebrow">Character</p>
+                <h2>Your sheet at a glance</h2>
+                <p class="muted-text">
+                  Portrait, health, hunger, stats, skills, and equipment live here so the journey screen can stay cleaner.
+                </p>
+              </div>
+            </div>
+
+            <div id="characterContent" class="character-shell"></div>
+            <p id="characterMessage" class="form-message"></p>
           </section>
         </section>
 
@@ -243,22 +268,7 @@
             </form>
           </section>
 
-          <section class="panel">
-            <div class="section-header">
-              <div>
-                <h2>Recent sessions</h2>
-                <p id="recentSessionsSummary" class="muted-text">
-                  No sessions logged yet.
-                </p>
-              </div>
-            </div>
-
-            <div id="recentSessionsList" class="sessions-list"></div>
-          </section>
-        </section>
-
-        <section id="screenAdd" class="mobile-screen" data-screen="add">
-          <details id="addGamePanel" class="panel add-game-panel" open>
+          <details id="addGamePanel" class="panel add-game-panel">
             <summary>Add a game</summary>
 
             <form id="gameForm" class="stack-form">
@@ -338,6 +348,19 @@
               <p id="formMessage" class="form-message"></p>
             </form>
           </details>
+
+          <section class="panel">
+            <div class="section-header">
+              <div>
+                <h2>Recent sessions</h2>
+                <p id="recentSessionsSummary" class="muted-text">
+                  No sessions logged yet.
+                </p>
+              </div>
+            </div>
+
+            <div id="recentSessionsList" class="sessions-list"></div>
+          </section>
 
           <details id="settingsPanel" class="panel settings-panel">
             <summary>Settings &amp; data</summary>
@@ -558,6 +581,6 @@
       </div>
     </div>
 
-    <script type="module" src="./src/main.js?v=20260327a"></script>
+    <script type="module" src="./src/main.js?v=20260328b"></script>
   </body>
 </html>

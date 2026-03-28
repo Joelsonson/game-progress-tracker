@@ -7,7 +7,10 @@
   .journey-resource-grid,
   .journey-class-grid,
   .journey-stat-grid,
-  .journey-log-grid {
+  .journey-log-grid,
+  .journey-adventure-grid,
+  .character-build-grid,
+  .character-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -15,7 +18,8 @@
   .crop-modal-layout,
   .journey-hero-top,
   .journey-utility-row,
-  .journey-character-name-row {
+  .journey-character-name-row,
+  .character-hero-layout {
     grid-template-columns: 1fr;
   }
 
@@ -33,7 +37,10 @@
   .journey-resource-grid,
   .journey-class-grid,
   .journey-stat-grid,
-  .journey-log-grid {
+  .journey-log-grid,
+  .journey-adventure-grid,
+  .character-build-grid,
+  .character-summary-grid {
     grid-template-columns: 1fr;
   }
 
@@ -110,7 +117,7 @@
 }
 
 .quick-action-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .nav-chip-button,
@@ -265,6 +272,7 @@
 
   .journey-home-shell .summary-row,
   .journey-shell .summary-row,
+  .character-shell .summary-row,
   .game-card .summary-row {
     flex-wrap: wrap;
     overflow-x: visible;
@@ -450,6 +458,10 @@
     grid-template-columns: 1fr;
   }
 
+  .character-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .mobile-quick-switch {
     top: 10px;
   }
@@ -473,6 +485,11 @@
   .journey-sprite-preview {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .character-summary-grid,
+  .character-radar-legend {
+    grid-template-columns: 1fr;
   }
 
   .journey-event-header {

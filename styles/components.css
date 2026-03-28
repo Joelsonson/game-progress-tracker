@@ -632,6 +632,261 @@
   font-size: 1.15rem;
 }
 
+.journey-route-card,
+.character-hero-card {
+  display: grid;
+  gap: 16px;
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  border-radius: 20px;
+  padding: 18px;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(15, 23, 42, 0.62)),
+    radial-gradient(circle at top left, rgba(96, 165, 250, 0.16), transparent 35%);
+}
+
+.character-shell,
+.journey-adventure-grid,
+.character-build-grid,
+.character-resource-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.journey-adventure-grid,
+.character-build-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.character-hero-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.7fr) minmax(0, 1.3fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.character-portrait-panel,
+.character-identity-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.character-portrait-panel {
+  align-content: start;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(96, 165, 250, 0.16);
+  background:
+    radial-gradient(circle at top, rgba(96, 165, 250, 0.16), transparent 44%),
+    rgba(2, 6, 23, 0.7);
+}
+
+.journey-sprite-stage-portrait {
+  justify-self: center;
+}
+
+.character-portrait-copy,
+.journey-debug-panel-body {
+  display: grid;
+  gap: 8px;
+}
+
+.character-portrait-copy h4,
+.character-portrait-copy p {
+  margin: 0;
+}
+
+.character-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.character-resource-stack {
+  margin-top: 4px;
+}
+
+.character-resource-card {
+  display: grid;
+  gap: 10px;
+}
+
+.character-resource-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.journey-inline-help {
+  position: relative;
+}
+
+.journey-inline-help summary {
+  list-style: none;
+}
+
+.journey-inline-help summary::-webkit-details-marker {
+  display: none;
+}
+
+.journey-info-button {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(96, 165, 250, 0.28);
+  background: rgba(96, 165, 250, 0.12);
+  color: #dbeafe;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.journey-inline-help[open] .journey-info-button {
+  background: rgba(52, 211, 153, 0.14);
+  border-color: rgba(52, 211, 153, 0.32);
+  color: #d1fae5;
+}
+
+.journey-inline-help-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 3;
+  width: min(260px, 72vw);
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  background: rgba(2, 6, 23, 0.96);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.32);
+}
+
+.journey-inline-help-popover p {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.journey-inline-help-popover p + p {
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.character-radar-card {
+  gap: 16px;
+}
+
+.character-radar-shell {
+  display: grid;
+  gap: 14px;
+}
+
+.character-radar-chart {
+  width: 100%;
+  max-width: 360px;
+  justify-self: center;
+}
+
+.character-radar-rings polygon {
+  fill: rgba(96, 165, 250, 0.04);
+  stroke: rgba(148, 163, 184, 0.18);
+  stroke-width: 1;
+}
+
+.character-radar-axes line {
+  stroke: rgba(148, 163, 184, 0.2);
+  stroke-width: 1;
+}
+
+.character-radar-area {
+  fill: rgba(52, 211, 153, 0.18);
+}
+
+.character-radar-outline {
+  fill: none;
+  stroke: rgba(52, 211, 153, 0.92);
+  stroke-width: 2.4;
+}
+
+.character-radar-points circle {
+  fill: #34d399;
+  stroke: rgba(2, 6, 23, 0.9);
+  stroke-width: 1.5;
+}
+
+.character-radar-labels text {
+  fill: #dbeafe;
+  font-size: 10px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.character-radar-legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.character-radar-legend-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(15, 23, 42, 0.78);
+}
+
+.character-radar-legend-item span {
+  color: var(--muted);
+}
+
+.character-radar-legend-item strong {
+  color: var(--text);
+}
+
+.journey-story-stats-compact strong {
+  font-size: 1rem;
+}
+
+.journey-debug-panel {
+  border: 1px solid rgba(251, 191, 36, 0.22);
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.56);
+}
+
+.journey-debug-panel summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 16px 18px;
+  font-weight: 800;
+}
+
+.journey-debug-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.journey-debug-panel summary::after {
+  content: " +";
+  color: var(--warning);
+}
+
+.journey-debug-panel[open] summary::after {
+  content: " −";
+}
+
+.journey-debug-panel[open] summary {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.journey-debug-panel-body {
+  padding: 16px 18px 18px;
+}
+
 .journey-event-modal[hidden] {
   display: none;
 }
