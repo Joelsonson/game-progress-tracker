@@ -117,9 +117,8 @@ Read this file first before making changes. Use it as the routing map for what t
 
 - `styles/tokens.css`
   - CSS variables only
-  - book-like color palette and light/dark theme tokens
 - `styles/base.css`
-  - reset, typography, body, inputs, buttons, base form elements
+  - reset, body, inputs, buttons, base form elements
 - `styles/layout.css`
   - grids, stacks, panel layout, shared spacing structures
 - `styles/components.css`

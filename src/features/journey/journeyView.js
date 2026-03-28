@@ -23,7 +23,6 @@ import {
   escapeHtml,
   formatDateTime,
 } from "../../core/formatters.js";
-import { appState } from "../../core/state.js";
 import { syncBodyScrollLock } from "../../core/ui.js";
 import {
   buildJourneyDerived,
@@ -232,36 +231,6 @@ export function closeJourneyEventModal() {
   journeyEventModal.hidden = true;
   if (journeyEventBodyEl) journeyEventBodyEl.innerHTML = "";
   syncBodyScrollLock();
-}
-
-export function showJourneyEventThinking(choiceLabel) {
-  if (!journeyEventBodyEl) return;
-
-  const choiceButtons = journeyEventBodyEl.querySelectorAll(".journey-event-choice");
-  for (const button of choiceButtons) {
-    if (button instanceof HTMLButtonElement) {
-      button.disabled = true;
-    }
-  }
-
-  if (journeyEventBodyEl.querySelector(".journey-event-thinking")) {
-    return;
-  }
-
-  journeyEventBodyEl.insertAdjacentHTML(
-    "beforeend",
-    `
-      <div class="journey-event-thinking" aria-live="polite">
-        <span class="journey-event-thinking-title">You pause and think</span>
-        <span class="journey-event-thinking-copy">${escapeHtml(
-          choiceLabel || "The road waits for your choice to settle."
-        )}</span>
-        <span class="journey-event-thinking-dots" aria-hidden="true">
-          <span></span><span></span><span></span>
-        </span>
-      </div>
-    `
-  );
 }
 
 export function openJourneyOutcomeModal(eventEntry, choice, resultText, outcomeItems) {
@@ -510,7 +479,6 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
   if (!characterContentEl) return;
 
   const viewModel = buildJourneyViewModel(state, games, sessions, xpSummary);
-  const showNameEditor = !viewModel.state.characterName || appState.editingCharacterName;
 
   characterContentEl.innerHTML = `
     <section class="character-hero-card">
@@ -524,46 +492,26 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
         <div class="character-identity-panel">
           <div class="journey-title-row">
             <h3>${escapeHtml(viewModel.displayName)}</h3>
-            ${
-              viewModel.state.characterName
-                ? `
-                    <button
-                      type="button"
-                      class="character-name-edit-button"
-                      data-journey-action="toggle-name-editor"
-                      aria-label="Edit character name"
-                    >
-                      ✎
-                    </button>
-                  `
-                : ""
-            }
             <span class="journey-chip">${escapeHtml(viewModel.classLabel)}</span>
             <span class="journey-chip">${escapeHtml(viewModel.statusLabel)}</span>
           </div>
 
-          ${
-            showNameEditor
-              ? `
-                  <div class="journey-character-name-row">
-                    <input
-                      id="journeyCharacterNameInput"
-                      type="text"
-                      maxlength="30"
-                      placeholder="Name your character"
-                      value="${escapeAttribute(viewModel.state.characterName)}"
-                    />
-                    <button
-                      type="button"
-                      class="secondary-button"
-                      data-journey-action="save-name"
-                    >
-                      Save name
-                    </button>
-                  </div>
-                `
-              : ""
-          }
+          <div class="journey-character-name-row">
+            <input
+              id="journeyCharacterNameInput"
+              type="text"
+              maxlength="30"
+              placeholder="Name your character"
+              value="${escapeAttribute(viewModel.state.characterName)}"
+            />
+            <button
+              type="button"
+              class="secondary-button"
+              data-journey-action="save-name"
+            >
+              Save name
+            </button>
+          </div>
 
           <div class="character-vitals-grid">
             ${renderCharacterVitalChip({
@@ -1020,9 +968,9 @@ function renderCharacterResourceCard(config) {
       <div class="character-resource-header">
         <div class="journey-title-row">
           <h4>${escapeHtml(config.title)}</h4>
-          <span class="journey-chip">${escapeHtml(config.statLabel)} ${config.statValue}</span>
+          ${renderJourneyInlineHelp(config.infoLabel, config.infoLines)}
         </div>
-        ${renderJourneyInlineHelp(config.infoLabel, config.infoLines)}
+        <span class="journey-chip">${escapeHtml(config.statLabel)} ${config.statValue}</span>
       </div>
       <div class="resource-track">
         <div class="resource-fill ${config.fillClass}" style="width: ${config.percent}%"></div>
@@ -1145,7 +1093,7 @@ function renderJourneyRadarChart(stats) {
             .join("")}
         </g>
         <polygon class="character-radar-area" points="${dataPolygon}" />
-        <polygon class="character-radar-outline" points="${dataPolygon}" />
+        <polyline class="character-radar-outline" points="${dataPolygon}" />
         <g class="character-radar-points">
           ${entries
             .map((entry, index) => {
