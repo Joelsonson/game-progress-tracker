@@ -676,7 +676,8 @@
 
 .journey-character-list {
   display: grid;
-  gap: 10px;
+  gap: 12px;
+  margin-top: 8px;
 }
 
 .journey-story-stat {
@@ -776,8 +777,10 @@
   gap: 12px;
   padding: 12px 14px;
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.92), rgba(var(--surface-rgb), 0.82)),
+    rgba(var(--panel-rgb), 0.72);
 }
 
 .character-vital-icon {
@@ -787,14 +790,13 @@
   align-items: center;
   justify-content: center;
   border-radius: 14px;
-  border: 1px solid rgba(96, 165, 250, 0.24);
-  background:
-    linear-gradient(180deg, rgba(96, 165, 250, 0.18), rgba(30, 41, 59, 0.9)),
-    rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(var(--ink-rgb), 0.06);
+  background: rgba(var(--panel-rgb), 0.76);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 8px 16px rgba(0, 0, 0, 0.18);
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 8px 16px rgba(var(--ink-rgb), 0.1);
   font-size: 1.05rem;
+  font-weight: 700;
 }
 
 .character-vital-copy {
@@ -813,6 +815,18 @@
 
 .character-resource-stack {
   margin-top: 4px;
+}
+
+.character-vital-chip.is-health .character-vital-icon {
+  color: #8e453c;
+  background: rgba(164, 86, 75, 0.12);
+  border-color: rgba(164, 86, 75, 0.14);
+}
+
+.character-vital-chip.is-hunger .character-vital-icon {
+  color: #8d6a33;
+  background: rgba(164, 118, 63, 0.12);
+  border-color: rgba(164, 118, 63, 0.14);
 }
 
 .character-resource-card {
@@ -1169,14 +1183,15 @@
 }
 
 .journey-event-thinking-title {
-  font-family: "Folio", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 1rem;
   font-weight: 700;
-  color: var(--accent-2);
+  color: var(--text);
 }
 
 .journey-event-thinking-copy {
   color: var(--muted);
+  text-align: center;
 }
 
 .journey-event-thinking-dots {
@@ -1505,11 +1520,11 @@
 .journey-event-button,
 .journey-home-event-button {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   justify-items: start;
   align-items: start;
   width: 100%;
-  padding: 16px;
+  padding: 14px 16px;
   border-radius: 20px;
   text-align: left;
   white-space: normal;
@@ -1523,8 +1538,13 @@
 
 .journey-home-event-button {
   min-height: 0;
+  border-color: rgba(var(--ink-rgb), 0.08);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.96), rgba(var(--surface-rgb), 0.84)),
+    rgba(var(--panel-rgb), 0.82);
+  color: var(--text);
   box-shadow:
-    0 18px 34px rgba(var(--accent-rgb), 0.12),
+    0 18px 34px rgba(var(--ink-rgb), 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
@@ -1558,7 +1578,7 @@
 
 .journey-event-title,
 .journey-home-event-title {
-  font-size: 1.18rem;
+  font-size: 1.08rem;
   line-height: 1.25;
   font-weight: 600;
   color: var(--text);
@@ -1569,6 +1589,10 @@
   margin: 0;
   color: var(--muted);
   line-height: 1.45;
+}
+
+.journey-home-event-button .journey-event-summary {
+  color: var(--muted);
 }
 
 .journey-log-entry {
@@ -1593,7 +1617,7 @@
   display: grid;
   gap: 6px;
   justify-items: start;
-  padding: 16px;
+  padding: 14px 16px;
   border-radius: 20px;
   text-align: left;
 }
@@ -1608,6 +1632,16 @@
 .journey-event-choice-preview {
   color: var(--muted);
   line-height: 1.45;
+}
+
+.character-inventory-actions {
+  margin-top: 10px;
+}
+
+.journey-weapon-status-note {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 @keyframes journey-thinking-pulse {

@@ -198,6 +198,7 @@ Read this file first before making changes. Use it as the routing map for what t
 - Keep `.ase` files in the repo as editable source when helpful
 - JSON sprite metadata is optional reference data for frame count, frame size, and timing
 - The travel animation preview is wired from `assets/journey/sprites/Walking.png`
+- Recovery/injured travel states can use `assets/journey/sprites/injured.png`
 - The character portrait is wired from `assets/journey/sprites/Idlethink.png`
 
 ### If the request is about image cropping, art uploads, or completion cards
@@ -240,6 +241,7 @@ Read this file first before making changes. Use it as the routing map for what t
 - Do not add separate desktop layouts unless the user explicitly asks for desktop support again.
 - Preserve the current parchment-and-glass visual direction unless the user asks to restyle it again.
 - The current UI direction mixes a cleaner system-sans shell with Georgia for story-facing journey typography; keep journey events and story cards lighter and less heavy-handed than the older dark card treatment.
+- Character inventory is the place for weapon equip flow plus tonic/ration use actions; avoid reintroducing separate drop buttons for regular equipped weapons unless the user asks for that flow again.
 
 ## Prompt Shortcut
 

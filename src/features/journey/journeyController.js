@@ -437,11 +437,13 @@ export async function handleJourneyEventModalClick(event) {
 
   appState.isJourneyEventResolving = true;
   showJourneyEventThinking(
-    button.querySelector("strong")?.textContent || "The road waits for your choice."
+    buildJourneyChoiceProgressText(
+      button.querySelector(".journey-event-choice-title")?.textContent || ""
+    )
   );
 
   try {
-    await wait(2000);
+    await wait(3000);
     await resolveJourneyEventChoice(button.dataset.eventId, button.dataset.choiceId);
   } finally {
     appState.isJourneyEventResolving = false;
@@ -519,4 +521,42 @@ function wait(ms) {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
   });
+}
+
+function buildJourneyChoiceProgressText(choiceLabel) {
+  const cleaned = String(choiceLabel || "")
+    .trim()
+    .replace(/[.!?]+$/, "");
+
+  if (!cleaned) {
+    return "Carrying out your choice...";
+  }
+
+  const verbSwaps = [
+    [/^build\b/i, "Building"],
+    [/^push\b/i, "Pushing"],
+    [/^collect\b/i, "Collecting"],
+    [/^find\b/i, "Finding"],
+    [/^recover\b/i, "Recovering"],
+    [/^rest\b/i, "Resting"],
+    [/^wait\b/i, "Waiting"],
+    [/^make\b/i, "Making"],
+    [/^light\b/i, "Lighting"],
+    [/^take\b/i, "Taking"],
+    [/^hold\b/i, "Holding"],
+    [/^cross\b/i, "Crossing"],
+    [/^follow\b/i, "Following"],
+    [/^search\b/i, "Searching"],
+    [/^use\b/i, "Using"],
+    [/^eat\b/i, "Eating"],
+    [/^drink\b/i, "Drinking"],
+  ];
+
+  for (const [pattern, replacement] of verbSwaps) {
+    if (pattern.test(cleaned)) {
+      return `${cleaned.replace(pattern, replacement)}...`;
+    }
+  }
+
+  return `${cleaned}...`;
 }
