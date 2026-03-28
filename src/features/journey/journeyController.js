@@ -35,7 +35,13 @@ import {
   replaceJourneyWeapon,
   syncJourneyState,
 } from "./journeyEngine.js";
-import { closeJourneyEventModal, closeJourneyOutcomeModal, openJourneyEventModal, openJourneyOutcomeModal } from "./journeyView.js";
+import {
+  closeJourneyEventModal,
+  closeJourneyOutcomeModal,
+  openJourneyEventModal,
+  openJourneyOutcomeModal,
+  showJourneyEventThinking,
+} from "./journeyView.js";
 
 function showJourneyFeedback(message, isError = false) {
   showMessage(journeyMessageEl, message, isError);
@@ -132,12 +138,19 @@ export async function handleJourneyClick(event) {
       const nextName =
         nameInput instanceof HTMLInputElement ? nameInput.value.trim() : "";
       state.characterName = nextName.slice(0, 30);
+      appState.editingCharacterName = !state.characterName;
       await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
       showJourneyFeedback(
         state.characterName
           ? `Character name set to ${state.characterName}.`
           : "Character name cleared."
       );
+      await appState.renderApp();
+      return;
+    }
+
+    if (action === "toggle-name-editor") {
+      appState.editingCharacterName = !appState.editingCharacterName;
       await appState.renderApp();
       return;
     }
@@ -407,6 +420,10 @@ export async function handleJourneyClick(event) {
 }
 
 export async function handleJourneyEventModalClick(event) {
+  if (appState.isJourneyEventResolving) {
+    return;
+  }
+
   if (
     event.target instanceof HTMLElement &&
     event.target.dataset.closeJourneyEvent !== undefined
@@ -418,7 +435,17 @@ export async function handleJourneyEventModalClick(event) {
   const button = event.target.closest("button[data-journey-event-choice]");
   if (!button) return;
 
-  await resolveJourneyEventChoice(button.dataset.eventId, button.dataset.choiceId);
+  appState.isJourneyEventResolving = true;
+  showJourneyEventThinking(
+    button.querySelector("strong")?.textContent || "The road waits for your choice."
+  );
+
+  try {
+    await wait(2000);
+    await resolveJourneyEventChoice(button.dataset.eventId, button.dataset.choiceId);
+  } finally {
+    appState.isJourneyEventResolving = false;
+  }
 }
 
 export function handleJourneyOutcomeModalClick(event) {
@@ -486,4 +513,10 @@ export async function resolveJourneyEventChoice(eventId, choiceId) {
       true
     );
   }
+}
+
+function wait(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
 }

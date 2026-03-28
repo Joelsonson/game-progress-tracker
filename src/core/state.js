@@ -5,5 +5,7 @@ export const appState = {
   pendingArtTarget: null,
   cropSession: null,
   activeScreenId: DEFAULT_SCREEN_ID,
+  editingCharacterName: false,
+  isJourneyEventResolving: false,
   renderApp: async () => {},
 };

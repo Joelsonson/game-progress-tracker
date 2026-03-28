@@ -9,15 +9,28 @@ body {
 }
 
 body {
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: Palatino, "Palatino Linotype", "Book Antiqua", Georgia, serif;
   background:
-    radial-gradient(circle at top, rgba(96, 165, 250, 0.16), transparent 32%),
+    radial-gradient(circle at top, rgba(var(--accent-rgb), 0.14), transparent 32%),
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.94), rgba(var(--surface-rgb), 0.98)),
     var(--bg);
   color: var(--text);
   min-height: 100vh;
   max-width: 100%;
   overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.level-chip,
+.journey-overline,
+.eyebrow {
+  font-family: "Folio", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  letter-spacing: 0.01em;
 }
 
 button,
@@ -72,7 +85,9 @@ select {
 }
 
 .panel {
-  background: rgba(17, 24, 39, 0.9);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.98), rgba(var(--surface-rgb), 0.94)),
+    var(--panel);
   border: 1px solid var(--border);
   border-radius: 18px;
   padding: 20px;
@@ -172,7 +187,7 @@ textarea {
 
 .primary-button {
   background: var(--accent);
-  color: #0b1220;
+  color: var(--button-text);
 }
 
 .primary-button:hover {
@@ -180,13 +195,13 @@ textarea {
 }
 
 .secondary-button {
-  background: #243042;
+  background: var(--panel-2);
   color: var(--text);
   border: 1px solid var(--border);
 }
 
 .secondary-button:hover {
-  background: #2d3a4f;
+  background: var(--panel-3);
 }
 
 .secondary-button:disabled {
