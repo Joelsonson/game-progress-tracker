@@ -29,6 +29,8 @@ import {
   getUnspentSkillPoints,
 } from "./journeyEngine.js";
 
+const JOURNEY_TEST_IDLE_SPRITE_SRC = "./assets/journey/sprites/idle.png";
+
 export function renderHomeJourney(state, xpSummary) {
   if (!homeJourneyContentEl) return;
 
@@ -63,6 +65,8 @@ export function renderHomeJourney(state, xpSummary) {
           <p class="muted-text">
             ${escapeHtml(getJourneyActivityText(state, boss, progress, journeyStats))}
           </p>
+
+          ${renderJourneySpritePreview()}
 
           <div class="journey-progress-track">
             <div class="journey-progress-fill" style="width: ${progress.percent}%"></div>
@@ -353,6 +357,7 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
             <h4>${escapeHtml(displayName)}</h4>
             <span class="journey-chip">${escapeHtml(JOURNEY_CLASS_META[state.classType].label)}</span>
           </div>
+          ${renderJourneySpritePreview()}
           <div class="journey-character-name-row">
             <input
               id="journeyCharacterNameInput"
@@ -627,6 +632,27 @@ export function buildJourneyClassSelectionUi(state) {
 
 export function getJourneyDisplayName(state) {
   return state.characterName || "Nameless Wanderer";
+}
+
+export function renderJourneySpritePreview() {
+  return `
+    <div class="journey-sprite-preview">
+      <div class="journey-sprite-stage" aria-hidden="true">
+        <img
+          class="journey-sprite-sheet"
+          src="${JOURNEY_TEST_IDLE_SPRITE_SRC}"
+          alt=""
+        />
+      </div>
+      <div class="journey-sprite-copy">
+        <p class="journey-overline">Sprite preview</p>
+        <h4>Idle animation test</h4>
+        <p class="muted-text">
+          Loaded from <code>assets/journey/sprites/idle.png</code> so you can preview the sheet in the app.
+        </p>
+      </div>
+    </div>
+  `;
 }
 
 export function getJourneyInventoryItems(state, supplies) {

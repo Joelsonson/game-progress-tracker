@@ -264,7 +264,8 @@
   }
 
   .journey-home-shell .summary-row,
-  .journey-shell .summary-row {
+  .journey-shell .summary-row,
+  .game-card .summary-row {
     flex-wrap: wrap;
     overflow-x: visible;
   }
@@ -424,7 +425,8 @@
 }
 
 .journey-home-shell .summary-pill,
-.journey-shell .summary-pill {
+.journey-shell .summary-pill,
+.game-card .summary-pill {
   flex: 0 0 auto;
   max-width: 100%;
   white-space: normal;
@@ -466,6 +468,11 @@
   .journey-home-actions {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .journey-sprite-preview {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .journey-event-header {
