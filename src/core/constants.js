@@ -355,6 +355,5 @@ export const JOURNEY_STARTER_ITEMS = [
   "old notebook",
 ];
 
-export const MOBILE_BREAKPOINT_PX = 900;
 export const SCREEN_STORAGE_KEY = "gameTracker.activeScreen";
 export const DEFAULT_SCREEN_ID = "home";

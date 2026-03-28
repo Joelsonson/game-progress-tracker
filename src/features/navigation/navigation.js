@@ -1,5 +1,5 @@
 import { addGamePanel, appScreens, screenNavButtons } from "../../core/dom.js";
-import { DEFAULT_SCREEN_ID, MOBILE_BREAKPOINT_PX, SCREEN_STORAGE_KEY } from "../../core/constants.js";
+import { DEFAULT_SCREEN_ID, SCREEN_STORAGE_KEY } from "../../core/constants.js";
 import { appState } from "../../core/state.js";
 
 export function handleScreenNavClick(event) {
@@ -13,7 +13,7 @@ export function handleScreenNavClick(event) {
 
   setActiveScreen(targetScreenId, {
     store: true,
-    scrollToTop: isMobileViewport(),
+    scrollToTop: true,
   });
 
   if (openPanel === "add-game" && addGamePanel) {
@@ -38,10 +38,6 @@ export function getPreferredScreenId() {
 
 export function isValidScreenId(screenId) {
   return appScreens.some((screen) => screen.dataset.screen === screenId);
-}
-
-export function isMobileViewport() {
-  return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`).matches;
 }
 
 export function setActiveScreen(screenId, options = {}) {
@@ -70,7 +66,7 @@ export function setActiveScreen(screenId, options = {}) {
 
   applyScreenHash(nextScreenId);
 
-  if (scrollToTop && isMobileViewport()) {
+  if (scrollToTop) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 }
@@ -84,9 +80,4 @@ export function applyScreenHash(screenId) {
   } catch (error) {
     // Ignore history update failures.
   }
-}
-
-export function scrollScreenIntoView(screenId) {
-  const screen = appScreens.find((entry) => entry.dataset.screen === screenId);
-  screen?.scrollIntoView({ behavior: "smooth", block: "start" });
 }

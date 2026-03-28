@@ -13,7 +13,7 @@ import {
 import { buildXpSummary, clamp, enforceMainGameRules, getErrorMessage, randomInt } from "../../core/formatters.js";
 import { appState } from "../../core/state.js";
 import { showMessage } from "../../core/ui.js";
-import { applyScreenHash, isMobileViewport, scrollScreenIntoView, setActiveScreen } from "../navigation/navigation.js";
+import { applyScreenHash, setActiveScreen } from "../navigation/navigation.js";
 import {
   addJourneyLog,
   applyJourneyChoiceEffects,
@@ -51,13 +51,9 @@ export async function handleHomeJourneyClick(event) {
   if (action === "open-journey" || action === "open-event") {
     setActiveScreen("journey", {
       store: true,
-      scrollToTop: isMobileViewport(),
+      scrollToTop: true,
     });
     applyScreenHash("journey");
-
-    if (!isMobileViewport()) {
-      scrollScreenIntoView("journey");
-    }
   }
 
   if (action !== "open-event") return;

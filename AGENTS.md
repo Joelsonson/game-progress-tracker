@@ -5,6 +5,7 @@ Read this file first before making changes. Use it as the routing map for what t
 ## Purpose
 
 - This app is a single-page vanilla JS tracker with modular feature folders.
+- The app is intentionally mobile-only now, even on desktop-sized screens.
 - `index.html` is the shell.
 - `src/main.js` wires startup, rendering, and feature event binding.
 - `styles/` is split by responsibility, not by feature.
@@ -57,7 +58,7 @@ Read this file first before making changes. Use it as the routing map for what t
 ### Features
 
 - `src/features/navigation/navigation.js`
-  - screen switching and mobile navigation behavior
+  - screen switching for the always-mobile single-screen flow
 
 - `src/features/games/gamesController.js`
   - add game
@@ -131,7 +132,7 @@ Read this file first before making changes. Use it as the routing map for what t
 
 - Read `src/main.js`
 - Read `src/features/navigation/navigation.js`
-- Check `index.html` for the mobile screen order:
+- Check `index.html` for the always-mobile screen order:
   - Home
   - Journey
   - Character
@@ -222,6 +223,7 @@ Read this file first before making changes. Use it as the routing map for what t
 - For journey sprite changes, update the asset in `assets/journey/sprites/` first, then verify any frame count or timing constants in `src/features/journey/journeyView.js`.
 - Keep the journey screen focused on travel-state UI and the character screen focused on character-sheet UI unless the request explicitly merges them again.
 - Keep equipment rules, bag sizes, weapon bonuses, and carry limits inside `src/features/journey/journeyEngine.js` and `src/core/constants.js`, not inside the view.
+- Do not add separate desktop layouts unless the user explicitly asks for desktop support again.
 
 ## Prompt Shortcut
 
