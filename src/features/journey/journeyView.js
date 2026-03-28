@@ -29,7 +29,13 @@ import {
   getUnspentSkillPoints,
 } from "./journeyEngine.js";
 
-const JOURNEY_TEST_IDLE_SPRITE_SRC = "./assets/journey/sprites/idle.png";
+const JOURNEY_WALK_SPRITE_SRC = "./assets/journey/sprites/walk.png";
+const JOURNEY_WALK_SPRITE_FRAME_COUNT = 4;
+const JOURNEY_SPRITE_MAX_DISPLAY_WIDTH = 136;
+const JOURNEY_SPRITE_MAX_DISPLAY_HEIGHT = 168;
+const JOURNEY_SPRITE_BOUNDING_PADDING = 12;
+const JOURNEY_SPRITE_BACKGROUND_TOLERANCE = 24;
+const journeySpriteMetricsCache = new Map();
 
 export function renderHomeJourney(state, xpSummary) {
   if (!homeJourneyContentEl) return;
@@ -640,19 +646,198 @@ export function renderJourneySpritePreview() {
       <div class="journey-sprite-stage" aria-hidden="true">
         <img
           class="journey-sprite-sheet"
-          src="${JOURNEY_TEST_IDLE_SPRITE_SRC}"
+          src="${JOURNEY_WALK_SPRITE_SRC}"
+          data-journey-sprite-sheet
+          data-frame-count="${JOURNEY_WALK_SPRITE_FRAME_COUNT}"
           alt=""
         />
       </div>
       <div class="journey-sprite-copy">
         <p class="journey-overline">Sprite preview</p>
-        <h4>Idle animation test</h4>
+        <h4>Walk animation preview</h4>
         <p class="muted-text">
-          Loaded from <code>assets/journey/sprites/idle.png</code> so you can preview the sheet in the app.
+          Loaded from <code>assets/journey/sprites/walk.png</code> and sized from the sheet automatically.
         </p>
       </div>
     </div>
   `;
+}
+
+export function initializeJourneySpritePreviews(root = document) {
+  const spriteSheets = root.querySelectorAll("[data-journey-sprite-sheet]");
+
+  for (const spriteSheet of spriteSheets) {
+    configureJourneySpriteSheet(spriteSheet);
+  }
+}
+
+function configureJourneySpriteSheet(spriteSheet) {
+  if (!(spriteSheet instanceof HTMLImageElement)) return;
+
+  const frameCount = Number.parseInt(spriteSheet.dataset.frameCount || "", 10);
+  if (!Number.isFinite(frameCount) || frameCount <= 0) return;
+
+  const applyMetrics = () => {
+    if (!spriteSheet.naturalWidth || !spriteSheet.naturalHeight) return;
+
+    const cacheKey = `${spriteSheet.currentSrc || spriteSheet.src}::${frameCount}`;
+    const cachedMetrics = journeySpriteMetricsCache.get(cacheKey);
+    const metrics =
+      cachedMetrics || buildJourneySpriteMetrics(spriteSheet, frameCount);
+
+    if (!cachedMetrics) {
+      journeySpriteMetricsCache.set(cacheKey, metrics);
+    }
+
+    const stage = spriteSheet.closest(".journey-sprite-stage");
+    if (stage) {
+      stage.style.setProperty("--journey-sprite-display-width", `${metrics.displayWidth}px`);
+      stage.style.setProperty("--journey-sprite-display-height", `${metrics.displayHeight}px`);
+    }
+
+    spriteSheet.style.setProperty("--journey-sprite-sheet-width", `${metrics.sheetWidth}px`);
+    spriteSheet.style.setProperty("--journey-sprite-sheet-height", `${metrics.sheetHeight}px`);
+    spriteSheet.style.setProperty("--journey-sprite-offset-x", `${metrics.offsetX}px`);
+    spriteSheet.style.setProperty("--journey-sprite-offset-y", `${metrics.offsetY}px`);
+    spriteSheet.style.setProperty("--journey-sprite-shift", `${metrics.shift}px`);
+    spriteSheet.style.animationTimingFunction = `steps(${frameCount})`;
+  };
+
+  if (spriteSheet.complete && spriteSheet.naturalWidth) {
+    applyMetrics();
+    return;
+  }
+
+  spriteSheet.addEventListener("load", applyMetrics, { once: true });
+}
+
+function buildJourneySpriteMetrics(spriteSheet, frameCount) {
+  const frameWidth = Math.floor(spriteSheet.naturalWidth / frameCount);
+  const frameHeight = spriteSheet.naturalHeight;
+  const cropBounds = detectJourneySpriteBounds(spriteSheet, frameWidth, frameHeight, frameCount);
+  const displayScale = Math.min(
+    1,
+    JOURNEY_SPRITE_MAX_DISPLAY_WIDTH / cropBounds.width,
+    JOURNEY_SPRITE_MAX_DISPLAY_HEIGHT / cropBounds.height
+  );
+  const roundedScale = Number.isFinite(displayScale) && displayScale > 0 ? displayScale : 1;
+  const displayWidth = Math.max(1, Math.round(cropBounds.width * roundedScale));
+  const displayHeight = Math.max(1, Math.round(cropBounds.height * roundedScale));
+  const renderedFrameWidth = Math.max(1, Math.round(frameWidth * roundedScale));
+
+  return {
+    displayWidth,
+    displayHeight,
+    sheetWidth: Math.max(1, Math.round(spriteSheet.naturalWidth * roundedScale)),
+    sheetHeight: Math.max(1, Math.round(frameHeight * roundedScale)),
+    offsetX: Math.round(cropBounds.x * roundedScale) * -1,
+    offsetY: Math.round(cropBounds.y * roundedScale) * -1,
+    shift: renderedFrameWidth * frameCount,
+  };
+}
+
+function detectJourneySpriteBounds(spriteSheet, frameWidth, frameHeight, frameCount) {
+  const canvas = document.createElement("canvas");
+  canvas.width = spriteSheet.naturalWidth;
+  canvas.height = frameHeight;
+
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) {
+    return { x: 0, y: 0, width: frameWidth, height: frameHeight };
+  }
+
+  context.drawImage(spriteSheet, 0, 0);
+  const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
+  const backgroundPalette = collectJourneySpriteBackgroundPalette(data, canvas.width, canvas.height);
+
+  let minX = frameWidth;
+  let minY = frameHeight;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let frameIndex = 0; frameIndex < frameCount; frameIndex += 1) {
+    const frameOffsetX = frameIndex * frameWidth;
+
+    for (let y = 0; y < frameHeight; y += 1) {
+      for (let x = 0; x < frameWidth; x += 1) {
+        const pixelIndex = ((y * canvas.width) + frameOffsetX + x) * 4;
+        const red = data[pixelIndex];
+        const green = data[pixelIndex + 1];
+        const blue = data[pixelIndex + 2];
+
+        if (matchesJourneySpriteBackground(red, green, blue, backgroundPalette)) {
+          continue;
+        }
+
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+      }
+    }
+  }
+
+  if (maxX < minX || maxY < minY) {
+    return { x: 0, y: 0, width: frameWidth, height: frameHeight };
+  }
+
+  const paddedMinX = Math.max(0, minX - JOURNEY_SPRITE_BOUNDING_PADDING);
+  const paddedMinY = Math.max(0, minY - JOURNEY_SPRITE_BOUNDING_PADDING);
+  const paddedMaxX = Math.min(frameWidth - 1, maxX + JOURNEY_SPRITE_BOUNDING_PADDING);
+  const paddedMaxY = Math.min(frameHeight - 1, maxY + JOURNEY_SPRITE_BOUNDING_PADDING);
+
+  return {
+    x: paddedMinX,
+    y: paddedMinY,
+    width: paddedMaxX - paddedMinX + 1,
+    height: paddedMaxY - paddedMinY + 1,
+  };
+}
+
+function collectJourneySpriteBackgroundPalette(imageData, width, height) {
+  const colorCounts = new Map();
+  const borderDepth = Math.min(18, Math.max(4, Math.floor(Math.min(width, height) / 20)));
+
+  const countColor = (x, y) => {
+    const pixelIndex = ((y * width) + x) * 4;
+    const key = `${imageData[pixelIndex]},${imageData[pixelIndex + 1]},${imageData[pixelIndex + 2]}`;
+    colorCounts.set(key, (colorCounts.get(key) || 0) + 1);
+  };
+
+  for (let y = 0; y < borderDepth; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      countColor(x, y);
+      countColor(x, height - 1 - y);
+    }
+  }
+
+  for (let x = 0; x < borderDepth; x += 1) {
+    for (let y = borderDepth; y < height - borderDepth; y += 1) {
+      countColor(x, y);
+      countColor(width - 1 - x, y);
+    }
+  }
+
+  return Array.from(colorCounts.entries())
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 6)
+    .map(([key]) => {
+      const [red, green, blue] = key.split(",").map(Number);
+      return { red, green, blue };
+    });
+}
+
+function matchesJourneySpriteBackground(red, green, blue, backgroundPalette) {
+  if (!backgroundPalette.length) return false;
+
+  return backgroundPalette.some((color) => {
+    const channelDistance =
+      Math.abs(red - color.red) +
+      Math.abs(green - color.green) +
+      Math.abs(blue - color.blue);
+
+    return channelDistance <= JOURNEY_SPRITE_BACKGROUND_TOLERANCE;
+  });
 }
 
 export function getJourneyInventoryItems(state, supplies) {

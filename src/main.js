@@ -40,7 +40,13 @@ import { handleAddGame, handleArtPickerChange, handleListClick, repairGamesIfNee
 import { renderCompletionSpotlight, renderGames, renderMainQuest, renderPlayerProgress, renderStats } from "./features/games/gamesView.js";
 import { handleHomeJourneyClick, handleJourneyClick, handleJourneyEventModalClick, handleJourneyOutcomeModalClick } from "./features/journey/journeyController.js";
 import { syncJourneyState } from "./features/journey/journeyEngine.js";
-import { closeJourneyEventModal, closeJourneyOutcomeModal, renderHomeJourney, renderIdleJourney } from "./features/journey/journeyView.js";
+import {
+  closeJourneyEventModal,
+  closeJourneyOutcomeModal,
+  initializeJourneySpritePreviews,
+  renderHomeJourney,
+  renderIdleJourney,
+} from "./features/journey/journeyView.js";
 import { getPreferredScreenId, handleScreenNavClick, handleViewportResize, setActiveScreen } from "./features/navigation/navigation.js";
 import { handleAddSession } from "./features/sessions/sessionsController.js";
 import { renderRecentSessions, renderSessionGameOptions } from "./features/sessions/sessionsView.js";
@@ -131,6 +137,7 @@ export async function renderApp() {
   renderPlayerProgress(xpSummary);
   renderStats(sortedGames, sessions);
   renderIdleJourney(idleJourney, sortedGames, sessions, xpSummary);
+  initializeJourneySpritePreviews();
   renderCompletionSpotlight(sortedGames, sessionStats);
   renderMainQuest(sortedGames, sessionStats);
   renderSessionGameOptions(sortedGames);
