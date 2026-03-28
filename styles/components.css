@@ -1117,25 +1117,25 @@
   border: 1px solid rgba(148, 163, 184, 0.18);
   background: rgba(30, 41, 59, 0.9);
   color: var(--text);
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .journey-outcome-pill.is-positive {
   background: rgba(52, 211, 153, 0.14);
   border-color: rgba(52, 211, 153, 0.32);
-  color: #b7f7de;
+  color: var(--success);
 }
 
 .journey-outcome-pill.is-negative {
   background: rgba(248, 113, 113, 0.14);
   border-color: rgba(248, 113, 113, 0.32);
-  color: #fecaca;
+  color: var(--danger);
 }
 
 .journey-outcome-pill.is-neutral {
   background: rgba(96, 165, 250, 0.14);
   border-color: rgba(96, 165, 250, 0.28);
-  color: #dbeafe;
+  color: var(--accent-blue-strong);
 }
 
 .session-xp-negative {
@@ -1520,8 +1520,9 @@
 .journey-event-button,
 .journey-home-event-button {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   justify-items: start;
+  align-content: start;
   align-items: start;
   width: 100%;
   padding: 14px 16px;
@@ -1552,15 +1553,16 @@
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: flex-start;
+  gap: 8px;
 }
 
 .journey-event-kicker {
-  color: var(--accent-2);
+  color: var(--muted);
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.12em;
 }
 
 .journey-event-action {
@@ -1578,9 +1580,16 @@
 
 .journey-event-title,
 .journey-home-event-title {
-  font-size: 1.08rem;
-  line-height: 1.25;
-  font-weight: 600;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    "Segoe UI",
+    system-ui,
+    sans-serif;
+  font-size: 1rem;
+  line-height: 1.4;
+  font-weight: 700;
   color: var(--text);
 }
 
@@ -1616,16 +1625,27 @@
 .journey-event-choice {
   display: grid;
   gap: 6px;
+  width: 100%;
+  justify-content: flex-start;
   justify-items: start;
+  align-content: start;
+  align-items: start;
   padding: 14px 16px;
   border-radius: 20px;
   text-align: left;
 }
 
 .journey-event-choice-title {
-  font-size: 1.05rem;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    "Segoe UI",
+    system-ui,
+    sans-serif;
+  font-size: 1rem;
   line-height: 1.35;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text);
 }
 

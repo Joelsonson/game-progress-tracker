@@ -93,9 +93,6 @@ export function renderHomeJourney(state, xpSummary) {
     100
   );
   const pendingEvent = state.pendingEvents[0] || null;
-  const advancedClassCount = state.unlockedClasses.filter(
-    (classKey) => classKey !== JOURNEY_BASE_CLASS
-  ).length;
   const displayName = getJourneyDisplayName(state);
   const stretchSprite = getJourneyStretchSprite(state, hpPercent);
 
@@ -131,16 +128,6 @@ export function renderHomeJourney(state, xpSummary) {
             <span class="summary-pill">${escapeHtml(
               stretchPresentation.horizonLabel
             )}: ${escapeHtml(stretchPresentation.horizonValue)}</span>
-            <span class="summary-pill">Road cleared: ${state.bossIndex}</span>
-            <span class="summary-pill">Discipline: ${escapeHtml(
-              JOURNEY_CLASS_META[state.classType].label
-            )}</span>
-            <span class="summary-pill">Unlocked paths: ${advancedClassCount}</span>
-            ${
-              pendingEvent
-                ? `<span class="summary-pill">Event waiting</span>`
-                : ""
-            }
           </div>
         </div>
 
@@ -151,7 +138,9 @@ export function renderHomeJourney(state, xpSummary) {
               JOURNEY_CLASS_META[state.classType].label
             )}</h3>
             <p class="journey-inline-copy">
-              Started with a ${escapeHtml(state.starterItem)} • ${getJourneyStatusLabel(state.status)}
+              ${getJourneyStatusLabel(state.status)} • ${Math.round(
+                hpPercent
+              )}% health • ${Math.round(hungerPercent)}% hunger
             </p>
           </div>
 
@@ -193,9 +182,6 @@ export function renderHomeJourney(state, xpSummary) {
                 <span class="journey-event-kicker">New event</span>
                 <span class="journey-home-event-title">${escapeHtml(
                   pendingEvent.title
-                )}</span>
-                <span class="journey-event-summary">${escapeHtml(
-                  pendingEvent.teaser
                 )}</span>
               </button>
             `
@@ -358,13 +344,9 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
                   >
                     <span class="journey-event-button-head">
                       <span class="journey-event-kicker">New event</span>
-                      <span class="journey-event-action">Review</span>
                     </span>
                     <span class="journey-event-title">${escapeHtml(
                       eventEntry.title
-                    )}</span>
-                    <span class="journey-event-summary">${escapeHtml(
-                      eventEntry.teaser
                     )}</span>
                   </button>
                 `

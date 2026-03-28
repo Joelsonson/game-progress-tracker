@@ -7,9 +7,12 @@
 .journey-class-grid,
 .journey-stat-grid,
 .journey-log-grid,
-.journey-adventure-grid,
 .character-build-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.journey-adventure-grid {
+  grid-template-columns: 1fr;
 }
 
 .top-layout,
