@@ -21,12 +21,18 @@ import {
   buildJourneyDerived,
   buildJourneyOutcomeItems,
   buildJourneySupplies,
+  discardJourneyPendingWeapon,
+  dropJourneyWeapon,
+  equipJourneyWeapon,
   getJourneyEventCandidates,
   getJourneyLevel,
+  getJourneyWeaponMeta,
   getUnspentSkillPoints,
   hasJourneyClassUnlocked,
+  keepJourneyPendingWeapon,
   normalizeJourneyState,
   pushJourneyDebugSnapshot,
+  replaceJourneyWeapon,
   syncJourneyState,
 } from "./journeyEngine.js";
 import { closeJourneyEventModal, closeJourneyOutcomeModal, openJourneyEventModal, openJourneyOutcomeModal } from "./journeyView.js";
@@ -180,6 +186,98 @@ export async function handleJourneyClick(event) {
       );
       await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
       showJourneyFeedback(`${JOURNEY_STAT_META[statKey].label} increased.`);
+      await appState.renderApp();
+      return;
+    }
+
+    if (action === "equip-weapon") {
+      const weaponKey = button.dataset.weapon;
+      if (!equipJourneyWeapon(state, weaponKey)) {
+        showJourneyFeedback("That weapon cannot be equipped right now.", true);
+        return;
+      }
+
+      const weaponLabel = getJourneyWeaponMeta(weaponKey)?.label || "Weapon";
+      addJourneyLog(
+        state,
+        `You adjusted your kit and equipped ${weaponLabel}.`,
+        new Date().toISOString()
+      );
+      await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
+      showJourneyFeedback(`${weaponLabel} equipped.`);
+      await appState.renderApp();
+      return;
+    }
+
+    if (action === "drop-weapon") {
+      const weaponKey = button.dataset.weapon;
+      if (!dropJourneyWeapon(state, weaponKey)) {
+        showJourneyFeedback("That weapon is not in your inventory.", true);
+        return;
+      }
+
+      const weaponLabel = getJourneyWeaponMeta(weaponKey)?.label || "Weapon";
+      addJourneyLog(
+        state,
+        `You let go of ${weaponLabel} to make room for something better.`,
+        new Date().toISOString()
+      );
+      await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
+      showJourneyFeedback(`${weaponLabel} dropped.`);
+      await appState.renderApp();
+      return;
+    }
+
+    if (action === "keep-weapon") {
+      const weaponKey = button.dataset.weapon;
+      if (!keepJourneyPendingWeapon(state, weaponKey)) {
+        showJourneyFeedback("There is no spare room for that weapon yet.", true);
+        return;
+      }
+
+      const weaponLabel = getJourneyWeaponMeta(weaponKey)?.label || "Weapon";
+      addJourneyLog(
+        state,
+        `You packed away ${weaponLabel} for a future stretch.`,
+        new Date().toISOString()
+      );
+      await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
+      showJourneyFeedback(`${weaponLabel} added to your inventory.`);
+      await appState.renderApp();
+      return;
+    }
+
+    if (action === "replace-weapon") {
+      const currentWeaponKey = button.dataset.replace;
+      const nextWeaponKey = button.dataset.weapon;
+      if (!replaceJourneyWeapon(state, currentWeaponKey, nextWeaponKey)) {
+        showJourneyFeedback("That swap could not be made.", true);
+        return;
+      }
+
+      const currentLabel = getJourneyWeaponMeta(currentWeaponKey)?.label || "Weapon";
+      const nextLabel = getJourneyWeaponMeta(nextWeaponKey)?.label || "Weapon";
+      addJourneyLog(
+        state,
+        `You traded out ${currentLabel} and claimed ${nextLabel}.`,
+        new Date().toISOString()
+      );
+      await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
+      showJourneyFeedback(`${nextLabel} replaced ${currentLabel}.`);
+      await appState.renderApp();
+      return;
+    }
+
+    if (action === "discard-pending-weapon") {
+      const weaponKey = button.dataset.weapon;
+      if (!discardJourneyPendingWeapon(state, weaponKey)) {
+        showJourneyFeedback("That waiting weapon is already gone.", true);
+        return;
+      }
+
+      const weaponLabel = getJourneyWeaponMeta(weaponKey)?.label || "Weapon";
+      await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
+      showJourneyFeedback(`Left ${weaponLabel} behind.`);
       await appState.renderApp();
       return;
     }

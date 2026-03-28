@@ -3,6 +3,7 @@ import {
   GAME_STATUSES,
   IDLE_JOURNEY_META_KEY,
   JOURNEY_AMBIENT_INTERACTIONS,
+  JOURNEY_BAG_META,
   JOURNEY_BASE_CLASS,
   JOURNEY_BOSS_DISTANCE,
   JOURNEY_BOSS_NAMES,
@@ -16,6 +17,7 @@ import {
   JOURNEY_STAT_KEYS,
   JOURNEY_STORY_XP_PER_LEVEL,
   JOURNEY_TICK_MS,
+  JOURNEY_WEAPON_META,
   JOURNEY_ZONE_NAMES,
 } from "../../core/constants.js";
 import { computeStreak } from "../../core/formatters.js";
@@ -54,6 +56,10 @@ export async function syncJourneyState(rawState, games, sessions, xpSummary) {
     changed = true;
   }
 
+  if (settleJourneySupplyOverflow(state, games, sessions)) {
+    changed = true;
+  }
+
   const elapsedMs = clamp(
     now.getTime() - new Date(state.lastUpdatedAt || now.toISOString()).getTime(),
     0,
@@ -62,6 +68,10 @@ export async function syncJourneyState(rawState, games, sessions, xpSummary) {
 
   if (elapsedMs >= 1000) {
     simulateJourneyState(state, elapsedMs, journeyStats, journeyContext);
+    changed = true;
+  }
+
+  if (settleJourneySupplyOverflow(state, games, sessions)) {
     changed = true;
   }
 
@@ -111,12 +121,48 @@ export function normalizeJourneyState(rawState = null) {
   const inferredBoarDefeat =
     storyFlags.boarDefeated || Math.max(0, Math.floor(Number(source.bossIndex) || 0)) > 0;
   const inferredWeapon =
-    storyFlags.foundWeapon || inferredBoarDefeat || Boolean(source.weaponName);
+    storyFlags.foundWeapon ||
+    inferredBoarDefeat ||
+    Boolean(source.weaponName) ||
+    Boolean(source.equippedWeaponKey);
   storyFlags.boarDefeated = inferredBoarDefeat;
-  storyFlags.foundWeapon = inferredWeapon;
+  const bagKey = normalizeJourneyBagKey(source.bagKey);
+  const bagMeta = getJourneyBagMeta(bagKey);
+  const weaponSlotLimit = bagMeta.weaponSlots;
+  const legacyWeaponKey = normalizeJourneyWeaponKey(
+    source.equippedWeaponKey || source.weaponName
+  );
+  const inventoryWeaponSet = new Set(
+    Array.isArray(source.inventoryWeaponKeys) ? source.inventoryWeaponKeys : []
+  );
+  if (legacyWeaponKey) {
+    inventoryWeaponSet.add(legacyWeaponKey);
+  }
+  const normalizedWeaponKeys = [...inventoryWeaponSet]
+    .map((entry) => normalizeJourneyWeaponKey(entry))
+    .filter(Boolean);
+  const keptWeaponKeys = normalizedWeaponKeys.slice(0, weaponSlotLimit);
+  const normalizedPendingWeapons = Array.isArray(source.pendingWeaponKeys)
+    ? source.pendingWeaponKeys
+        .map((entry) => normalizeJourneyWeaponKey(entry))
+        .filter(Boolean)
+    : [];
+  const pendingWeaponKeys = [
+    ...new Set(
+      [...normalizedPendingWeapons, ...normalizedWeaponKeys.slice(weaponSlotLimit)].filter(
+        (weaponKey) => !keptWeaponKeys.includes(weaponKey)
+      )
+    ),
+  ];
+  const requestedEquippedWeaponKey = normalizeJourneyWeaponKey(source.equippedWeaponKey);
+  const equippedWeaponKey = keptWeaponKeys.includes(requestedEquippedWeaponKey)
+    ? requestedEquippedWeaponKey
+    : keptWeaponKeys[0] || "";
+  storyFlags.foundWeapon =
+    inferredWeapon || keptWeaponKeys.length > 0 || pendingWeaponKeys.length > 0;
 
   return {
-    version: 3,
+    version: 4,
     classType,
     unlockedClasses,
     allocatedStats,
@@ -128,12 +174,10 @@ export function normalizeJourneyState(rawState = null) {
       typeof source.starterItem === "string" && source.starterItem.trim()
         ? source.starterItem.trim()
         : randomJourneyStarterItem(),
-    weaponName:
-      typeof source.weaponName === "string" && source.weaponName.trim()
-        ? source.weaponName.trim()
-        : inferredWeapon
-          ? "Scavenged weapon"
-          : "",
+    bagKey,
+    inventoryWeaponKeys: keptWeaponKeys,
+    equippedWeaponKey,
+    pendingWeaponKeys,
     storyXp: Math.max(0, Math.floor(Number(source.storyXp) || 0)),
     bonusSkillPoints: Math.max(
       0,
@@ -156,6 +200,14 @@ export function normalizeJourneyState(rawState = null) {
     townVisits: Math.max(0, Math.floor(Number(source.townVisits) || 0)),
     spentRations: Math.max(0, Math.floor(Number(source.spentRations) || 0)),
     spentTonics: Math.max(0, Math.floor(Number(source.spentTonics) || 0)),
+    autoConsumedRations: Math.max(
+      0,
+      Math.floor(Number(source.autoConsumedRations) || 0)
+    ),
+    autoConsumedTonics: Math.max(
+      0,
+      Math.floor(Number(source.autoConsumedTonics) || 0)
+    ),
     highestTrackerLevel: Math.max(
       1,
       Math.floor(Number(source.highestTrackerLevel) || 1)
@@ -218,12 +270,28 @@ export function pushJourneyDebugSnapshot(state) {
 export function buildJourneyDerived(state, journeyLevel) {
   const classMeta =
     JOURNEY_CLASS_META[state.classType] || JOURNEY_CLASS_META[JOURNEY_BASE_CLASS];
+  const equippedWeaponMeta = getJourneyWeaponMeta(state.equippedWeaponKey);
+  const classBonuses = classMeta.bonuses || {};
+  const weaponBonuses = equippedWeaponMeta?.bonuses || {};
+  const statBreakdown = {};
   const stats = JOURNEY_STAT_KEYS.reduce((accumulator, key) => {
+    const breakdown = {
+      base: 2,
+      classBonus: classBonuses[key] || 0,
+      weaponBonus: weaponBonuses[key] || 0,
+      modifier: Math.round(Number(state.statModifiers?.[key]) || 0),
+      allocated: Math.max(0, Math.floor(Number(state.allocatedStats[key]) || 0)),
+    };
     accumulator[key] =
-      2 +
-      (classMeta.bonuses[key] || 0) +
-      Math.round(Number(state.statModifiers?.[key]) || 0) +
-      Math.max(0, Math.floor(Number(state.allocatedStats[key]) || 0));
+      breakdown.base +
+      breakdown.classBonus +
+      breakdown.weaponBonus +
+      breakdown.modifier +
+      breakdown.allocated;
+    statBreakdown[key] = {
+      ...breakdown,
+      total: accumulator[key],
+    };
     return accumulator;
   }, {});
 
@@ -242,6 +310,10 @@ export function buildJourneyDerived(state, journeyLevel) {
 
   return {
     classMeta,
+    equippedWeaponMeta,
+    classBonuses,
+    weaponBonuses,
+    statBreakdown,
     stats,
     level: journeyLevel,
     maxHp,
@@ -260,23 +332,51 @@ export function buildJourneySupplies(games, sessions, state) {
   const completedCount = games.filter(
     (game) => game.status === GAME_STATUSES.COMPLETED
   ).length;
+  const carryLimits = getJourneyCarryLimits(state);
   const earnedRations =
     sessions.length + meaningfulCount + completedCount * 2 + state.bonusRations;
   const earnedTonics =
     Math.floor(meaningfulCount / 2) + completedCount * 3 + state.bonusTonics;
+  const consumedRations = Math.min(
+    Math.max(0, state.autoConsumedRations || 0),
+    Math.max(0, earnedRations - state.spentRations)
+  );
+  const consumedTonics = Math.min(
+    Math.max(0, state.autoConsumedTonics || 0),
+    Math.max(0, earnedTonics - state.spentTonics)
+  );
+  const availableRations = Math.max(
+    0,
+    earnedRations - state.spentRations - consumedRations
+  );
+  const availableTonics = Math.max(
+    0,
+    earnedTonics - state.spentTonics - consumedTonics
+  );
 
   return {
     earnedRations,
     earnedTonics,
-    availableRations: Math.max(0, earnedRations - state.spentRations),
-    availableTonics: Math.max(0, earnedTonics - state.spentTonics),
+    availableRations,
+    availableTonics,
+    rationCapacity: carryLimits.rationCapacity,
+    tonicCapacity: carryLimits.tonicCapacity,
+    autoConsumedRations: consumedRations,
+    autoConsumedTonics: consumedTonics,
   };
 }
 
 export function buildJourneyStretchChallenge(state, journeyStats) {
   const boss = getJourneyBoss(state.bossIndex);
   const conditionPower = state.currentHp * 0.12 + state.currentHunger * 0.08;
-  const weaponBonus = state.storyFlags.foundWeapon ? 8 : -6;
+  const weaponBonus = journeyStats.equippedWeaponMeta
+    ? 4 +
+      JOURNEY_STAT_KEYS.reduce(
+        (total, statKey) => total + (journeyStats.weaponBonuses[statKey] || 0),
+        0
+      ) *
+        1.5
+    : -6;
   const powerRatio =
     (journeyStats.power + conditionPower + weaponBonus) / Math.max(1, boss.power);
   const successChance = clamp(
@@ -321,7 +421,7 @@ export function getJourneyGoalMeta(state, boss, progress) {
       return {
         goalTitle: "Find your bearings",
         goalAction: "finding your bearings",
-        horizonLabel: "Waiting ahead",
+        horizonLabel: "Right now",
         horizonValue: "Nothing here feels familiar yet.",
       };
     }
@@ -330,7 +430,7 @@ export function getJourneyGoalMeta(state, boss, progress) {
       return {
         goalTitle: "Find a path that actually leads somewhere",
         goalAction: "finding a path that actually leads somewhere",
-        horizonLabel: "Waiting ahead",
+        horizonLabel: "Up ahead",
         horizonValue: "You need a trail that actually leads somewhere.",
       };
     }
@@ -339,7 +439,7 @@ export function getJourneyGoalMeta(state, boss, progress) {
       return {
         goalTitle: "Find something you can fight with",
         goalAction: "finding something you can fight with",
-        horizonLabel: "Waiting ahead",
+        horizonLabel: "Up ahead",
         horizonValue: "You cannot stay unarmed forever.",
       };
     }
@@ -348,7 +448,7 @@ export function getJourneyGoalMeta(state, boss, progress) {
       return {
         goalTitle: "Find food and steady yourself",
         goalAction: "finding food and steadying yourself",
-        horizonLabel: "Waiting ahead",
+        horizonLabel: "Need",
         horizonValue: "You need enough strength for whatever comes next.",
       };
     }
@@ -356,7 +456,7 @@ export function getJourneyGoalMeta(state, boss, progress) {
     return {
       goalTitle: "Follow the boar's trail",
       goalAction: "following the boar's trail",
-      horizonLabel: "Waiting ahead",
+      horizonLabel: "Trail sign",
       horizonValue: "Fresh signs of the boar are all over this part of the forest.",
     };
   }
@@ -366,7 +466,7 @@ export function getJourneyGoalMeta(state, boss, progress) {
       return {
         goalTitle: "Stay ahead of the wolves",
         goalAction: "staying ahead of the wolves",
-        horizonLabel: "Waiting ahead",
+        horizonLabel: "Up ahead",
         horizonValue: "The pack is somewhere close enough to matter.",
       };
     }
@@ -383,7 +483,7 @@ export function getJourneyGoalMeta(state, boss, progress) {
     return {
       goalTitle: `Push through ${getJourneyZoneName(state.bossIndex)}`,
       goalAction: `pushing through ${getJourneyZoneName(state.bossIndex).toLowerCase()}`,
-      horizonLabel: "Waiting ahead",
+      horizonLabel: "Up ahead",
       horizonValue: "The road still feels hostile and half-known.",
     };
   }
@@ -487,10 +587,26 @@ export function buildJourneyOutcomeItems(beforeState, afterState) {
   );
   addDelta("Rations", afterState.bonusRations - beforeState.bonusRations);
   addDelta("Tonics", afterState.bonusTonics - beforeState.bonusTonics);
-
-  if (beforeState.weaponName !== afterState.weaponName && afterState.weaponName) {
+  const beforeWeapons = new Set([
+    ...(beforeState.inventoryWeaponKeys || []),
+    ...(beforeState.pendingWeaponKeys || []),
+  ]);
+  const gainedWeapons = [
+    ...(afterState.inventoryWeaponKeys || []),
+    ...(afterState.pendingWeaponKeys || []),
+  ].filter((weaponKey) => !beforeWeapons.has(weaponKey));
+  for (const weaponKey of gainedWeapons) {
+    const weaponMeta = getJourneyWeaponMeta(weaponKey);
+    if (!weaponMeta) continue;
     items.push({
-      label: `Weapon: ${afterState.weaponName}`,
+      label: `Weapon: ${weaponMeta.label}`,
+      className: "is-positive",
+    });
+  }
+
+  if (beforeState.bagKey !== afterState.bagKey) {
+    items.push({
+      label: `Bag: ${getJourneyBagMeta(afterState.bagKey).label}`,
       className: "is-positive",
     });
   }
@@ -828,18 +944,20 @@ export function resolveJourneyBoss(state, journeyStats, atDate) {
 export function applyJourneyVictoryRewards(state, journeyLevel, atDate) {
   const rewards = ["1 skill point"];
 
-  if (!state.storyFlags.foundWeapon && Math.random() < 0.58) {
-    const weaponOptions = [
-      "Weathered short sword",
-      "Hardened boar spear",
-      "Traveler's hatchet",
-      "Bandit-cut machete",
-    ];
-    const weaponName =
-      weaponOptions[randomInt(0, weaponOptions.length - 1)];
-    state.storyFlags.foundWeapon = true;
-    state.weaponName = weaponName;
-    rewards.push(weaponName);
+  if (Math.random() < 0.58) {
+    const weaponKey = getJourneyVictoryWeaponReward(journeyLevel);
+    const weaponRewardText = awardJourneyWeapon(state, weaponKey);
+    if (weaponRewardText) {
+      rewards.push(weaponRewardText);
+    }
+  }
+
+  if (Math.random() < 0.26) {
+    const bagKey = getJourneyVictoryBagReward(state, journeyLevel);
+    const bagRewardText = awardJourneyBag(state, bagKey);
+    if (bagRewardText) {
+      rewards.push(bagRewardText);
+    }
   }
 
   const rationReward = Math.random() < 0.74 ? randomInt(1, 2) : 0;
@@ -1474,6 +1592,7 @@ export function maybeAddAmbientJourneyLog(state, atDate) {
 
 export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
   const { effects } = choice;
+  const notes = [];
 
   state.currentHp = clamp(
     state.currentHp + effects.hp,
@@ -1494,7 +1613,10 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
   state.bonusRations = Math.max(0, state.bonusRations + effects.bonusRations);
   state.bonusTonics = Math.max(0, state.bonusTonics + effects.bonusTonics);
   if (effects.weaponName) {
-    state.weaponName = effects.weaponName;
+    const weaponRewardText = awardJourneyWeapon(state, effects.weaponName);
+    if (weaponRewardText) {
+      notes.push(`Weapon found: ${weaponRewardText}.`);
+    }
   }
 
   for (const flagKey of JOURNEY_FLAG_KEYS) {
@@ -1525,7 +1647,13 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
     );
   }
 
-  return unlockedText ? `${choice.resultText} ${unlockedText}` : choice.resultText;
+  if (unlockedText) {
+    notes.push(unlockedText);
+  }
+
+  return notes.length
+    ? `${choice.resultText} ${notes.join(" ")}`
+    : choice.resultText;
 }
 
 export function unlockJourneyClass(state, classKey, atIso) {
@@ -1545,6 +1673,307 @@ export function unlockJourneyClass(state, classKey, atIso) {
 
 export function hasJourneyClassUnlocked(state, classKey) {
   return state.unlockedClasses.includes(classKey);
+}
+
+export function getJourneyBagMeta(bagKey) {
+  return JOURNEY_BAG_META[normalizeJourneyBagKey(bagKey)] || JOURNEY_BAG_META.none;
+}
+
+export function getJourneyWeaponMeta(weaponKey) {
+  const normalizedKey = normalizeJourneyWeaponKey(weaponKey);
+  return normalizedKey ? JOURNEY_WEAPON_META[normalizedKey] || null : null;
+}
+
+export function getJourneyCarryLimits(state) {
+  const bagMeta = getJourneyBagMeta(state?.bagKey);
+  return {
+    weaponSlots: bagMeta.weaponSlots,
+    rationCapacity: bagMeta.rationCapacity,
+    tonicCapacity: bagMeta.tonicCapacity,
+  };
+}
+
+export function getJourneyWeaponInventory(state) {
+  return (Array.isArray(state.inventoryWeaponKeys) ? state.inventoryWeaponKeys : [])
+    .map((weaponKey) => ({
+      key: weaponKey,
+      meta: getJourneyWeaponMeta(weaponKey),
+      equipped: weaponKey === state.equippedWeaponKey,
+    }))
+    .filter((entry) => entry.meta);
+}
+
+export function getJourneyPendingWeapons(state) {
+  return (Array.isArray(state.pendingWeaponKeys) ? state.pendingWeaponKeys : [])
+    .map((weaponKey) => ({
+      key: weaponKey,
+      meta: getJourneyWeaponMeta(weaponKey),
+    }))
+    .filter((entry) => entry.meta);
+}
+
+export function normalizeJourneyBagKey(bagKey) {
+  const safeKey = String(bagKey || "").trim();
+  return JOURNEY_BAG_META[safeKey] ? safeKey : "none";
+}
+
+export function normalizeJourneyWeaponKey(weaponKey) {
+  const safeKey = String(weaponKey || "").trim();
+  if (!safeKey) return "";
+  if (JOURNEY_WEAPON_META[safeKey]) return safeKey;
+
+  const matchingEntry = Object.entries(JOURNEY_WEAPON_META).find(
+    ([, meta]) => meta.label.toLowerCase() === safeKey.toLowerCase()
+  );
+  return matchingEntry?.[0] || "";
+}
+
+export function awardJourneyBag(state, bagKey) {
+  const nextBagKey = normalizeJourneyBagKey(bagKey);
+  const nextBagMeta = getJourneyBagMeta(nextBagKey);
+  const currentBagMeta = getJourneyBagMeta(state.bagKey);
+
+  if (nextBagMeta.rank <= currentBagMeta.rank) {
+    return "";
+  }
+
+  state.bagKey = nextBagKey;
+  return nextBagMeta.label;
+}
+
+export function awardJourneyWeapon(state, weaponKey) {
+  const nextWeaponKey =
+    normalizeJourneyWeaponKey(weaponKey) || "scavenged_weapon";
+  const weaponMeta = getJourneyWeaponMeta(nextWeaponKey);
+  if (!weaponMeta) return "";
+
+  state.storyFlags.foundWeapon = true;
+  state.inventoryWeaponKeys = Array.isArray(state.inventoryWeaponKeys)
+    ? state.inventoryWeaponKeys
+    : [];
+  state.pendingWeaponKeys = Array.isArray(state.pendingWeaponKeys)
+    ? state.pendingWeaponKeys
+    : [];
+
+  if (
+    state.inventoryWeaponKeys.includes(nextWeaponKey) ||
+    state.pendingWeaponKeys.includes(nextWeaponKey)
+  ) {
+    return weaponMeta.label;
+  }
+
+  const { weaponSlots } = getJourneyCarryLimits(state);
+  if (state.inventoryWeaponKeys.length < weaponSlots) {
+    state.inventoryWeaponKeys = [...state.inventoryWeaponKeys, nextWeaponKey];
+    if (!state.equippedWeaponKey) {
+      state.equippedWeaponKey = nextWeaponKey;
+    }
+    return weaponMeta.label;
+  }
+
+  state.pendingWeaponKeys = [...state.pendingWeaponKeys, nextWeaponKey];
+  return `${weaponMeta.label} (inventory full)`;
+}
+
+export function keepJourneyPendingWeapon(state, weaponKey) {
+  const nextWeaponKey = normalizeJourneyWeaponKey(weaponKey);
+  if (!nextWeaponKey) return false;
+
+  state.pendingWeaponKeys = Array.isArray(state.pendingWeaponKeys)
+    ? state.pendingWeaponKeys
+    : [];
+  state.inventoryWeaponKeys = Array.isArray(state.inventoryWeaponKeys)
+    ? state.inventoryWeaponKeys
+    : [];
+
+  if (!state.pendingWeaponKeys.includes(nextWeaponKey)) {
+    return false;
+  }
+
+  const { weaponSlots } = getJourneyCarryLimits(state);
+  if (state.inventoryWeaponKeys.length >= weaponSlots) {
+    return false;
+  }
+
+  state.pendingWeaponKeys = state.pendingWeaponKeys.filter(
+    (entry) => entry !== nextWeaponKey
+  );
+  state.inventoryWeaponKeys = [...state.inventoryWeaponKeys, nextWeaponKey];
+  if (!state.equippedWeaponKey) {
+    state.equippedWeaponKey = nextWeaponKey;
+  }
+  return true;
+}
+
+export function replaceJourneyWeapon(state, currentWeaponKey, nextWeaponKey) {
+  const equippedKey = normalizeJourneyWeaponKey(currentWeaponKey);
+  const incomingKey = normalizeJourneyWeaponKey(nextWeaponKey);
+  if (!equippedKey || !incomingKey) return false;
+
+  state.inventoryWeaponKeys = Array.isArray(state.inventoryWeaponKeys)
+    ? state.inventoryWeaponKeys
+    : [];
+  state.pendingWeaponKeys = Array.isArray(state.pendingWeaponKeys)
+    ? state.pendingWeaponKeys
+    : [];
+
+  if (
+    !state.inventoryWeaponKeys.includes(equippedKey) ||
+    !state.pendingWeaponKeys.includes(incomingKey)
+  ) {
+    return false;
+  }
+
+  state.inventoryWeaponKeys = state.inventoryWeaponKeys.map((weaponKey) =>
+    weaponKey === equippedKey ? incomingKey : weaponKey
+  );
+  state.pendingWeaponKeys = state.pendingWeaponKeys.filter(
+    (weaponKey) => weaponKey !== incomingKey
+  );
+  if (state.equippedWeaponKey === equippedKey) {
+    state.equippedWeaponKey = incomingKey;
+  }
+  return true;
+}
+
+export function dropJourneyWeapon(state, weaponKey) {
+  const nextWeaponKey = normalizeJourneyWeaponKey(weaponKey);
+  if (!nextWeaponKey) return false;
+
+  state.inventoryWeaponKeys = Array.isArray(state.inventoryWeaponKeys)
+    ? state.inventoryWeaponKeys
+    : [];
+  if (!state.inventoryWeaponKeys.includes(nextWeaponKey)) {
+    return false;
+  }
+
+  state.inventoryWeaponKeys = state.inventoryWeaponKeys.filter(
+    (entry) => entry !== nextWeaponKey
+  );
+  if (state.equippedWeaponKey === nextWeaponKey) {
+    state.equippedWeaponKey = state.inventoryWeaponKeys[0] || "";
+  }
+  return true;
+}
+
+export function discardJourneyPendingWeapon(state, weaponKey) {
+  const nextWeaponKey = normalizeJourneyWeaponKey(weaponKey);
+  if (!nextWeaponKey) return false;
+
+  state.pendingWeaponKeys = Array.isArray(state.pendingWeaponKeys)
+    ? state.pendingWeaponKeys
+    : [];
+  if (!state.pendingWeaponKeys.includes(nextWeaponKey)) {
+    return false;
+  }
+
+  state.pendingWeaponKeys = state.pendingWeaponKeys.filter(
+    (entry) => entry !== nextWeaponKey
+  );
+  return true;
+}
+
+export function equipJourneyWeapon(state, weaponKey) {
+  const nextWeaponKey = normalizeJourneyWeaponKey(weaponKey);
+  if (!nextWeaponKey) return false;
+
+  state.inventoryWeaponKeys = Array.isArray(state.inventoryWeaponKeys)
+    ? state.inventoryWeaponKeys
+    : [];
+  if (!state.inventoryWeaponKeys.includes(nextWeaponKey)) {
+    return false;
+  }
+
+  state.equippedWeaponKey = nextWeaponKey;
+  return true;
+}
+
+export function settleJourneySupplyOverflow(state, games, sessions) {
+  const meaningfulCount = sessions.filter(
+    (session) => session.meaningfulProgress
+  ).length;
+  const completedCount = games.filter(
+    (game) => game.status === GAME_STATUSES.COMPLETED
+  ).length;
+  const earnedRations =
+    sessions.length + meaningfulCount + completedCount * 2 + state.bonusRations;
+  const earnedTonics =
+    Math.floor(meaningfulCount / 2) + completedCount * 3 + state.bonusTonics;
+  const carryLimits = getJourneyCarryLimits(state);
+  let changed = false;
+
+  const maxAutoConsumedRations = Math.max(0, earnedRations - state.spentRations);
+  const maxAutoConsumedTonics = Math.max(0, earnedTonics - state.spentTonics);
+
+  const normalizedAutoConsumedRations = Math.min(
+    Math.max(0, state.autoConsumedRations || 0),
+    maxAutoConsumedRations
+  );
+  if (normalizedAutoConsumedRations !== state.autoConsumedRations) {
+    state.autoConsumedRations = normalizedAutoConsumedRations;
+    changed = true;
+  }
+
+  const normalizedAutoConsumedTonics = Math.min(
+    Math.max(0, state.autoConsumedTonics || 0),
+    maxAutoConsumedTonics
+  );
+  if (normalizedAutoConsumedTonics !== state.autoConsumedTonics) {
+    state.autoConsumedTonics = normalizedAutoConsumedTonics;
+    changed = true;
+  }
+
+  const availableRations =
+    earnedRations - state.spentRations - state.autoConsumedRations;
+  if (availableRations > carryLimits.rationCapacity) {
+    state.autoConsumedRations += availableRations - carryLimits.rationCapacity;
+    changed = true;
+  }
+
+  const availableTonics =
+    earnedTonics - state.spentTonics - state.autoConsumedTonics;
+  if (availableTonics > carryLimits.tonicCapacity) {
+    state.autoConsumedTonics += availableTonics - carryLimits.tonicCapacity;
+    changed = true;
+  }
+
+  return changed;
+}
+
+export function getJourneyVictoryWeaponReward(journeyLevel) {
+  if (journeyLevel >= 7) {
+    return randomPick(["ember_rod", "warded_stave", "ruin_greatblade"]);
+  }
+  if (journeyLevel >= 4) {
+    return randomPick([
+      "weathered_short_sword",
+      "hardened_boar_spear",
+      "travelers_hatchet",
+      "bandit_cut_machete",
+      "ashwood_bow",
+      "ember_rod",
+    ]);
+  }
+  return randomPick([
+    "rust_worn_belt_knife",
+    "crude_spear_club",
+    "weathered_short_sword",
+    "hardened_boar_spear",
+    "travelers_hatchet",
+    "bandit_cut_machete",
+  ]);
+}
+
+export function getJourneyVictoryBagReward(state, journeyLevel) {
+  const currentBagRank = getJourneyBagMeta(state.bagKey).rank;
+  const candidates = Object.entries(JOURNEY_BAG_META)
+    .filter(([, meta]) => meta.rank > currentBagRank)
+    .map(([bagKey]) => bagKey);
+
+  if (!candidates.length) return "";
+  if (journeyLevel >= 6 && candidates.includes("field_kit")) return "field_kit";
+  if (journeyLevel >= 3 && candidates.includes("backpack")) return "backpack";
+  return candidates[0];
 }
 
 export function sendJourneyToTown(
@@ -1715,6 +2144,10 @@ export function randomInt(min, max) {
   const safeMin = Math.ceil(Math.min(min, max));
   const safeMax = Math.floor(Math.max(min, max));
   return Math.floor(Math.random() * (safeMax - safeMin + 1)) + safeMin;
+}
+
+export function randomPick(values) {
+  return values[randomInt(0, values.length - 1)];
 }
 
 export function clamp(value, min, max) {

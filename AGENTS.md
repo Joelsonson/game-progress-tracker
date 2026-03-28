@@ -43,6 +43,8 @@ Read this file first before making changes. Use it as the routing map for what t
 
 - `src/core/constants.js`
   - shared constants and feature metadata
+  - journey weapon metadata
+  - journey bag metadata
 - `src/core/dom.js`
   - cached DOM references
 - `src/core/state.js`
@@ -81,11 +83,15 @@ Read this file first before making changes. Use it as the routing map for what t
   - journey clicks
   - modal actions
   - user-triggered journey updates
+  - character equipment actions like equip, replace, and discard
 - `src/features/journey/journeyEngine.js`
   - idle journey state sync
   - progression rules
   - event generation
   - simulation
+  - inventory rules
+  - bag carry limits
+  - weapon rewards and stat bonuses
 - `src/features/journey/journeyView.js`
   - home journey UI
   - journey screen UI
@@ -170,6 +176,7 @@ Read this file first before making changes. Use it as the routing map for what t
 - Read `src/features/journey/journeyView.js`
 - Read `src/features/journey/journeyController.js`
 - Read `src/features/journey/journeyEngine.js`
+- Read `src/core/constants.js` for weapon and bag metadata
 - Check `styles/components.css`
 - Check `styles/screens.css`
 
@@ -214,6 +221,7 @@ Read this file first before making changes. Use it as the routing map for what t
 - If UI text references a computed value, verify whether the calculation lives in `src/core/formatters.js` or a feature engine before changing the markup.
 - For journey sprite changes, update the asset in `assets/journey/sprites/` first, then verify any frame count or timing constants in `src/features/journey/journeyView.js`.
 - Keep the journey screen focused on travel-state UI and the character screen focused on character-sheet UI unless the request explicitly merges them again.
+- Keep equipment rules, bag sizes, weapon bonuses, and carry limits inside `src/features/journey/journeyEngine.js` and `src/core/constants.js`, not inside the view.
 
 ## Prompt Shortcut
 

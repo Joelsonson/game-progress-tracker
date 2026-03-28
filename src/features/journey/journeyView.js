@@ -26,15 +26,18 @@ import {
 import { syncBodyScrollLock } from "../../core/ui.js";
 import {
   buildJourneyDerived,
+  getJourneyBagMeta,
   buildJourneyStretchPresentation,
   buildJourneySupplies,
   formatDurationRangeHours,
   getJourneyActivityText,
   getJourneyBoss,
   getJourneyLevel,
+  getJourneyPendingWeapons,
   getJourneySegmentProgress,
   getJourneyStatusLabel,
   getJourneyStoryLevelBonus,
+  getJourneyWeaponInventory,
   getJourneyZoneName,
   getRecoveryText,
   getUnspentSkillPoints,
@@ -487,7 +490,6 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
         </div>
 
         <div class="character-identity-panel">
-          <p class="journey-overline">Character sheet</p>
           <div class="journey-title-row">
             <h3>${escapeHtml(viewModel.displayName)}</h3>
             <span class="journey-chip">${escapeHtml(viewModel.classLabel)}</span>
@@ -580,22 +582,28 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
       </article>
 
       <article class="journey-side-card character-radar-card">
-        <p class="journey-overline">Equipment</p>
-        <h4>What defines this build</h4>
+        <p class="journey-overline">Loadout</p>
+        <h4>What is shaping this build</h4>
         <div class="journey-character-list">
           <div class="journey-log-entry">
             <p><strong>Discipline:</strong> ${escapeHtml(viewModel.classLabel)}</p>
           </div>
           <div class="journey-log-entry">
-            <p><strong>Weapon:</strong> ${escapeHtml(viewModel.state.weaponName || "Still unarmed")}</p>
+            <p><strong>Equipped weapon:</strong> ${escapeHtml(
+              viewModel.journeyStats.equippedWeaponMeta?.label || "Still unarmed"
+            )}</p>
+          </div>
+          <div class="journey-log-entry">
+            <p><strong>Bag:</strong> ${escapeHtml(viewModel.bagMeta.label)}</p>
           </div>
           <div class="journey-log-entry">
             <p><strong>Starter keepsake:</strong> ${escapeHtml(viewModel.state.starterItem)}</p>
           </div>
           <div class="journey-log-entry">
-            <p><strong>Status:</strong> ${escapeHtml(viewModel.statusLabel)}</p>
+            <p><strong>Carry limits:</strong> ${viewModel.bagMeta.weaponSlots} weapon slot${viewModel.bagMeta.weaponSlots === 1 ? "" : "s"}, ${viewModel.supplies.rationCapacity} ration${viewModel.supplies.rationCapacity === 1 ? "" : "s"}, ${viewModel.supplies.tonicCapacity} tonic${viewModel.supplies.tonicCapacity === 1 ? "" : "s"}</p>
           </div>
         </div>
+        <p class="muted-text">${escapeHtml(viewModel.bagMeta.description)}</p>
       </article>
     </section>
 
@@ -604,20 +612,47 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
         <p class="journey-overline">Inventory</p>
         <h4>What you are carrying</h4>
         <div class="summary-row">
-          <span class="summary-pill">Rations: ${viewModel.supplies.availableRations} / ${viewModel.supplies.earnedRations}</span>
-          <span class="summary-pill">Tonics: ${viewModel.supplies.availableTonics} / ${viewModel.supplies.earnedTonics}</span>
+          <span class="summary-pill">Weapons <strong>${viewModel.weaponInventory.length} / ${viewModel.bagMeta.weaponSlots}</strong></span>
+          <span class="summary-pill">Rations <strong>${viewModel.supplies.availableRations} / ${viewModel.supplies.rationCapacity}</strong></span>
+          <span class="summary-pill">Tonics <strong>${viewModel.supplies.availableTonics} / ${viewModel.supplies.tonicCapacity}</strong></span>
         </div>
         <div class="journey-character-list">
-          ${viewModel.inventoryItems
-            .map(
-              (item) => `
+          ${viewModel.weaponInventory.length
+            ? viewModel.weaponInventory
+                .map((weapon) => renderJourneyWeaponCard(weapon))
+                .join("")
+            : `
                 <div class="journey-log-entry">
-                  <p>${escapeHtml(item)}</p>
+                  <p>You are still travelling light and painfully under-armed.</p>
+                </div>
+              `}
+        </div>
+        ${
+          viewModel.supplies.autoConsumedRations || viewModel.supplies.autoConsumedTonics
+            ? `
+                <p class="muted-text">
+                  Extra supplies beyond your bag space are automatically consumed on the road.
+                </p>
+              `
+            : ""
+        }
+        ${
+          viewModel.pendingWeapons.length
+            ? `
+                <div class="journey-character-list journey-pending-weapon-list">
+                  ${viewModel.pendingWeapons
+                    .map((weapon) =>
+                      renderJourneyPendingWeaponCard(
+                        weapon,
+                        viewModel.weaponInventory,
+                        viewModel.bagMeta.weaponSlots
+                      )
+                    )
+                    .join("")}
                 </div>
               `
-            )
-            .join("")}
-        </div>
+            : ""
+        }
       </article>
 
       <article class="journey-side-card">
@@ -721,7 +756,9 @@ function buildJourneyViewModel(state, games, sessions, xpSummary) {
   );
   const storyLevelBonus = getJourneyStoryLevelBonus(state.storyXp);
   const displayName = getJourneyDisplayName(state);
-  const inventoryItems = getJourneyInventoryItems(state, supplies);
+  const bagMeta = getJourneyBagMeta(state.bagKey);
+  const weaponInventory = getJourneyWeaponInventory(state);
+  const pendingWeapons = getJourneyPendingWeapons(state);
   const knownNotes = getJourneyKnownNotes(state);
 
   return {
@@ -743,7 +780,9 @@ function buildJourneyViewModel(state, games, sessions, xpSummary) {
     hungerPercent,
     storyLevelBonus,
     displayName,
-    inventoryItems,
+    bagMeta,
+    weaponInventory,
+    pendingWeapons,
     knownNotes,
     classLabel: JOURNEY_CLASS_META[state.classType].label,
     classDescription: JOURNEY_CLASS_META[state.classType].description,
@@ -755,21 +794,48 @@ function buildJourneyViewModel(state, games, sessions, xpSummary) {
 function renderJourneyStatCards(viewModel) {
   return JOURNEY_STAT_KEYS.map((statKey) => {
     const statMeta = JOURNEY_STAT_META[statKey];
-    const spent = viewModel.state.allocatedStats[statKey] || 0;
-    const modifier = viewModel.state.statModifiers[statKey] || 0;
-    const modifierText = modifier
-      ? ` • Modifier ${modifier > 0 ? "+" : ""}${modifier}`
+    const breakdown = viewModel.journeyStats.statBreakdown[statKey];
+    const hasClassBonus = breakdown.classBonus > 0;
+    const hasWeaponBonus = breakdown.weaponBonus > 0;
+    const modifierText = breakdown.modifier
+      ? `Modifier ${breakdown.modifier > 0 ? "+" : ""}${breakdown.modifier}`
       : "";
 
     return `
-      <article class="journey-stat-card character-stat-card-item">
+      <article class="journey-stat-card character-stat-card-item ${
+        hasClassBonus ? "has-class-bonus" : ""
+      } ${hasWeaponBonus ? "has-weapon-bonus" : ""}">
         <div class="stat-row">
           <h4>${escapeHtml(statMeta.label)}</h4>
-          <strong>${viewModel.journeyStats.stats[statKey]}</strong>
-          <span class="journey-chip">Spent ${spent}</span>
+          <strong>${breakdown.total}</strong>
+          <span class="journey-chip">Spent ${breakdown.allocated}</span>
+        </div>
+        <div class="journey-inline-row stat-source-row">
+          <span class="journey-chip">Base ${breakdown.base}</span>
+          ${
+            hasClassBonus
+              ? `<span class="journey-chip is-class">Class +${breakdown.classBonus}</span>`
+              : ""
+          }
+          ${
+            hasWeaponBonus
+              ? `<span class="journey-chip is-weapon">Weapon +${breakdown.weaponBonus}</span>`
+              : ""
+          }
+          ${
+            modifierText
+              ? `<span class="journey-chip">${escapeHtml(modifierText)}</span>`
+              : ""
+          }
         </div>
         <p class="stat-help">${escapeHtml(statMeta.help)}</p>
-        <p class="muted-text">Current total includes class bonuses and story modifiers${escapeHtml(modifierText)}.</p>
+        <p class="muted-text">
+          ${
+            hasClassBonus || hasWeaponBonus
+              ? "Bonus sources are lighting this stat up right now."
+              : "This stat is currently driven by your base training and spent skill points."
+          }
+        </p>
         <div class="journey-skill-actions">
           <button
             type="button"
@@ -784,6 +850,116 @@ function renderJourneyStatCards(viewModel) {
       </article>
     `;
   }).join("");
+}
+
+function renderJourneyWeaponCard(weapon) {
+  return `
+    <article class="journey-log-entry journey-weapon-card ${
+      weapon.equipped ? "is-equipped" : ""
+    }">
+      <div class="journey-title-row">
+        <strong>${escapeHtml(weapon.meta.label)}</strong>
+        <span class="journey-chip">${escapeHtml(weapon.meta.tier)}</span>
+        ${weapon.equipped ? '<span class="journey-chip is-active">Equipped</span>' : ""}
+      </div>
+      <p class="muted-text">${escapeHtml(weapon.meta.description)}</p>
+      <div class="journey-inline-row stat-source-row">
+        ${renderWeaponBonusChips(weapon.meta.bonuses)}
+      </div>
+      <div class="journey-skill-actions">
+        ${
+          weapon.equipped
+            ? ""
+            : `
+                <button
+                  type="button"
+                  class="secondary-button"
+                  data-journey-action="equip-weapon"
+                  data-weapon="${weapon.key}"
+                >
+                  Equip
+                </button>
+              `
+        }
+        <button
+          type="button"
+          class="secondary-button"
+          data-journey-action="drop-weapon"
+          data-weapon="${weapon.key}"
+        >
+          Drop
+        </button>
+      </div>
+    </article>
+  `;
+}
+
+function renderJourneyPendingWeaponCard(weapon, currentWeapons, weaponSlots) {
+  const canKeep = currentWeapons.length < weaponSlots;
+
+  return `
+    <article class="journey-log-entry journey-weapon-card is-pending">
+      <div class="journey-title-row">
+        <strong>${escapeHtml(weapon.meta.label)}</strong>
+        <span class="journey-chip is-warning">New find</span>
+        <span class="journey-chip">${escapeHtml(weapon.meta.tier)}</span>
+      </div>
+      <p class="muted-text">${escapeHtml(weapon.meta.description)}</p>
+      <div class="journey-inline-row stat-source-row">
+        ${renderWeaponBonusChips(weapon.meta.bonuses)}
+      </div>
+      <div class="journey-skill-actions">
+        ${
+          canKeep
+            ? `
+                <button
+                  type="button"
+                  class="secondary-button"
+                  data-journey-action="keep-weapon"
+                  data-weapon="${weapon.key}"
+                >
+                  Keep it
+                </button>
+              `
+            : currentWeapons
+                .map(
+                  (currentWeapon) => `
+                    <button
+                      type="button"
+                      class="secondary-button"
+                      data-journey-action="replace-weapon"
+                      data-weapon="${weapon.key}"
+                      data-replace="${currentWeapon.key}"
+                    >
+                      Replace ${escapeHtml(currentWeapon.meta.label)}
+                    </button>
+                  `
+                )
+                .join("")
+        }
+        <button
+          type="button"
+          class="secondary-button"
+          data-journey-action="discard-pending-weapon"
+          data-weapon="${weapon.key}"
+        >
+          Leave it
+        </button>
+      </div>
+    </article>
+  `;
+}
+
+function renderWeaponBonusChips(bonuses) {
+  return JOURNEY_STAT_KEYS.filter((statKey) => (bonuses?.[statKey] || 0) > 0)
+    .map(
+      (statKey) => `
+        <span class="journey-chip is-weapon">
+          ${escapeHtml(JOURNEY_STAT_META[statKey].label)} +${bonuses[statKey]}
+        </span>
+      `
+    )
+    .join("");
 }
 
 function renderCharacterResourceCard(config) {
@@ -1208,8 +1384,9 @@ function matchesJourneySpriteBackground(red, green, blue, backgroundPalette) {
 export function getJourneyInventoryItems(state, supplies) {
   const items = [`Starter keepsake: ${state.starterItem}`];
 
-  if (state.weaponName) {
-    items.push(`Weapon: ${state.weaponName}`);
+  const equippedWeapon = getJourneyWeaponInventory(state).find((weapon) => weapon.equipped);
+  if (equippedWeapon?.meta) {
+    items.push(`Equipped weapon: ${equippedWeapon.meta.label}`);
   }
 
   if (state.storyFlags.boarDefeated) {
@@ -1238,6 +1415,10 @@ export function getJourneyKnownNotes(state) {
     notes.push("You are no longer completely unarmed.");
   }
 
+  if (state.bagKey && state.bagKey !== "none") {
+    notes.push("You have enough pack space now to carry a more serious loadout.");
+  }
+
   if (state.storyFlags.boarDefeated) {
     notes.push("You survived your first brutal hunt in the woods.");
   }
@@ -1250,6 +1431,10 @@ export function getJourneyKnownNotes(state) {
     notes.push(
       `A discipline awakened: ${JOURNEY_CLASS_META[state.classType].label}.`
     );
+  }
+
+  if ((state.pendingWeaponKeys || []).length) {
+    notes.push("A fresh weapon find is waiting on you to decide what stays and what goes.");
   }
 
   return notes;

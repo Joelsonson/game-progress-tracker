@@ -15,33 +15,30 @@
   <body>
     <main class="app-shell">
       <header class="hero">
-        <p class="eyebrow">Prototype v0.8</p>
+        <p class="eyebrow">Journey Log</p>
         <h1><span class="brand-title-main">Tabi no Kiroku</span><span class="brand-title-divider"> — </span><span class="brand-title-sub">Journey Log</span></h1>
-        <p class="hero-text">
-          Track your play, power your expedition, and keep moving toward the finish line.
-        </p>
       </header>
 
       <section class="panel mobile-quick-switch" aria-label="Quick navigation">
         <div class="quick-switch-grid">
           <button type="button" class="nav-chip-button is-active" data-screen-target="home">
-            <span class="nav-chip-icon">⛺</span>
+            <span class="nav-chip-icon">🏠</span>
             <span>Home</span>
           </button>
           <button type="button" class="nav-chip-button" data-screen-target="journey">
-            <span class="nav-chip-icon">🗺</span>
+            <span class="nav-chip-icon">🧭</span>
             <span>Journey</span>
           </button>
           <button type="button" class="nav-chip-button" data-screen-target="character">
-            <span class="nav-chip-icon">🛡</span>
+            <span class="nav-chip-icon">🧍</span>
             <span>Character</span>
           </button>
           <button type="button" class="nav-chip-button" data-screen-target="tracker">
-            <span class="nav-chip-icon">🎒</span>
+            <span class="nav-chip-icon">🎮</span>
             <span>Tracker</span>
           </button>
           <button type="button" class="nav-chip-button" data-screen-target="sessions">
-            <span class="nav-chip-icon">⚔</span>
+            <span class="nav-chip-icon">⏱️</span>
             <span>Sessions</span>
           </button>
         </div>
@@ -166,7 +163,7 @@
                 <p class="eyebrow">Idle journey</p>
                 <h2>Another world, day by day</h2>
                 <p class="muted-text">
-                  Focus this view on the road itself: progress, events, and the latest travel story beats.
+                  Your character journeys on ahead. The more progress you make in games, the more he will push forward in his own journey.
                 </p>
               </div>
             </div>
@@ -178,16 +175,6 @@
 
         <section id="screenCharacter" class="mobile-screen" data-screen="character">
           <section class="panel journey-panel">
-            <div class="section-header">
-              <div>
-                <p class="eyebrow">Character</p>
-                <h2>Your sheet at a glance</h2>
-                <p class="muted-text">
-                  Portrait, health, hunger, stats, skills, and equipment live here so the journey screen can stay cleaner.
-                </p>
-              </div>
-            </div>
-
             <div id="characterContent" class="character-shell"></div>
             <p id="characterMessage" class="form-message"></p>
           </section>
@@ -258,7 +245,6 @@
                   id="meaningfulProgress"
                   name="meaningfulProgress"
                   type="checkbox"
-                  checked
                 />
                 <span>This session felt like meaningful progress</span>
               </label>

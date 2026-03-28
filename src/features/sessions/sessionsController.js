@@ -98,7 +98,7 @@ export async function handleAddSession(event) {
     });
 
     sessionForm.reset();
-    meaningfulProgressInput.checked = true;
+    meaningfulProgressInput.checked = false;
 
     const replayText =
       selectedGame.status === GAME_STATUSES.COMPLETED ? " replay" : "";

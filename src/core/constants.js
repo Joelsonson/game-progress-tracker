@@ -174,6 +174,110 @@ export const JOURNEY_CLASS_META = {
   },
 };
 
+export const JOURNEY_BAG_META = {
+  none: {
+    label: "No bag",
+    description: "You can only keep what fits on your belt and in your hands.",
+    rank: 0,
+    weaponSlots: 1,
+    rationCapacity: 2,
+    tonicCapacity: 1,
+  },
+  satchel: {
+    label: "Forager satchel",
+    description: "A small shoulder satchel with just enough room to stop living hand-to-mouth.",
+    rank: 1,
+    weaponSlots: 2,
+    rationCapacity: 4,
+    tonicCapacity: 2,
+  },
+  backpack: {
+    label: "Traveller's backpack",
+    description: "A proper pack that lets you carry spare gear without fumbling every step.",
+    rank: 2,
+    weaponSlots: 3,
+    rationCapacity: 6,
+    tonicCapacity: 3,
+  },
+  field_kit: {
+    label: "Expedition field kit",
+    description: "A reinforced pack with careful compartments for the longer and uglier roads ahead.",
+    rank: 3,
+    weaponSlots: 3,
+    rationCapacity: 8,
+    tonicCapacity: 4,
+  },
+};
+
+export const JOURNEY_WEAPON_META = {
+  scavenged_weapon: {
+    label: "Scavenged weapon",
+    tier: "Improvised",
+    description: "Better than being unarmed, but only barely.",
+    bonuses: { might: 1, finesse: 0, arcana: 0, vitality: 0, resolve: 0 },
+  },
+  rust_worn_belt_knife: {
+    label: "Rust-worn belt knife",
+    tier: "Common",
+    description: "Short reach, fast hand, and better than empty pockets.",
+    bonuses: { might: 0, finesse: 2, arcana: 0, vitality: 0, resolve: 0 },
+  },
+  crude_spear_club: {
+    label: "Crude spear-club",
+    tier: "Common",
+    description: "Awkward, heavy, and surprisingly dependable in a panic.",
+    bonuses: { might: 1, finesse: 0, arcana: 0, vitality: 1, resolve: 0 },
+  },
+  weathered_short_sword: {
+    label: "Weathered short sword",
+    tier: "Uncommon",
+    description: "Balanced enough to make clean work feel possible.",
+    bonuses: { might: 2, finesse: 1, arcana: 0, vitality: 0, resolve: 0 },
+  },
+  hardened_boar_spear: {
+    label: "Hardened boar spear",
+    tier: "Uncommon",
+    description: "Made for hunting things that do not stop when they should.",
+    bonuses: { might: 2, finesse: 0, arcana: 0, vitality: 1, resolve: 0 },
+  },
+  travelers_hatchet: {
+    label: "Traveler's hatchet",
+    tier: "Uncommon",
+    description: "Useful in camp, better in a fight than it has any right to be.",
+    bonuses: { might: 1, finesse: 1, arcana: 0, vitality: 0, resolve: 1 },
+  },
+  bandit_cut_machete: {
+    label: "Bandit-cut machete",
+    tier: "Uncommon",
+    description: "Rough steel that rewards aggression and quick hands.",
+    bonuses: { might: 1, finesse: 2, arcana: 0, vitality: 0, resolve: 0 },
+  },
+  ashwood_bow: {
+    label: "Ashwood bow",
+    tier: "Rare",
+    description: "Light, reliable, and far deadlier in patient hands.",
+    bonuses: { might: 0, finesse: 3, arcana: 0, vitality: 0, resolve: 1 },
+  },
+  ember_rod: {
+    label: "Ember rod",
+    tier: "Rare",
+    description: "A charred focus humming with the memory of heat.",
+    bonuses: { might: 0, finesse: 0, arcana: 3, vitality: 0, resolve: 1 },
+  },
+  warded_stave: {
+    label: "Warded stave",
+    tier: "Rare",
+    description: "Steadier than it looks, and carved to hold protective sigils.",
+    bonuses: { might: 0, finesse: 0, arcana: 2, vitality: 1, resolve: 1 },
+  },
+  ruin_greatblade: {
+    label: "Ruin greatblade",
+    tier: "Epic",
+    description: "Heavy steel from a harsher stretch of the road.",
+    bonuses: { might: 3, finesse: 0, arcana: 0, vitality: 1, resolve: 0 },
+  },
+};
+
 export const JOURNEY_STAT_META = {
   might: {
     label: "Might",
