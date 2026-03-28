@@ -557,3 +557,53 @@
   color: var(--muted);
   text-align: center;
 }
+
+/* Book Theme */
+.level-chip,
+.section-count,
+.summary-pill {
+  background: rgba(var(--accent-rgb), 0.1);
+  border-color: rgba(var(--accent-rgb), 0.24);
+  color: var(--accent-2);
+}
+
+.summary-stat,
+.stat-card,
+.games-section,
+.game-card,
+.session-card {
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.98), rgba(var(--surface-rgb), 0.94)),
+    var(--panel);
+  border-color: var(--border);
+}
+
+.summary-stat-value {
+  color: var(--text);
+}
+
+.xp-bar {
+  background: rgba(var(--ink-rgb), 0.08);
+}
+
+.games-section-main,
+.game-card-main {
+  border-color: rgba(var(--accent-rgb), 0.32);
+  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.12);
+}
+
+.game-card-banner,
+.quest-hero-banner,
+.completion-card-banner {
+  background:
+    linear-gradient(135deg, rgba(var(--accent-rgb), 0.22), rgba(var(--ink-rgb), 0.08)),
+    var(--panel-3);
+}
+
+.game-card-banner::after,
+.quest-hero-banner::after,
+.completion-card-banner::after {
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.08), rgba(var(--ink-rgb), 0.14)),
+    linear-gradient(90deg, rgba(var(--surface-rgb), 0.04), rgba(var(--ink-rgb), 0.08));
+}
