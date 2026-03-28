@@ -239,6 +239,7 @@ Read this file first before making changes. Use it as the routing map for what t
 - Keep equipment rules, bag sizes, weapon bonuses, and carry limits inside `src/features/journey/journeyEngine.js` and `src/core/constants.js`, not inside the view.
 - Do not add separate desktop layouts unless the user explicitly asks for desktop support again.
 - Preserve the current parchment-and-glass visual direction unless the user asks to restyle it again.
+- The current UI direction mixes a cleaner system-sans shell with Georgia for story-facing journey typography; keep journey events and story cards lighter and less heavy-handed than the older dark card treatment.
 
 ## Prompt Shortcut
 

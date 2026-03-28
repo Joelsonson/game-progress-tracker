@@ -9,7 +9,13 @@ body {
 }
 
 body {
-  font-family: Palatino, "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    "Segoe UI",
+    system-ui,
+    sans-serif;
   background:
     radial-gradient(circle at top, rgba(var(--accent-rgb), 0.15), transparent 32%),
     radial-gradient(circle at 50% -8%, rgba(var(--ink-rgb), 0.04), transparent 28%),
@@ -36,7 +42,7 @@ h6,
 .level-chip,
 .journey-overline,
 .eyebrow {
-  font-family: "Folio", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  font-family: Georgia, "Times New Roman", serif;
   letter-spacing: 0.01em;
 }
 

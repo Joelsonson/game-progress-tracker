@@ -177,11 +177,17 @@ export function renderHomeJourney(state, xpSummary) {
             ? `
               <button
                 type="button"
-                class="primary-button"
+                class="primary-button journey-home-event-button"
                 data-home-action="open-event"
                 data-event-id="${pendingEvent.id}"
               >
-                Something happened
+                <span class="journey-event-kicker">New event</span>
+                <span class="journey-home-event-title">${escapeHtml(
+                  pendingEvent.title
+                )}</span>
+                <span class="journey-event-summary">${escapeHtml(
+                  pendingEvent.teaser
+                )}</span>
               </button>
             `
             : ""
@@ -214,8 +220,12 @@ export function openJourneyEventModal(eventEntry) {
               data-event-id="${eventEntry.id}"
               data-choice-id="${choice.id}"
             >
-              <strong>${escapeHtml(choice.label)}</strong>
-              <span>${escapeHtml(choice.preview)}</span>
+              <span class="journey-event-choice-title">${escapeHtml(
+                choice.label
+              )}</span>
+              <span class="journey-event-choice-preview">${escapeHtml(
+                choice.preview
+              )}</span>
             </button>
           `
         )
@@ -320,9 +330,9 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
     ? `
         <article class="journey-side-card journey-alert-card">
           <p class="journey-overline">Event queue</p>
-          <h4>Something happened</h4>
+          <h4>Awaiting a choice</h4>
           <p class="muted-text">
-            The road has a way of forcing decisions on you.
+            Open an encounter when you are ready to deal with it.
           </p>
           <div class="journey-event-list">
             ${viewModel.state.pendingEvents
@@ -334,11 +344,16 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
                     data-journey-action="open-event"
                     data-event-id="${eventEntry.id}"
                   >
-                    <span>
+                    <span class="journey-event-button-head">
                       <span class="journey-event-kicker">New event</span>
-                      <strong>${escapeHtml(eventEntry.title)}</strong>
+                      <span class="journey-event-action">Review</span>
                     </span>
-                    <span class="journey-event-summary">${escapeHtml(eventEntry.teaser)}</span>
+                    <span class="journey-event-title">${escapeHtml(
+                      eventEntry.title
+                    )}</span>
+                    <span class="journey-event-summary">${escapeHtml(
+                      eventEntry.teaser
+                    )}</span>
                   </button>
                 `
               )
