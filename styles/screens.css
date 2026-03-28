@@ -9,8 +9,7 @@
   .journey-stat-grid,
   .journey-log-grid,
   .journey-adventure-grid,
-  .character-build-grid,
-  .character-summary-grid {
+  .character-build-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -19,7 +18,8 @@
   .journey-hero-top,
   .journey-utility-row,
   .journey-character-name-row,
-  .character-hero-layout {
+  .character-hero-layout,
+  .journey-route-hero {
     grid-template-columns: 1fr;
   }
 
@@ -40,7 +40,7 @@
   .journey-log-grid,
   .journey-adventure-grid,
   .character-build-grid,
-  .character-summary-grid {
+  .character-vitals-grid {
     grid-template-columns: 1fr;
   }
 
@@ -155,6 +155,19 @@
 
 .nav-chip-icon,
 .mobile-tab-icon {
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  background:
+    linear-gradient(180deg, rgba(96, 165, 250, 0.16), rgba(30, 41, 59, 0.9)),
+    rgba(15, 23, 42, 0.92);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 8px 16px rgba(0, 0, 0, 0.16);
   font-size: 1rem;
   line-height: 1;
 }
@@ -458,8 +471,8 @@
     grid-template-columns: 1fr;
   }
 
-  .character-summary-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .journey-route-sprite-banner {
+    justify-self: start;
   }
 
   .mobile-quick-switch {
@@ -482,13 +495,8 @@
     grid-template-columns: 1fr;
   }
 
-  .journey-sprite-preview {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .character-summary-grid,
-  .character-radar-legend {
+  .character-radar-legend,
+  .character-vitals-grid {
     grid-template-columns: 1fr;
   }
 

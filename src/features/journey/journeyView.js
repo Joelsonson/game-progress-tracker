@@ -96,11 +96,10 @@ export function renderHomeJourney(state, xpSummary) {
             ${escapeHtml(getJourneyActivityText(state, boss, progress, journeyStats))}
           </p>
 
-          ${renderJourneySpritePreview(JOURNEY_WALK_SPRITE, {
-            eyebrow: "Travel sprite",
-            title: "Road animation",
-            description:
-              "The active travel sprite still lives on the home summary so the character page can use the portrait view instead.",
+          ${renderJourneySpriteBanner(JOURNEY_WALK_SPRITE, {
+            wrapperClass: "journey-home-sprite-banner",
+            stageClass: "journey-sprite-stage-banner",
+            label: "On the road",
           })}
 
           <div class="journey-progress-track">
@@ -325,18 +324,27 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
 
   journeyContentEl.innerHTML = `
     <section class="journey-route-card">
-      <p class="journey-overline">Current stretch</p>
-      <div class="journey-title-row">
-        <h3>${escapeHtml(viewModel.displayName)} • Lv. ${viewModel.journeyLevel}</h3>
-        <span class="journey-chip is-active">${escapeHtml(viewModel.zoneName)}</span>
-        <span class="journey-chip">${escapeHtml(viewModel.statusLabel)}</span>
-        ${
-          viewModel.state.pendingEvents.length
-            ? `<span class="journey-chip is-warning">${viewModel.state.pendingEvents.length} event waiting</span>`
-            : ""
-        }
+      <div class="journey-route-hero">
+        <div class="journey-route-copy">
+          <p class="journey-overline">Current stretch</p>
+          <div class="journey-title-row">
+            <h3>${escapeHtml(viewModel.displayName)} • Lv. ${viewModel.journeyLevel}</h3>
+            <span class="journey-chip is-active">${escapeHtml(viewModel.zoneName)}</span>
+            <span class="journey-chip">${escapeHtml(viewModel.statusLabel)}</span>
+            ${
+              viewModel.state.pendingEvents.length
+                ? `<span class="journey-chip is-warning">${viewModel.state.pendingEvents.length} event waiting</span>`
+                : ""
+            }
+          </div>
+          <p class="journey-zone">${escapeHtml(viewModel.activityText)}</p>
+        </div>
+        ${renderJourneySpriteBanner(JOURNEY_WALK_SPRITE, {
+          wrapperClass: "journey-route-sprite-banner",
+          stageClass: "journey-sprite-stage-route",
+          label: "Travelling",
+        })}
       </div>
-      <p class="journey-zone">${escapeHtml(viewModel.activityText)}</p>
       <div class="journey-progress-track">
         <div class="journey-progress-fill" style="width: ${viewModel.progress.percent}%"></div>
       </div>
@@ -476,13 +484,6 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
           ${renderJourneySpriteImage(JOURNEY_PORTRAIT_SPRITE, {
             stageClass: "journey-sprite-stage-portrait",
           })}
-          <div class="character-portrait-copy">
-            <p class="journey-overline">Portrait</p>
-            <h4>Idle portrait</h4>
-            <p class="muted-text">
-              Loaded from <code>assets/journey/sprites/Idlethink.png</code>.
-            </p>
-          </div>
         </div>
 
         <div class="character-identity-panel">
@@ -510,81 +511,75 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
             </button>
           </div>
 
-          <p class="muted-text">
-            Journey level is your tracker level plus story bonus from what happens out on the road. Tracker level is earned from your logged gaming sessions.
-          </p>
-
-          <div class="character-summary-grid">
-            <div class="journey-story-stat">
-              <span>Journey level</span>
-              <strong>${viewModel.journeyLevel}</strong>
-            </div>
-            <div class="journey-story-stat">
-              <span>Tracker level</span>
-              <strong>${viewModel.xpSummary.level}</strong>
-            </div>
-            <div class="journey-story-stat">
-              <span>Story bonus</span>
-              <strong>+${viewModel.storyLevelBonus}</strong>
-            </div>
-            <div class="journey-story-stat">
-              <span>Story XP</span>
-              <strong>${viewModel.state.storyXp}</strong>
-            </div>
-            <div class="journey-story-stat">
-              <span>Skill points left</span>
-              <strong>${viewModel.unspentSkillPoints}</strong>
-            </div>
-          </div>
-
-          <div class="character-resource-stack">
-            ${renderCharacterResourceCard({
-              title: "Health",
-              current: Math.round(viewModel.state.currentHp),
-              max: viewModel.journeyStats.maxHp,
-              percent: viewModel.hpPercent,
-              statLabel: "Vitality",
-              statValue: viewModel.journeyStats.stats.vitality,
-              action: "use-tonic",
-              actionText: `Use tonic (${viewModel.supplies.availableTonics})`,
-              disabled: viewModel.supplies.availableTonics <= 0,
-              infoLabel: "Health details",
-              infoLines: [
-                `Passive regen: ${viewModel.journeyStats.regenPerHour.toFixed(1)}/hr`,
-                "Tonics restore a chunk of HP and scale with vitality.",
-              ],
-              fillClass: "resource-fill-health",
+          <div class="character-vitals-grid">
+            ${renderCharacterVitalChip({
+              icon: "❤",
+              label: "HP",
+              value: `${Math.round(viewModel.state.currentHp)} / ${viewModel.journeyStats.maxHp}`,
             })}
-            ${renderCharacterResourceCard({
-              title: "Hunger",
-              current: Math.round(viewModel.state.currentHunger),
-              max: viewModel.journeyStats.maxHunger,
-              percent: viewModel.hungerPercent,
-              statLabel: "Resolve",
-              statValue: viewModel.journeyStats.stats.resolve,
-              action: "use-ration",
-              actionText: `Eat ration (${viewModel.supplies.availableRations})`,
-              disabled: viewModel.supplies.availableRations <= 0,
-              infoLabel: "Hunger details",
-              infoLines: [
-                `Hunger drain: ${viewModel.journeyStats.hungerDrainPerHour.toFixed(1)}/hr`,
-                "Rations restore hunger and scale with resolve.",
-              ],
-              fillClass: "resource-fill-hunger",
+            ${renderCharacterVitalChip({
+              icon: "🍖",
+              label: "Hunger",
+              value: `${Math.round(viewModel.state.currentHunger)} / ${viewModel.journeyStats.maxHunger}`,
             })}
           </div>
+
+          <div class="summary-row character-summary-row">
+            <span class="summary-pill">Journey Lv. <strong>${viewModel.journeyLevel}</strong></span>
+            <span class="summary-pill">Tracker Lv. <strong>${viewModel.xpSummary.level}</strong></span>
+            <span class="summary-pill">Story bonus <strong>+${viewModel.storyLevelBonus}</strong></span>
+            <span class="summary-pill">Story XP <strong>${viewModel.state.storyXp}</strong></span>
+            <span class="summary-pill">Skill points <strong>${viewModel.unspentSkillPoints}</strong></span>
+          </div>
+
+          ${renderJourneyRadarChart(viewModel.journeyStats.stats)}
         </div>
       </div>
     </section>
 
     <section class="character-build-grid">
-      <article class="journey-side-card character-radar-card">
-        <p class="journey-overline">Attributes</p>
-        <h4>Build shape</h4>
-        ${renderJourneyRadarChart(viewModel.journeyStats.stats)}
+      <article class="journey-side-card">
+        <p class="journey-overline">Condition</p>
+        <h4>Recovery and upkeep</h4>
+        <div class="character-resource-stack">
+          ${renderCharacterResourceCard({
+            title: "Health",
+            current: Math.round(viewModel.state.currentHp),
+            max: viewModel.journeyStats.maxHp,
+            percent: viewModel.hpPercent,
+            statLabel: "Vitality",
+            statValue: viewModel.journeyStats.stats.vitality,
+            action: "use-tonic",
+            actionText: `Use tonic (${viewModel.supplies.availableTonics})`,
+            disabled: viewModel.supplies.availableTonics <= 0,
+            infoLabel: "Health details",
+            infoLines: [
+              `Passive regen: ${viewModel.journeyStats.regenPerHour.toFixed(1)}/hr`,
+              "Tonics restore a chunk of HP and scale with vitality.",
+            ],
+            fillClass: "resource-fill-health",
+          })}
+          ${renderCharacterResourceCard({
+            title: "Hunger",
+            current: Math.round(viewModel.state.currentHunger),
+            max: viewModel.journeyStats.maxHunger,
+            percent: viewModel.hungerPercent,
+            statLabel: "Resolve",
+            statValue: viewModel.journeyStats.stats.resolve,
+            action: "use-ration",
+            actionText: `Eat ration (${viewModel.supplies.availableRations})`,
+            disabled: viewModel.supplies.availableRations <= 0,
+            infoLabel: "Hunger details",
+            infoLines: [
+              `Hunger drain: ${viewModel.journeyStats.hungerDrainPerHour.toFixed(1)}/hr`,
+              "Rations restore hunger and scale with resolve.",
+            ],
+            fillClass: "resource-fill-hunger",
+          })}
+        </div>
       </article>
 
-      <article class="journey-side-card">
+      <article class="journey-side-card character-radar-card">
         <p class="journey-overline">Equipment</p>
         <h4>What defines this build</h4>
         <div class="journey-character-list">
@@ -822,6 +817,18 @@ function renderCharacterResourceCard(config) {
   `;
 }
 
+function renderCharacterVitalChip(config) {
+  return `
+    <div class="character-vital-chip">
+      <span class="character-vital-icon" aria-hidden="true">${escapeHtml(config.icon)}</span>
+      <div class="character-vital-copy">
+        <span>${escapeHtml(config.label)}</span>
+        <strong>${escapeHtml(config.value)}</strong>
+      </div>
+    </div>
+  `;
+}
+
 function renderJourneyInlineHelp(label, lines) {
   return `
     <details class="journey-inline-help">
@@ -835,17 +842,21 @@ function renderJourneyInlineHelp(label, lines) {
   `;
 }
 
-function renderJourneySpritePreview(spriteConfig, options = {}) {
+function renderJourneySpriteBanner(spriteConfig, options = {}) {
+  const wrapperClass = options.wrapperClass ? ` ${options.wrapperClass}` : "";
+
   return `
-    <div class="journey-sprite-preview">
+    <div class="journey-sprite-banner${wrapperClass}">
+      ${
+        options.label
+          ? `<span class="journey-sprite-banner-label">${escapeHtml(options.label)}</span>`
+          : ""
+      }
       ${renderJourneySpriteImage(spriteConfig, {
         stageClass: options.stageClass || "",
+        maxDisplayWidth: options.maxDisplayWidth,
+        maxDisplayHeight: options.maxDisplayHeight,
       })}
-      <div class="journey-sprite-copy">
-        ${options.eyebrow ? `<p class="journey-overline">${escapeHtml(options.eyebrow)}</p>` : ""}
-        ${options.title ? `<h4>${escapeHtml(options.title)}</h4>` : ""}
-        ${options.description ? `<p class="muted-text">${escapeHtml(options.description)}</p>` : ""}
-      </div>
     </div>
   `;
 }
