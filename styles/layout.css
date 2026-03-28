@@ -607,3 +607,21 @@
     linear-gradient(180deg, rgba(var(--panel-rgb), 0.08), rgba(var(--ink-rgb), 0.14)),
     linear-gradient(90deg, rgba(var(--surface-rgb), 0.04), rgba(var(--ink-rgb), 0.08));
 }
+
+.quest-cover-thumb,
+.game-art-placeholder {
+  border-color: rgba(var(--accent-rgb), 0.16);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.82), rgba(var(--surface-rgb), 0.72)),
+    rgba(var(--panel-rgb), 0.7);
+  box-shadow: 0 14px 28px rgba(var(--ink-rgb), 0.14);
+  backdrop-filter: blur(16px);
+}
+
+.game-art-placeholder {
+  color: var(--accent-2);
+  background:
+    radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.16), transparent 46%),
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.84), rgba(var(--surface-rgb), 0.72)),
+    rgba(var(--panel-rgb), 0.72);
+}

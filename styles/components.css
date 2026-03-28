@@ -1296,6 +1296,68 @@
   background: rgba(var(--ink-rgb), 0.42);
 }
 
+.journey-progress-track,
+.resource-track {
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.8), rgba(var(--surface-rgb), 0.72)),
+    rgba(var(--panel-rgb), 0.72);
+  border-color: rgba(var(--accent-rgb), 0.14);
+  box-shadow: inset 0 1px 0 rgba(var(--panel-rgb), 0.8);
+}
+
+.journey-progress-fill {
+  background: linear-gradient(90deg, rgba(var(--accent-rgb), 0.92), rgba(212, 187, 164, 0.88));
+}
+
+.resource-fill-health {
+  background: linear-gradient(90deg, rgba(164, 86, 75, 0.92), rgba(191, 141, 92, 0.86));
+}
+
+.resource-fill-hunger {
+  background: linear-gradient(90deg, rgba(164, 118, 63, 0.92), rgba(95, 122, 86, 0.82));
+}
+
+.journey-sprite-banner-label,
+.journey-story-stat,
+.journey-log-entry,
+.character-vital-chip,
+.character-radar-legend-item,
+.journey-debug-panel {
+  border-color: rgba(var(--accent-rgb), 0.16);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.84), rgba(var(--surface-rgb), 0.74)),
+    rgba(var(--panel-rgb), 0.68);
+  color: var(--text);
+  backdrop-filter: blur(16px);
+}
+
+.journey-sprite-banner-label {
+  border-color: rgba(var(--accent-rgb), 0.24);
+  background: rgba(var(--panel-rgb), 0.78);
+  color: var(--accent-2);
+}
+
+.journey-story-stat span,
+.journey-log-entry time,
+.character-radar-legend-item span {
+  color: var(--muted);
+}
+
+.journey-story-stat strong,
+.character-radar-legend-item strong {
+  color: var(--text);
+}
+
+.journey-chip.is-weapon {
+  background: rgba(164, 86, 75, 0.12);
+  border-color: rgba(164, 86, 75, 0.22);
+  color: var(--text);
+}
+
+.journey-debug-panel summary {
+  color: var(--accent-2);
+}
+
 @keyframes journey-thinking-pulse {
   0%,
   80%,

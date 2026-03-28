@@ -29,12 +29,12 @@
 
 .mobile-screen-group {
   display: grid;
-  gap: 20px;
+  gap: 28px;
 }
 
 .mobile-screen {
   display: none;
-  gap: 20px;
+  gap: 28px;
 }
 
 .mobile-screen.is-active {
@@ -256,7 +256,7 @@
 
 .journey-home-shell {
   display: grid;
-  gap: 16px;
+  gap: 22px;
 }
 
 .journey-home-copy h2,
@@ -272,10 +272,13 @@
 .journey-home-meters {
   display: grid;
   gap: 12px;
-  padding: 16px;
+  padding: 18px;
   border-radius: 18px;
   border: 1px solid var(--border);
-  background: rgba(15, 23, 42, 0.52);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.86), rgba(var(--surface-rgb), 0.72)),
+    rgba(var(--panel-rgb), 0.72);
+  backdrop-filter: blur(16px);
 }
 
 .journey-home-meter {
@@ -286,7 +289,7 @@
 .journey-home-actions {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 10px;
+  gap: 12px;
 }
 
 .journey-home-shell .summary-pill,

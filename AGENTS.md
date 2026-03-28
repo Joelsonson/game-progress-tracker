@@ -126,6 +126,7 @@ Read this file first before making changes. Use it as the routing map for what t
   - cards, badges, modals, journey widgets, reusable pieces
 - `styles/screens.css`
   - responsive behavior and screen-specific layout adjustments
+  - mobile-only spacing rhythm
 
 ## Change Routing
 
@@ -225,6 +226,7 @@ Read this file first before making changes. Use it as the routing map for what t
 - Keep the journey screen focused on travel-state UI and the character screen focused on character-sheet UI unless the request explicitly merges them again.
 - Keep equipment rules, bag sizes, weapon bonuses, and carry limits inside `src/features/journey/journeyEngine.js` and `src/core/constants.js`, not inside the view.
 - Do not add separate desktop layouts unless the user explicitly asks for desktop support again.
+- Preserve the current parchment-and-glass visual direction unless the user asks to restyle it again.
 
 ## Prompt Shortcut
 
