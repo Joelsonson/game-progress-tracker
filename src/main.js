@@ -18,6 +18,9 @@ import {
   exportDataButton,
   formMessage,
   gameForm,
+  gameActionsBodyEl,
+  gameActionsCloseButton,
+  gameActionsModal,
   gamesListEl,
   homeJourneyContentEl,
   importDataButton,
@@ -38,7 +41,7 @@ import { appState } from "./core/state.js";
 import { showMessage } from "./core/ui.js";
 import { handleClearData, handleExportData, handleImportData, handleResetJourneyData } from "./features/backup/backupController.js";
 import { cancelCropSelection, confirmCropSelection, handleCropControlInput, handleCropModalClick, resetCropControls } from "./features/art/imageCropper.js";
-import { handleAddGame, handleArtPickerChange, handleListClick, repairGamesIfNeeded } from "./features/games/gamesController.js";
+import { closeGameActionsSheet, handleAddGame, handleArtPickerChange, handleGameActionsModalClick, handleListClick, repairGamesIfNeeded } from "./features/games/gamesController.js";
 import { renderCompletionSpotlight, renderGames, renderMainQuest, renderPlayerProgress, renderStats } from "./features/games/gamesView.js";
 import { handleHomeJourneyClick, handleJourneyClick, handleJourneyEventModalClick, handleJourneyOutcomeModalClick } from "./features/journey/journeyController.js";
 import { syncJourneyState } from "./features/journey/journeyEngine.js";
@@ -77,6 +80,7 @@ function bindEvents() {
   sessionForm.addEventListener("submit", handleAddSession);
   gamesListEl.addEventListener("click", handleListClick);
   completionSpotlightEl.addEventListener("click", handleListClick);
+  gameActionsBodyEl?.addEventListener("click", handleListClick);
   journeyContentEl?.addEventListener("click", handleJourneyClick);
   characterContentEl?.addEventListener("click", handleJourneyClick);
   homeJourneyContentEl?.addEventListener("click", handleHomeJourneyClick);
@@ -97,6 +101,8 @@ function bindEvents() {
   cropCancelButton?.addEventListener("click", cancelCropSelection);
   cropConfirmButton?.addEventListener("click", confirmCropSelection);
   artCropModal?.addEventListener("click", handleCropModalClick);
+  gameActionsModal?.addEventListener("click", handleGameActionsModalClick);
+  gameActionsCloseButton?.addEventListener("click", closeGameActionsSheet);
   journeyEventModal?.addEventListener("click", handleJourneyEventModalClick);
   journeyEventCloseButton?.addEventListener("click", closeJourneyEventModal);
   journeyOutcomeModal?.addEventListener("click", handleJourneyOutcomeModalClick);
@@ -113,6 +119,11 @@ function bindEvents() {
 function handleGlobalKeyDown(event) {
   if (event.key === "Escape" && appState.cropSession) {
     cancelCropSelection();
+    return;
+  }
+
+  if (event.key === "Escape" && gameActionsModal && !gameActionsModal.hidden) {
+    closeGameActionsSheet();
     return;
   }
 

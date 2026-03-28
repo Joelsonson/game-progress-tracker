@@ -15,6 +15,8 @@
   --danger: #a4564b;
   --paused: #7b6d8d;
   --button-text: #fffaf6;
+  --accent-blue: #5c97ee;
+  --accent-blue-strong: #2f6fd6;
   --surface-rgb: 248, 244, 241;
   --panel-rgb: 255, 250, 246;
   --accent-rgb: 141, 99, 72;
@@ -40,6 +42,8 @@
     --danger: #d48f83;
     --paused: #b9aacb;
     --button-text: #201c1b;
+    --accent-blue: #8abbff;
+    --accent-blue-strong: #4f8ef5;
     --surface-rgb: 36, 36, 36;
     --panel-rgb: 45, 45, 45;
     --accent-rgb: 210, 181, 155;
@@ -64,6 +68,8 @@
   --danger: #d48f83;
   --paused: #b9aacb;
   --button-text: #201c1b;
+  --accent-blue: #8abbff;
+  --accent-blue-strong: #4f8ef5;
   --surface-rgb: 36, 36, 36;
   --panel-rgb: 45, 45, 45;
   --accent-rgb: 121, 174, 232;

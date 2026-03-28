@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Tabi no Kiroku — Journey Log</title>
-    <meta name="theme-color" content="#020617" />
+    <meta name="theme-color" content="#f8f4f1" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20260328a" />
-    <link rel="stylesheet" href="./styles/tokens.css?v=20260328b" />
-    <link rel="stylesheet" href="./styles/base.css?v=20260328b" />
-    <link rel="stylesheet" href="./styles/layout.css?v=20260328b" />
-    <link rel="stylesheet" href="./styles/components.css?v=20260328b" />
-    <link rel="stylesheet" href="./styles/screens.css?v=20260328b" />
+    <link rel="stylesheet" href="./styles/tokens.css?v=20260328c" />
+    <link rel="stylesheet" href="./styles/base.css?v=20260328c" />
+    <link rel="stylesheet" href="./styles/layout.css?v=20260328c" />
+    <link rel="stylesheet" href="./styles/components.css?v=20260328c" />
+    <link rel="stylesheet" href="./styles/screens.css?v=20260328c" />
   </head>
   <body>
     <main class="app-shell">
@@ -583,6 +583,39 @@
       </div>
     </div>
 
-    <script type="module" src="./src/main.js?v=20260328b"></script>
+    <div id="gameActionsModal" class="mobile-action-sheet" hidden>
+      <div class="mobile-action-sheet-backdrop" data-close-game-actions></div>
+
+      <div
+        class="mobile-action-sheet-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="gameActionsTitle"
+      >
+        <div class="mobile-action-sheet-grabber" aria-hidden="true"></div>
+
+        <div class="mobile-action-sheet-header">
+          <div>
+            <p class="eyebrow">Tracker actions</p>
+            <h2 id="gameActionsTitle">Manage game</h2>
+            <p id="gameActionsMeta" class="muted-text">
+              Choose what to do next.
+            </p>
+          </div>
+          <button
+            id="gameActionsCloseButton"
+            type="button"
+            class="secondary-button"
+            data-close-game-actions
+          >
+            Done
+          </button>
+        </div>
+
+        <div id="gameActionsBody" class="mobile-action-sheet-body"></div>
+      </div>
+    </div>
+
+    <script type="module" src="./src/main.js?v=20260328c"></script>
   </body>
 </html>

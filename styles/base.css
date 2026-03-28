@@ -11,13 +11,20 @@ body {
 body {
   font-family: Palatino, "Palatino Linotype", "Book Antiqua", Georgia, serif;
   background:
-    radial-gradient(circle at top, rgba(var(--accent-rgb), 0.14), transparent 32%),
+    radial-gradient(circle at top, rgba(var(--accent-rgb), 0.15), transparent 32%),
+    radial-gradient(circle at 50% -8%, rgba(var(--ink-rgb), 0.04), transparent 28%),
     linear-gradient(180deg, rgba(var(--panel-rgb), 0.94), rgba(var(--surface-rgb), 0.98)),
     var(--bg);
   color: var(--text);
   min-height: 100vh;
   max-width: 100%;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body.has-overlay {
+  overflow: hidden;
 }
 
 h1,
@@ -86,15 +93,17 @@ select {
 
 .panel {
   background:
-    linear-gradient(180deg, rgba(var(--panel-rgb), 0.98), rgba(var(--surface-rgb), 0.94)),
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.96), rgba(var(--surface-rgb), 0.9)),
     var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 18px;
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
+  border-radius: 24px;
   padding: 20px;
-  box-shadow: var(--shadow);
+  box-shadow:
+    0 12px 28px rgba(var(--ink-rgb), 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.38);
   margin-bottom: 0;
   min-width: 0;
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(22px);
 }
 
 .panel h2,
@@ -120,18 +129,24 @@ input,
 textarea,
 select {
   width: 100%;
-  border: 1px solid var(--border);
-  background: var(--panel-2);
+  border: 1px solid rgba(var(--ink-rgb), 0.12);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.96), rgba(var(--surface-rgb), 0.84)),
+    var(--panel-2);
   color: var(--text);
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 12px 14px;
   outline: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
 }
 
 input:focus,
 textarea:focus,
 select:focus {
-  border-color: var(--accent);
+  border-color: rgba(var(--accent-rgb), 0.45);
+  box-shadow:
+    0 0 0 4px rgba(var(--accent-rgb), 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24);
 }
 
 input[type="file"] {
@@ -170,15 +185,21 @@ textarea {
 
 .primary-button,
 .secondary-button {
-  border: 0;
-  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
   padding: 12px 16px;
   font-weight: 700;
   cursor: pointer;
   transition:
     background 0.18s ease,
     border-color 0.18s ease,
-    transform 0.18s ease;
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+  box-shadow:
+    0 10px 20px rgba(var(--ink-rgb), 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
 .primary-button:hover,
@@ -187,22 +208,36 @@ textarea {
 }
 
 .primary-button {
-  background: var(--accent);
+  border: 1px solid rgba(var(--accent-rgb), 0.24);
+  background:
+    linear-gradient(180deg, rgba(var(--accent-rgb), 0.92), rgba(var(--accent-rgb), 0.76)),
+    var(--accent);
   color: var(--button-text);
 }
 
 .primary-button:hover {
-  filter: brightness(1.05);
+  filter: brightness(1.04);
+  box-shadow:
+    0 14px 26px rgba(var(--accent-rgb), 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .secondary-button {
-  background: var(--panel-2);
+  border: 1px solid rgba(var(--ink-rgb), 0.1);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.98), rgba(var(--surface-rgb), 0.84)),
+    var(--panel-2);
   color: var(--text);
-  border: 1px solid var(--border);
+  backdrop-filter: blur(18px);
 }
 
 .secondary-button:hover {
-  background: var(--panel-3);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 1), rgba(var(--surface-rgb), 0.92)),
+    var(--panel-3);
+  box-shadow:
+    0 14px 26px rgba(var(--ink-rgb), 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 .secondary-button:disabled {
@@ -212,18 +247,18 @@ textarea {
 }
 
 .action-success {
-  border-color: rgba(52, 211, 153, 0.35);
-  color: #b7f7de;
+  border-color: rgba(95, 122, 86, 0.24);
+  color: var(--success);
 }
 
 .action-warning {
-  border-color: rgba(251, 191, 36, 0.35);
-  color: #fde68a;
+  border-color: rgba(164, 118, 63, 0.24);
+  color: var(--warning);
 }
 
 .action-danger {
-  border-color: rgba(248, 113, 113, 0.35);
-  color: #fecaca;
+  border-color: rgba(164, 86, 75, 0.24);
+  color: var(--danger);
 }
 
 .form-message {

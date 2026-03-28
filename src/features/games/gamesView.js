@@ -361,29 +361,18 @@ export function renderCompletedDeckSection(section, sessionStats) {
 }
 
 export function renderCompletedDeckItem(game, sessionStats) {
-  const stats = sessionStats.get(game.id) || emptySessionStats();
-
   return `
     <article class="completed-deck-item">
-      ${renderCompletionCard(game, stats)}
-      <div class="game-actions completed-card-actions">
-        ${createActionButton("download-card", game.id, {
-          label: "Download Card",
-          className: "secondary-button action-success",
-        })}
-        ${createActionButton("set-status", game.id, {
-          label: "Play Again",
-          nextStatus: GAME_STATUSES.IN_PROGRESS,
-          className: "primary-button",
-        })}
-        ${createActionButton("pick-cover-art", game.id, {
-          label: game.coverImage ? "Change Cover" : "Add Cover",
-          className: "secondary-button",
-        })}
-        ${createActionButton("pick-banner-art", game.id, {
-          label: game.bannerImage ? "Change Banner" : "Add Banner",
-          className: "secondary-button",
-        })}
+      ${renderCompletionCard(game, sessionStats.get(game.id) || emptySessionStats())}
+      <div class="game-card-footer completed-card-actions">
+        <button
+          type="button"
+          class="secondary-button game-card-action-trigger"
+          data-action="open-game-actions"
+          data-id="${game.id}"
+        >
+          Manage card
+        </button>
       </div>
     </article>
   `;
@@ -474,14 +463,16 @@ export function renderGameCard(game, sessionStats) {
         }
       </div>
 
-      <details class="game-actions-menu">
-        <summary class="secondary-button game-actions-toggle">Actions</summary>
-        <div class="game-actions" aria-label="Game actions for ${escapeAttribute(
-          game.title
-        )}">
-          ${renderGameActions(game)}
-        </div>
-      </details>
+      <div class="game-card-footer">
+        <button
+          type="button"
+          class="secondary-button game-card-action-trigger"
+          data-action="open-game-actions"
+          data-id="${game.id}"
+        >
+          Actions
+        </button>
+      </div>
     </article>
   `;
 }
@@ -689,6 +680,40 @@ export function createActionButton(action, id, options) {
     >
       ${escapeHtml(options.label)}
     </button>
+  `;
+}
+
+export function renderGameActionSheet(game) {
+  const statusMeta =
+    STATUS_META[game.status] || STATUS_META[GAME_STATUSES.BACKLOG];
+  const mainBadge = game.isMain
+    ? '<span class="badge badge-main">Main Game</span>'
+    : "";
+
+  return `
+    <div class="game-action-sheet-card">
+      <div class="game-action-sheet-hero">
+        ${renderCoverVisual(game, "game-action-sheet-cover")}
+        <div class="game-action-sheet-copy">
+          <div class="game-title-row">
+            <h3 class="game-action-sheet-title">${escapeHtml(game.title)}</h3>
+            ${mainBadge}
+            <span class="badge badge-status ${statusMeta.badgeClass}">${escapeHtml(
+    statusMeta.label
+  )}</span>
+          </div>
+          <p class="game-action-sheet-meta">
+            ${escapeHtml(game.platform || "Unspecified")}
+          </p>
+        </div>
+      </div>
+
+      <div class="game-actions game-actions-sheet" aria-label="Game actions for ${escapeAttribute(
+        game.title
+      )}">
+        ${renderGameActions(game)}
+      </div>
+    </div>
   `;
 }
 

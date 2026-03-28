@@ -8,6 +8,10 @@ import {
   coverArtPickerInput,
   coverImageInput,
   formMessage,
+  gameActionsBodyEl,
+  gameActionsMetaEl,
+  gameActionsModal,
+  gameActionsTitleEl,
   gameForm,
   gameStatusInput,
   notesInput,
@@ -30,6 +34,35 @@ import { appState } from "../../core/state.js";
 import { openFilePicker, scrollDeck, showMessage } from "../../core/ui.js";
 import { downloadCompletionCard } from "../art/completionCard.js";
 import { optimizeUploadedImage } from "../art/imageCropper.js";
+import { renderGameActionSheet } from "./gamesView.js";
+
+export function openGameActionsSheet(game) {
+  if (!gameActionsModal || !gameActionsBodyEl || !gameActionsTitleEl || !gameActionsMetaEl) {
+    return;
+  }
+
+  const statusLabel = getStatusLabel(game.status);
+  gameActionsTitleEl.textContent = game.title;
+  gameActionsMetaEl.textContent = `${game.platform || "Unspecified"} • ${statusLabel}`;
+  gameActionsBodyEl.innerHTML = renderGameActionSheet(game);
+  gameActionsModal.hidden = false;
+  document.body.classList.add("has-overlay");
+}
+
+export function closeGameActionsSheet() {
+  if (!gameActionsModal || !gameActionsBodyEl) return;
+
+  gameActionsModal.hidden = true;
+  gameActionsBodyEl.innerHTML = "";
+  document.body.classList.remove("has-overlay");
+}
+
+export function handleGameActionsModalClick(event) {
+  if (!(event.target instanceof HTMLElement)) return;
+  if (event.target.closest("[data-close-game-actions]")) {
+    closeGameActionsSheet();
+  }
+}
 
 export async function repairGamesIfNeeded() {
   const games = await getAllGames(appState.db);
@@ -132,6 +165,7 @@ export async function handleListClick(event) {
   if (!button) return;
 
   const { action, id, status, target, direction } = button.dataset;
+  const triggeredFromActionSheet = Boolean(button.closest("#gameActionsModal"));
 
   try {
     if (action === "scroll-deck") {
@@ -147,6 +181,15 @@ export async function handleListClick(event) {
     if (!game) {
       showMessage(formMessage, "That game could not be found.", true);
       return;
+    }
+
+    if (action === "open-game-actions") {
+      openGameActionsSheet(game);
+      return;
+    }
+
+    if (triggeredFromActionSheet) {
+      closeGameActionsSheet();
     }
 
     if (action === "make-main") {

@@ -271,7 +271,7 @@ export function renderCoverVisual(game, className) {
 export function buildArtBackgroundStyle(image) {
   if (!image) return "";
 
-  return ` style="background-image: linear-gradient(180deg, rgba(15, 23, 42, 0.12), rgba(15, 23, 42, 0.78)), url('${escapeAttribute(
+  return ` style="background-image: url('${escapeAttribute(
     image
   )}')"`;
 }

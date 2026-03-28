@@ -64,13 +64,14 @@ Read this file first before making changes. Use it as the routing map for what t
 - `src/features/games/gamesController.js`
   - add game
   - tracker list actions
+  - tracker action sheet open/close behavior
   - art picker routing for games
 - `src/features/games/gamesView.js`
   - stats
   - main quest
   - tracker cards
   - completion spotlight
-  - compact tracker action menus
+  - tracker action sheet content
 
 - `src/features/sessions/sessionsController.js`
   - log session flow
@@ -130,6 +131,7 @@ Read this file first before making changes. Use it as the routing map for what t
 - `styles/screens.css`
   - responsive behavior and screen-specific layout adjustments
   - mobile-only spacing rhythm
+  - mobile action sheet layout
 
 ## Change Routing
 
@@ -152,6 +154,7 @@ Read this file first before making changes. Use it as the routing map for what t
 - Check `index.html` because the add game panel now lives inside the Sessions screen
 - Read `src/data/gamesRepo.js`
 - Check `src/core/formatters.js` for shared summaries or sorting
+- Tracker game actions now open through the bottom action sheet modal instead of inline button groups
 
 ### If the request is about session logging or session summaries
 
