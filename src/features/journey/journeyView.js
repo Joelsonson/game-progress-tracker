@@ -29,12 +29,14 @@ import {
   getUnspentSkillPoints,
 } from "./journeyEngine.js";
 
-const JOURNEY_WALK_SPRITE_SRC = "./assets/journey/sprites/walk.png";
-const JOURNEY_WALK_SPRITE_FRAME_COUNT = 4;
+const JOURNEY_WALK_SPRITE_SRC = "./assets/journey/sprites/Walking.png";
+const JOURNEY_WALK_SPRITE_FRAME_COUNT = 12;
+const JOURNEY_WALK_SPRITE_FRAME_DURATION_MS = 100;
 const JOURNEY_SPRITE_MAX_DISPLAY_WIDTH = 136;
 const JOURNEY_SPRITE_MAX_DISPLAY_HEIGHT = 168;
 const JOURNEY_SPRITE_BOUNDING_PADDING = 12;
 const JOURNEY_SPRITE_BACKGROUND_TOLERANCE = 24;
+const JOURNEY_SPRITE_ALPHA_THRESHOLD = 12;
 const journeySpriteMetricsCache = new Map();
 
 export function renderHomeJourney(state, xpSummary) {
@@ -656,7 +658,7 @@ export function renderJourneySpritePreview() {
         <p class="journey-overline">Sprite preview</p>
         <h4>Walk animation preview</h4>
         <p class="muted-text">
-          Loaded from <code>assets/journey/sprites/walk.png</code> and sized from the sheet automatically.
+          Loaded from <code>assets/journey/sprites/Walking.png</code> and sized from the sheet automatically.
         </p>
       </div>
     </div>
@@ -701,6 +703,9 @@ function configureJourneySpriteSheet(spriteSheet) {
     spriteSheet.style.setProperty("--journey-sprite-offset-y", `${metrics.offsetY}px`);
     spriteSheet.style.setProperty("--journey-sprite-shift", `${metrics.shift}px`);
     spriteSheet.style.animationTimingFunction = `steps(${frameCount})`;
+    spriteSheet.style.animationDuration = `${
+      JOURNEY_WALK_SPRITE_FRAME_DURATION_MS * frameCount
+    }ms`;
   };
 
   if (spriteSheet.complete && spriteSheet.naturalWidth) {
@@ -764,6 +769,11 @@ function detectJourneySpriteBounds(spriteSheet, frameWidth, frameHeight, frameCo
         const red = data[pixelIndex];
         const green = data[pixelIndex + 1];
         const blue = data[pixelIndex + 2];
+        const alpha = data[pixelIndex + 3];
+
+        if (alpha <= JOURNEY_SPRITE_ALPHA_THRESHOLD) {
+          continue;
+        }
 
         if (matchesJourneySpriteBackground(red, green, blue, backgroundPalette)) {
           continue;
@@ -800,6 +810,12 @@ function collectJourneySpriteBackgroundPalette(imageData, width, height) {
 
   const countColor = (x, y) => {
     const pixelIndex = ((y * width) + x) * 4;
+    const alpha = imageData[pixelIndex + 3];
+
+    if (alpha <= JOURNEY_SPRITE_ALPHA_THRESHOLD) {
+      return;
+    }
+
     const key = `${imageData[pixelIndex]},${imageData[pixelIndex + 1]},${imageData[pixelIndex + 2]}`;
     colorCounts.set(key, (colorCounts.get(key) || 0) + 1);
   };
