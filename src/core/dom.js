@@ -85,6 +85,9 @@ export const journeyOutcomeBodyEl = document.querySelector("#journeyOutcomeBody"
 export const journeyOutcomeCloseButton = document.querySelector(
   "#journeyOutcomeCloseButton"
 );
+export const characterSkillModalRoot = document.querySelector(
+  "#characterSkillModalRoot"
+);
 export const gameActionsModal = document.querySelector("#gameActionsModal");
 export const gameActionsTitleEl = document.querySelector("#gameActionsTitle");
 export const gameActionsMetaEl = document.querySelector("#gameActionsMeta");
@@ -92,6 +95,7 @@ export const gameActionsBodyEl = document.querySelector("#gameActionsBody");
 export const gameActionsCloseButton = document.querySelector(
   "#gameActionsCloseButton"
 );
+export const toastViewport = document.querySelector("#toastViewport");
 export const appScreens = Array.from(document.querySelectorAll("[data-screen]"));
 export const screenNavButtons = Array.from(
   document.querySelectorAll("[data-screen-target]")

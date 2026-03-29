@@ -4,6 +4,7 @@ import { getMeta } from "./data/metaRepo.js";
 import { getAllSessions } from "./data/sessionsRepo.js";
 import {
   bannerArtPickerInput,
+  characterSkillModalRoot,
   characterContentEl,
   clearDataButton,
   clearJourneyButton,
@@ -123,6 +124,7 @@ function bindEvents() {
   journeyEventCloseButton?.addEventListener("click", closeJourneyEventModal);
   journeyOutcomeModal?.addEventListener("click", handleJourneyOutcomeModalClick);
   journeyOutcomeCloseButton?.addEventListener("click", closeJourneyOutcomeModal);
+  characterSkillModalRoot?.addEventListener("click", handleJourneyClick);
   document.addEventListener("keydown", handleGlobalKeyDown);
 
   for (const button of screenNavButtons) {
@@ -140,6 +142,12 @@ function handleGlobalKeyDown(event) {
 
   if (event.key === "Escape" && gameActionsModal && !gameActionsModal.hidden) {
     closeGameActionsSheet();
+    return;
+  }
+
+  if (event.key === "Escape" && appState.showCharacterSkillModal) {
+    appState.showCharacterSkillModal = false;
+    void appState.renderApp();
     return;
   }
 

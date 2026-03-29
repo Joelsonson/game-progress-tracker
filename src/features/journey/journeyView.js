@@ -1,4 +1,5 @@
 import {
+  characterSkillModalRoot,
   characterContentEl,
   homeJourneyContentEl,
   journeyContentEl,
@@ -767,9 +768,9 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
         }
       </article>
     </section>
-    ${renderCharacterSkillModal(viewModel)}
   `;
 
+  renderCharacterSkillModal(viewModel);
   syncBodyScrollLock();
 }
 
@@ -1046,13 +1047,33 @@ function renderCharacterLevelBreakdown(viewModel) {
 }
 
 function renderCharacterSkillModal(viewModel) {
-  if (!appState.showCharacterSkillModal) {
-    return "";
+  if (!characterSkillModalRoot) {
+    return;
   }
 
-  return `
-    <div class="character-skill-modal" role="dialog" aria-modal="true" aria-labelledby="characterSkillModalTitle">
-      <div class="character-skill-dialog">
+  if (!appState.showCharacterSkillModal) {
+    characterSkillModalRoot.innerHTML = "";
+    syncBodyScrollLock();
+    return;
+  }
+
+  characterSkillModalRoot.innerHTML = `
+    <div
+      class="character-skill-modal"
+      data-character-skill-modal
+    >
+      <button
+        type="button"
+        class="character-skill-backdrop"
+        data-journey-action="close-skill-modal"
+        aria-label="Close level up modal"
+      ></button>
+      <div
+        class="character-skill-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="characterSkillModalTitle"
+      >
         <div class="character-skill-modal-header">
           <div>
             <p class="journey-overline">Level up</p>
@@ -1075,6 +1096,8 @@ function renderCharacterSkillModal(viewModel) {
       </div>
     </div>
   `;
+
+  syncBodyScrollLock();
 }
 
 function renderJourneyWeaponCard(weapon) {

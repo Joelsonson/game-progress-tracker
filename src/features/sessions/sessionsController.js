@@ -1,6 +1,6 @@
 import { normalizeGameRecord, normalizeSessionRecord } from "../../data/db.js";
 import { getAllGames, updateGame } from "../../data/gamesRepo.js";
-import { addSession } from "../../data/sessionsRepo.js";
+import { addSession, getAllSessions } from "../../data/sessionsRepo.js";
 import {
   meaningfulProgressInput,
   sessionForm,
@@ -12,6 +12,7 @@ import {
 } from "../../core/dom.js";
 import { GAME_STATUSES } from "../../core/constants.js";
 import {
+  buildXpSummary,
   canLogSessionForGame,
   formatMinutes,
   getErrorMessage,
@@ -20,7 +21,7 @@ import {
 } from "../../core/formatters.js";
 import { t } from "../../core/i18n.js";
 import { appState } from "../../core/state.js";
-import { showMessage } from "../../core/ui.js";
+import { showMessage, showToast } from "../../core/ui.js";
 
 export async function handleAddSession(event) {
   event.preventDefault();
@@ -50,9 +51,12 @@ export async function handleAddSession(event) {
   }
 
   try {
-    const games = (await getAllGames(appState.db)).map((game) =>
-      normalizeGameRecord(game)
-    );
+    const [gamesRaw, sessionsRaw] = await Promise.all([
+      getAllGames(appState.db),
+      getAllSessions(appState.db),
+    ]);
+    const games = gamesRaw.map((game) => normalizeGameRecord(game));
+    const sessions = sessionsRaw.map((session) => normalizeSessionRecord(session));
     const selectedGame = games.find((game) => game.id === gameId);
 
     if (!selectedGame) {
@@ -89,6 +93,8 @@ export async function handleAddSession(event) {
       playedAt: now,
       createdAt: now,
     });
+    const previousXpSummary = buildXpSummary(games, sessions);
+    const nextXpSummary = buildXpSummary(games, [...sessions, newSession]);
 
     await addSession(appState.db, newSession);
     await updateGame(appState.db, {
@@ -129,6 +135,23 @@ export async function handleAddSession(event) {
 
     await appState.renderApp();
     sessionGameSelect.value = gameId;
+    showToast(
+      `Logged ${formatMinutes(minutes)} for ${selectedGame.title}. ${xpBreakdown.totalText}.`,
+      {
+        title: "Session logged",
+      }
+    );
+
+    if (nextXpSummary.level > previousXpSummary.level) {
+      showToast(
+        buildLevelUpToast(previousXpSummary.level, nextXpSummary.level),
+        {
+          title: "Level up",
+          tone: "info",
+          duration: 4200,
+        }
+      );
+    }
   } catch (error) {
     console.error("Failed to save session:", error);
     showMessage(
@@ -137,4 +160,11 @@ export async function handleAddSession(event) {
       true
     );
   }
+}
+
+function buildLevelUpToast(previousLevel, nextLevel) {
+  const levelGain = Math.max(1, nextLevel - previousLevel);
+  const pointLabel = levelGain === 1 ? "point" : "points";
+
+  return `Reached tracker level ${nextLevel}. ${levelGain} skill ${pointLabel} ready to spend.`;
 }

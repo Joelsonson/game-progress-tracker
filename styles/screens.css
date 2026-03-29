@@ -127,6 +127,15 @@
   line-height: 1;
 }
 
+.nav-chip-icon img,
+.mobile-tab-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
 .nav-chip-button.is-active .nav-chip-icon,
 .mobile-tab-button.is-active .mobile-tab-icon {
   background: rgba(var(--accent-blue-strong), 0.14);
@@ -471,6 +480,17 @@
   .journey-event-dialog {
     margin: 14px auto;
     max-height: calc(100dvh - 28px);
+  }
+
+  .character-skill-modal {
+    align-items: end;
+    padding-inline: 12px;
+  }
+
+  .character-skill-dialog {
+    max-height: calc(100dvh - max(24px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+    border-bottom-left-radius: 22px;
+    border-bottom-right-radius: 22px;
   }
 
   .crop-preview-panel {

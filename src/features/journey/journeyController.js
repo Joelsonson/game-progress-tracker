@@ -12,7 +12,7 @@ import {
 } from "../../core/constants.js";
 import { buildXpSummary, clamp, enforceMainGameRules, getErrorMessage, randomInt } from "../../core/formatters.js";
 import { appState } from "../../core/state.js";
-import { showMessage } from "../../core/ui.js";
+import { showMessage, showToast } from "../../core/ui.js";
 import { applyScreenHash, setActiveScreen } from "../navigation/navigation.js";
 import {
   addJourneyLog,
@@ -103,6 +103,14 @@ export async function handleJourneyClick(event) {
   const button = event.target.closest("button[data-journey-action]");
   if (!button) return;
 
+  const action = button.dataset.journeyAction;
+
+  if (action === "close-skill-modal") {
+    appState.showCharacterSkillModal = false;
+    await appState.renderApp();
+    return;
+  }
+
   try {
     const [gamesRaw, sessionsRaw, idleRaw] = await Promise.all([
       getAllGames(appState.db),
@@ -118,7 +126,6 @@ export async function handleJourneyClick(event) {
     const state = await syncJourneyState(idleRaw, games, sessions, xpSummary);
     const journeyLevel = getJourneyLevel(state, xpSummary.level);
     const supplies = buildJourneySupplies(games, sessions, state);
-    const action = button.dataset.journeyAction;
 
     if (action === "open-event") {
       const eventId = button.dataset.eventId;
@@ -168,12 +175,6 @@ export async function handleJourneyClick(event) {
       return;
     }
 
-    if (action === "close-skill-modal") {
-      appState.showCharacterSkillModal = false;
-      await appState.renderApp();
-      return;
-    }
-
     if (action === "set-class") {
       const classType = button.dataset.class;
       if (!JOURNEY_CLASS_META[classType] || !hasJourneyClassUnlocked(state, classType)) {
@@ -190,6 +191,10 @@ export async function handleJourneyClick(event) {
       await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
       showJourneyFeedback(`${JOURNEY_CLASS_META[classType].label} equipped.`);
       await appState.renderApp();
+      showToast(`Class changed to ${JOURNEY_CLASS_META[classType].label}.`, {
+        title: "Class updated",
+        tone: "info",
+      });
       return;
     }
 
@@ -207,6 +212,8 @@ export async function handleJourneyClick(event) {
       }
 
       state.allocatedStats[statKey] += 1;
+      const updatedJourneyStats = buildJourneyDerived(state, journeyLevel);
+      const updatedStat = updatedJourneyStats.statBreakdown[statKey];
       addJourneyLog(
         state,
         `${JOURNEY_STAT_META[statKey].label} improved through hard-earned experience.`,
@@ -217,6 +224,9 @@ export async function handleJourneyClick(event) {
         getUnspentSkillPoints(state, journeyLevel) > 0;
       showJourneyFeedback(`${JOURNEY_STAT_META[statKey].label} increased.`);
       await appState.renderApp();
+      showToast(buildStatIncreaseToast(statKey, updatedJourneyStats, updatedStat), {
+        title: "Skill point spent",
+      });
       return;
     }
 
@@ -402,6 +412,7 @@ export async function handleJourneyClick(event) {
       }
 
       const journeyStats = buildJourneyDerived(state, journeyLevel);
+      const hungerBefore = state.currentHunger;
       state.spentRations += 1;
       state.currentHunger = clamp(
         state.currentHunger + 24 + journeyStats.stats.resolve * 2,
@@ -416,6 +427,17 @@ export async function handleJourneyClick(event) {
       await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
       showJourneyFeedback("Used 1 ration to restore hunger.");
       await appState.renderApp();
+      showToast(
+        buildSupplyToast({
+          resourceLabel: "Hunger",
+          amount: state.currentHunger - hungerBefore,
+          current: state.currentHunger,
+          max: journeyStats.maxHunger,
+        }),
+        {
+          title: "Ration used",
+        }
+      );
       return;
     }
 
@@ -429,6 +451,7 @@ export async function handleJourneyClick(event) {
       }
 
       const journeyStats = buildJourneyDerived(state, journeyLevel);
+      const hpBefore = state.currentHp;
       state.spentTonics += 1;
       state.currentHp = clamp(
         state.currentHp + 28 + journeyStats.stats.vitality * 3,
@@ -443,6 +466,18 @@ export async function handleJourneyClick(event) {
       await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
       showJourneyFeedback("Used 1 tonic to restore health.");
       await appState.renderApp();
+      showToast(
+        buildSupplyToast({
+          resourceLabel: "HP",
+          amount: state.currentHp - hpBefore,
+          current: state.currentHp,
+          max: journeyStats.maxHp,
+          suffix: " HP",
+        }),
+        {
+          title: "Tonic used",
+        }
+      );
     }
   } catch (error) {
     console.error("Failed to update idle journey:", error);
@@ -599,4 +634,26 @@ function buildJourneyChoiceProgressText(choiceLabel) {
   }
 
   return `${cleaned}...`;
+}
+
+function buildSupplyToast({ resourceLabel, amount, current, max, suffix = "" }) {
+  const roundedAmount = Math.max(0, Math.round(amount));
+  const roundedCurrent = Math.round(current);
+  const roundedMax = Math.round(max);
+
+  return `Regained ${roundedAmount} ${resourceLabel} (${roundedCurrent}/${roundedMax}${suffix}).`;
+}
+
+function buildStatIncreaseToast(statKey, journeyStats, statBreakdown) {
+  const statLabel = JOURNEY_STAT_META[statKey]?.label || "Stat";
+
+  if (statKey === "vitality") {
+    return `${statLabel} increased to ${statBreakdown.total}. Max HP is now ${journeyStats.maxHp}.`;
+  }
+
+  if (statKey === "resolve") {
+    return `${statLabel} increased to ${statBreakdown.total}. Max hunger is now ${journeyStats.maxHunger}.`;
+  }
+
+  return `${statLabel} increased to ${statBreakdown.total}.`;
 }
