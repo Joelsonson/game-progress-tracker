@@ -30,6 +30,7 @@ import {
   escapeHtml,
   formatDateTime,
 } from "../../core/formatters.js";
+import { getCurrentLocale, t } from "../../core/i18n.js";
 import { appState } from "../../core/state.js";
 import { syncBodyScrollLock } from "../../core/ui.js";
 import {
@@ -75,10 +76,274 @@ const JOURNEY_PORTRAIT_SPRITE = {
   maxDisplayHeight: 220,
 };
 
+const JOURNEY_LOCALIZED_META = {
+  ja: {
+    classes: {
+      stranded: {
+        label: "弱くて転移したばかり",
+        description:
+          "訓練も地図も、まともな装備もほとんどないまま異世界で目を覚ました。",
+      },
+      warrior: {
+        label: "喧嘩屋",
+        description:
+          "泥臭く戦い、衝撃に耐え、近距離の乱戦を生き延びる術を覚えた。",
+      },
+      mage: {
+        label: "野の魔術師",
+        description:
+          "世界が少しずつ静かではなくなる。奇妙な流れを感じ取り、それを扱い始める。",
+      },
+      thief: {
+        label: "斥候",
+        description:
+          "身軽さ、早めの察知、無駄のなさで生き残る。",
+      },
+    },
+    stats: {
+      might: {
+        label: "筋力",
+        help: "荒っぽい戦い、重量物の扱い、頼りない武器を使いこなす助けになる。",
+      },
+      finesse: {
+        label: "技巧",
+        help: "身のこなしが速く静かになり、危険な場面で捕まりにくくなる。",
+      },
+      arcana: {
+        label: "秘術",
+        help: "この世界の奇妙な理を感じ取り、やがて扱えるようになる。",
+      },
+      vitality: {
+        label: "生命力",
+        help: "より長く立っていられ、痛い失敗のあとも立て直しやすくなる。",
+      },
+      resolve: {
+        label: "意志",
+        help: "落ち着きを保ち、乏しい食事を引き延ばし、消耗しても進み続けやすくなる。",
+      },
+    },
+    bags: {
+      none: {
+        label: "袋なし",
+        description: "腰と両手に収まるものしか持てない。",
+      },
+      satchel: {
+        label: "採集用サッチェル",
+        description: "その日暮らしを抜け出すには十分なくらいの小さな肩掛け袋。",
+      },
+      backpack: {
+        label: "旅人のバックパック",
+        description: "予備装備を持ち歩いても足元がおぼつかなくならない、まともな鞄。",
+      },
+      field_kit: {
+        label: "遠征用フィールドキット",
+        description: "より長く厳しい道に備えた、補強入りの整理された背嚢。",
+      },
+    },
+    weapons: {
+      scavenged_weapon: {
+        label: "拾い物の武器",
+        tier: "即席",
+        description: "素手よりはましだが、本当にそれだけだ。",
+      },
+      rust_worn_belt_knife: {
+        label: "錆びたベルトナイフ",
+        tier: "一般",
+        description: "間合いは短いが、手が速く、空のポケットよりはずっといい。",
+      },
+      crude_spear_club: {
+        label: "粗末な槍棍",
+        tier: "一般",
+        description: "不格好で重いが、いざという時には意外と頼れる。",
+      },
+      weathered_short_sword: {
+        label: "使い古しの短剣",
+        tier: "上質",
+        description: "釣り合いが良く、綺麗に戦える感覚を少しだけくれる。",
+      },
+      hardened_boar_spear: {
+        label: "硬化した猪槍",
+        tier: "上質",
+        description: "止まるべき時に止まらない相手を狩るための槍。",
+      },
+      travelers_hatchet: {
+        label: "旅人の手斧",
+        tier: "上質",
+        description: "野営でも役立ち、喧嘩でも妙に頼りになる。",
+      },
+      bandit_cut_machete: {
+        label: "山賊削りの鉈",
+        tier: "上質",
+        description: "粗い鋼だが、攻め気と素早い手に応えてくれる。",
+      },
+      ashwood_bow: {
+        label: "アッシュウッドの弓",
+        tier: "希少",
+        description: "軽く、信頼でき、辛抱強い手にはずっと危険だ。",
+      },
+      ember_rod: {
+        label: "残り火のロッド",
+        tier: "希少",
+        description: "熱の記憶をまだ宿した、焦げた焦点具。",
+      },
+      warded_stave: {
+        label: "護符の杖",
+        tier: "希少",
+        description: "見た目以上に安定していて、防護の刻印を抱えている。",
+      },
+      ruin_greatblade: {
+        label: "遺跡の大剣",
+        tier: "英雄級",
+        description: "より苛烈な道を通ってきた重鋼。",
+      },
+    },
+    starterItems: {
+      "dead phone": "電池切れのスマホ",
+      "cheap wristwatch": "安物の腕時計",
+      "school backpack": "学生用バックパック",
+      "blunt pocket knife": "切れ味の悪い折りたたみナイフ",
+      "lucky coin": "お守りのコイン",
+      "cracked lighter": "ひび割れたライター",
+      "old notebook": "古いノート",
+    },
+    eventTitles: {
+      "Unknown Forest": "未知の森",
+      "Creekside Thicket": "小川沿いの茂み",
+      "Abandoned Footpath": "打ち捨てられた細道",
+      "Fallow Hamlet Outskirts": "寂れた集落外れ",
+      "Broken Watchroad": "壊れた監視街道",
+      "Fog Marsh Crossing": "霧沼の渡り",
+      "Stonepass Trail": "石路峠道",
+      "Old Frontier Road": "旧辺境街道",
+      "Split Pine Ravine": "裂け松の谷",
+      "Sunken Causeway": "沈んだ土手道",
+      "Briar Tollway": "いばらの関道",
+      "Lantern Mile": "灯籠街道",
+      "Ashen Switchback": "灰の九十九折り",
+      "Ruined Gate Approach": "廃門前街道",
+      "Cornered Forest Boar": "追い詰められた森猪",
+      "Hungry Wolf Pack": "飢えた狼の群れ",
+      "Bridge Ambusher": "橋の伏兵",
+      "Marshfang Lurker": "沼牙の潜伏者",
+      "Hill Band Captain": "丘賊の頭目",
+      "Ruin-Stalker": "遺跡の追跡者",
+      "Gravepath Ogre": "墓道のオーガ",
+      "Storm Ridge Wyrm": "嵐尾根のワーム",
+      "The Border Tyrant": "境界の暴君",
+      "Tollroad Reaver": "関道の略奪者",
+      "Mireglass Serpent": "泥鏡の蛇",
+      "Blackbriar Stag": "黒い茨角の鹿",
+      "Gatehouse Revenant": "門楼の亡霊",
+      "Ashfall Chimera": "灰降りのキメラ",
+      "Forced retreat": "強制撤退",
+      "A road healer finds you": "街道の治療師に見つかる",
+      "A traveling herbalist waves you over": "旅の薬草師が手招きする",
+      "A glowing spring in the underbrush": "藪の中で光る泉",
+      "A raider's camp by the looted carriage": "略奪された荷車のそばの賊の野営地",
+      "A broken cart in the brush": "茂みに埋もれた壊れた荷車",
+      "A patch of unfamiliar berries": "見慣れない木の実の群れ",
+      "Heavy tracks near the creek": "小川のそばに重い足跡",
+      "A collapsed watchtower in the reeds": "葦原に崩れた見張り塔",
+      "A torn satchel caught in the briars": "いばらに引っかかった破れた鞄",
+      "Cold rain before dusk": "夕暮れ前の冷たい雨",
+      "An abandoned pack frame by the road": "道ばたの打ち捨てられた背負子",
+      "A sealed supply niche in a ruined gate": "崩れた門に残る封印補給庫",
+      "A waystone with a hidden compartment": "隠し収納のある道標石",
+      "A guard by a roadside fire": "道ばたの火のそばの衛兵",
+      "A whispering shrine": "ささやく祠",
+      "A quiet forager on the trail": "道で見かけた静かな採集者",
+      "Smoke from a charcoal pit": "炭焼き窯から立つ煙",
+      "A rope ferry over black water": "黒い水を渡る縄の渡し",
+      "Lanterns hung for the dead": "死者のために吊るされた灯",
+      "The Last Hearth Below the Hill": "丘の下の最後の炉火",
+      "Brand of the Last Hearth": "最後の炉火の刻印",
+      "Ash-Marrow Vigor": "灰髄の活力",
+      "Cinder-Script Memory": "残り火の記憶文",
+      "An oath-cairn of the first wardens": "最初の守人たちの誓石",
+      "Warden's Burden": "守人の重荷",
+      "Step of the First Scout": "最初の斥候の歩み",
+      "Witness of the Wardens": "守人たちの証人",
+      "The mirror spring under moonlight": "月光の下の鏡泉",
+      "Moon-Glass Insight": "月鏡の洞察",
+      "Stillwater Footing": "止水の足場",
+      "Star-Cooled Blood": "星冷えの血",
+    },
+  },
+};
+
 const JOURNEY_SPRITE_BOUNDING_PADDING = 12;
 const JOURNEY_SPRITE_BACKGROUND_TOLERANCE = 24;
 const JOURNEY_SPRITE_ALPHA_THRESHOLD = 12;
 const journeySpriteMetricsCache = new Map();
+
+function getJourneyLocalizedEntry(group, key, field, fallback = "") {
+  const locale = getCurrentLocale();
+  return JOURNEY_LOCALIZED_META[locale]?.[group]?.[key]?.[field] || fallback;
+}
+
+function getJourneyClassLabel(classKey) {
+  return getJourneyLocalizedEntry(
+    "classes",
+    classKey,
+    "label",
+    JOURNEY_CLASS_META[classKey]?.label || ""
+  );
+}
+
+function getJourneyClassDescription(classKey) {
+  return getJourneyLocalizedEntry(
+    "classes",
+    classKey,
+    "description",
+    JOURNEY_CLASS_META[classKey]?.description || ""
+  );
+}
+
+function getJourneyStatLabel(statKey) {
+  return getJourneyLocalizedEntry(
+    "stats",
+    statKey,
+    "label",
+    JOURNEY_STAT_META[statKey]?.label || statKey
+  );
+}
+
+function getJourneyStatHelp(statKey) {
+  return getJourneyLocalizedEntry(
+    "stats",
+    statKey,
+    "help",
+    JOURNEY_STAT_META[statKey]?.help || ""
+  );
+}
+
+function getJourneyBagLabel(bagKey, fallback = "") {
+  return getJourneyLocalizedEntry("bags", bagKey, "label", fallback);
+}
+
+function getJourneyBagDescription(bagKey, fallback = "") {
+  return getJourneyLocalizedEntry("bags", bagKey, "description", fallback);
+}
+
+function getJourneyWeaponLabel(weaponKey, fallback = "") {
+  return getJourneyLocalizedEntry("weapons", weaponKey, "label", fallback);
+}
+
+function getJourneyWeaponDescription(weaponKey, fallback = "") {
+  return getJourneyLocalizedEntry("weapons", weaponKey, "description", fallback);
+}
+
+function getJourneyWeaponTier(weaponKey, fallback = "") {
+  return getJourneyLocalizedEntry("weapons", weaponKey, "tier", fallback);
+}
+
+function getJourneyStarterItemLabel(item) {
+  return JOURNEY_LOCALIZED_META[getCurrentLocale()]?.starterItems?.[item] || item;
+}
+
+function getJourneyEventTitle(title) {
+  return JOURNEY_LOCALIZED_META[getCurrentLocale()]?.eventTitles?.[title] || title;
+}
 
 export function renderHomeJourney(state, xpSummary, supplies) {
   if (!homeJourneyContentEl) return;
@@ -108,7 +373,7 @@ export function renderHomeJourney(state, xpSummary, supplies) {
     <div class="journey-home-shell">
       <div class="journey-home-top">
         <div class="journey-home-copy">
-          <p class="eyebrow">Journey at a glance</p>
+          <p class="eyebrow">${escapeHtml(t("journeyUi.home.atGlance"))}</p>
           <h2>${escapeHtml(displayName)}</h2>
           <p class="muted-text">
             ${escapeHtml(getJourneyActivityText(state, boss, progress, journeyStats, supplies))}
@@ -130,7 +395,7 @@ export function renderHomeJourney(state, xpSummary, supplies) {
           </div>
 
           <div class="summary-row">
-            <span class="summary-pill">Current goal: ${escapeHtml(
+            <span class="summary-pill">${escapeHtml(t("journeyUi.home.currentGoal"))}: ${escapeHtml(
               stretchPresentation.goalTitle
             )}</span>
             <span class="summary-pill">${escapeHtml(
@@ -141,20 +406,26 @@ export function renderHomeJourney(state, xpSummary, supplies) {
 
         <div class="journey-home-meters">
           <div>
-            <p class="journey-overline">Condition</p>
+            <p class="journey-overline">${escapeHtml(t("journeyUi.home.condition"))}</p>
             <h3>Lv. ${journeyLevel} ${escapeHtml(
-              JOURNEY_CLASS_META[state.classType].label
+              getJourneyClassLabel(state.classType)
             )}</h3>
             <p class="journey-inline-copy">
-              ${getJourneyStatusLabel(state.status)} • ${Math.round(
-                hpPercent
-              )}% health • ${Math.round(hungerPercent)}% hunger
+              ${escapeHtml(
+                getCurrentLocale() === "ja"
+                  ? `${getJourneyStatusLabel(state.status)} • 体力 ${Math.round(
+                      hpPercent
+                    )}% • 空腹 ${Math.round(hungerPercent)}%`
+                  : `${getJourneyStatusLabel(state.status)} • ${Math.round(
+                      hpPercent
+                    )}% health • ${Math.round(hungerPercent)}% hunger`
+              )}
             </p>
           </div>
 
           <div class="journey-home-meter">
             <div class="resource-meta">
-              <span>Health</span>
+              <span>${escapeHtml(t("journeyUi.common.health"))}</span>
               <span>${Math.round(state.currentHp)} / ${journeyStats.maxHp}</span>
             </div>
             <div class="resource-track">
@@ -164,7 +435,7 @@ export function renderHomeJourney(state, xpSummary, supplies) {
 
           <div class="journey-home-meter">
             <div class="resource-meta">
-              <span>Hunger</span>
+              <span>${escapeHtml(t("journeyUi.common.hunger"))}</span>
               <span>${Math.round(state.currentHunger)} / ${journeyStats.maxHunger}</span>
             </div>
             <div class="resource-track">
@@ -176,7 +447,7 @@ export function renderHomeJourney(state, xpSummary, supplies) {
 
       <div class="journey-home-actions">
         <button type="button" class="secondary-button" data-home-action="open-journey">
-          Open journey
+          ${escapeHtml(t("journeyUi.home.openJourney"))}
         </button>
         ${
           pendingEvent
@@ -187,9 +458,11 @@ export function renderHomeJourney(state, xpSummary, supplies) {
                 data-home-action="open-event"
                 data-event-id="${pendingEvent.id}"
               >
-                <span class="journey-event-kicker">New event</span>
+                <span class="journey-event-kicker">${escapeHtml(
+                  t("journeyUi.home.newEvent")
+                )}</span>
                 <span class="journey-home-event-title">${escapeHtml(
-                  pendingEvent.title
+                  getJourneyEventTitle(pendingEvent.title)
                 )}</span>
               </button>
             `
@@ -205,7 +478,7 @@ export function openJourneyEventModal(eventEntry) {
     return;
   }
 
-  journeyEventTitleEl.textContent = eventEntry.title;
+  journeyEventTitleEl.textContent = getJourneyEventTitle(eventEntry.title);
   journeyEventMetaEl.textContent = `${formatDateTime(eventEntry.createdAt)} • ${eventEntry.teaser}`;
   journeyEventBodyEl.innerHTML = `
     <div class="journey-event-panel">
@@ -266,10 +539,10 @@ export function showJourneyEventThinking(choiceLabel) {
     `
       <div class="journey-event-thinking" aria-live="polite">
         <span class="journey-event-thinking-title">${escapeHtml(
-          choiceLabel || "Carrying out your choice..."
+          choiceLabel || t("journeyUi.modals.thinkingTitle")
         )}</span>
         <span class="journey-event-thinking-copy">${escapeHtml(
-          "The result is taking shape."
+          t("journeyUi.modals.thinkingCopy")
         )}</span>
         <span class="journey-event-thinking-dots" aria-hidden="true">
           <span></span><span></span><span></span>
@@ -280,7 +553,7 @@ export function showJourneyEventThinking(choiceLabel) {
 }
 
 function renderJourneyChoiceLabel(choice) {
-  const label = String(choice?.label || "Choose");
+  const label = String(choice?.label || t("journeyUi.modals.choose"));
   const highlightWord = String(choice?.highlightWord || "").trim();
 
   if (!highlightWord) {
@@ -311,12 +584,16 @@ export function openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeI
     return;
   }
 
-  journeyOutcomeTitleEl.textContent = eventEntry?.title || "What happened next";
+  journeyOutcomeTitleEl.textContent = getJourneyEventTitle(
+    eventEntry?.title || t("journeyUi.modals.whatHappenedNext")
+  );
   journeyOutcomeMetaEl.textContent = resolution
-    ? `${resolution.success ? "Succeeded" : "Failed"} • ${resolution.statLabel} • ${resolution.successPercent}% chance`
+    ? `${resolution.success ? t("journeyUi.modals.succeeded") : t("journeyUi.modals.failed")} • ${resolution.statLabel} • ${t("journeyUi.modals.chance", {
+        value: resolution.successPercent,
+      })}`
     : choice?.label
-      ? `You chose: ${choice.label}`
-      : "The road answered your choice.";
+      ? t("journeyUi.modals.youChose", { label: choice.label })
+      : t("journeyUi.modals.roadAnswered");
   journeyOutcomeBodyEl.innerHTML = `
     <div class="journey-event-panel journey-outcome-panel">
       ${
@@ -326,7 +603,11 @@ export function openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeI
               <span class="journey-outcome-result ${escapeAttribute(
                 resolution.success ? "is-success" : "is-failure"
               )}">
-                ${escapeHtml(resolution.success ? "Succeeded" : "Failed")}
+                ${escapeHtml(
+                  resolution.success
+                    ? t("journeyUi.modals.succeeded")
+                    : t("journeyUi.modals.failed")
+                )}
               </span>
               <p class="journey-outcome-meta-copy">
                 ${escapeHtml(
@@ -341,7 +622,7 @@ export function openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeI
         choice
           ? `
             <p class="journey-outcome-choice-copy">
-              You tried:
+              ${escapeHtml(t("journeyUi.modals.triedPrefix"))}
               <span class="journey-outcome-choice-text">${renderJourneyChoiceLabel(
                 choice
               )}</span>
@@ -349,7 +630,7 @@ export function openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeI
           `
           : ""
       }
-      <p>${escapeHtml(resolution?.resultText || "The road answered your choice.")}</p>
+      <p>${escapeHtml(resolution?.resultText || t("journeyUi.modals.roadAnswered"))}</p>
       ${
         outcomeItems.length
           ? `
@@ -365,7 +646,9 @@ export function openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeI
                 .join("")}
             </div>
           `
-          : `<p class="muted-text">Nothing shifted in a way you could clearly measure.</p>`
+          : `<p class="muted-text">${escapeHtml(
+              t("journeyUi.modals.noVisibleChange")
+            )}</p>`
       }
     </div>
   `;
@@ -382,12 +665,12 @@ export function closeJourneyOutcomeModal() {
 }
 
 export function openJourneyHistoryModal({
-  eyebrow = "Journey history",
-  title = "Journey history",
-  meta = "A record of the road behind you.",
+  eyebrow = t("journeyUi.modals.historyEyebrow"),
+  title = t("journeyUi.modals.historyTitle"),
+  meta = t("journeyUi.modals.historyMeta"),
   entries = [],
-  emptyTitle = "Nothing recorded yet",
-  emptyBody = "The road has not given you anything to file here yet.",
+  emptyTitle = t("journeyUi.modals.historyEmptyTitle"),
+  emptyBody = t("journeyUi.modals.historyEmptyBody"),
 } = {}) {
   if (
     !journeyHistoryModal ||
@@ -414,7 +697,9 @@ export function openJourneyHistoryModal({
                       <p class="journey-history-entry-kicker">${escapeHtml(
                         entry.kicker || eyebrow
                       )}</p>
-                      <h4>${escapeHtml(entry.title || "Untitled entry")}</h4>
+                      <h4>${escapeHtml(
+                        getJourneyEventTitle(entry.title || t("journeyUi.modals.untitledEntry"))
+                      )}</h4>
                     </div>
                     <time class="journey-history-entry-time">${formatDateTime(
                       entry.at
@@ -464,10 +749,10 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
   const pendingEventsMarkup = viewModel.state.pendingEvents.length
     ? `
         <article class="journey-side-card journey-alert-card">
-          <p class="journey-overline">Event queue</p>
-          <h4>Awaiting a choice</h4>
+          <p class="journey-overline">${escapeHtml(t("journeyUi.page.eventQueue"))}</p>
+          <h4>${escapeHtml(t("journeyUi.page.awaitingChoice"))}</h4>
           <p class="muted-text">
-            Open an encounter when you are ready to deal with it.
+            ${escapeHtml(t("journeyUi.page.eventQueueBody"))}
           </p>
           <div class="journey-event-list">
             ${viewModel.state.pendingEvents
@@ -480,10 +765,12 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
                     data-event-id="${eventEntry.id}"
                   >
                     <span class="journey-event-button-head">
-                      <span class="journey-event-kicker">New event</span>
+                      <span class="journey-event-kicker">${escapeHtml(
+                        t("journeyUi.home.newEvent")
+                      )}</span>
                     </span>
                     <span class="journey-event-title">${escapeHtml(
-                      eventEntry.title
+                      getJourneyEventTitle(eventEntry.title)
                     )}</span>
                   </button>
                 `
@@ -494,10 +781,10 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
       `
     : `
         <article class="journey-side-card">
-          <p class="journey-overline">Quiet stretch</p>
-          <h4>No immediate event</h4>
+          <p class="journey-overline">${escapeHtml(t("journeyUi.page.quietStretch"))}</p>
+          <h4>${escapeHtml(t("journeyUi.page.noImmediateEvent"))}</h4>
           <p class="muted-text">
-            Nothing urgent is waiting. For now, the road is only asking you to keep moving.
+            ${escapeHtml(t("journeyUi.page.quietStretchBody"))}
           </p>
         </article>
       `;
@@ -506,14 +793,18 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
     <section class="journey-route-card">
       <div class="journey-route-hero">
         <div class="journey-route-copy">
-          <p class="journey-overline">Current stretch</p>
+          <p class="journey-overline">${escapeHtml(t("journeyUi.page.currentStretch"))}</p>
           <div class="journey-title-row">
             <h3>${escapeHtml(viewModel.displayName)} • Lv. ${viewModel.journeyLevel}</h3>
             <span class="journey-chip is-active">${escapeHtml(viewModel.zoneName)}</span>
             <span class="journey-chip">${escapeHtml(viewModel.statusLabel)}</span>
             ${
               viewModel.state.pendingEvents.length
-                ? `<span class="journey-chip is-warning">${viewModel.state.pendingEvents.length} event waiting</span>`
+                ? `<span class="journey-chip is-warning">${escapeHtml(
+                    t("journeyUi.page.eventWaiting", {
+                      count: viewModel.state.pendingEvents.length,
+                    })
+                  )}</span>`
                 : ""
             }
           </div>
@@ -535,7 +826,7 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
 
       <div class="journey-story-stats journey-story-stats-compact">
         <div class="journey-story-stat">
-          <span>Current goal</span>
+          <span>${escapeHtml(t("journeyUi.page.currentGoal"))}</span>
           <strong>${escapeHtml(viewModel.stretchPresentation.goalTitle)}</strong>
         </div>
         <div class="journey-story-stat">
@@ -543,12 +834,16 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
           <strong>${escapeHtml(viewModel.stretchPresentation.horizonValue)}</strong>
         </div>
         <div class="journey-story-stat">
-          <span>Next danger</span>
+          <span>${escapeHtml(t("journeyUi.page.nextDanger"))}</span>
           <strong>${escapeHtml(viewModel.nextThreatLabel)}</strong>
         </div>
         <div class="journey-story-stat">
-          <span>Travel pace</span>
-          <strong>${viewModel.journeyStats.speedPerHour.toFixed(1)}/hr</strong>
+          <span>${escapeHtml(t("journeyUi.page.travelPace"))}</span>
+          <strong>${escapeHtml(
+            t("journeyUi.page.travelPaceValue", {
+              value: viewModel.journeyStats.speedPerHour.toFixed(1),
+            })
+          )}</strong>
         </div>
       </div>
 
@@ -561,15 +856,17 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
       ${pendingEventsMarkup}
 
       <article class="journey-side-card">
-        <p class="journey-overline">Expedition focus</p>
-        <h4>Keep the road readable</h4>
+        <p class="journey-overline">${escapeHtml(
+          t("journeyUi.page.expeditionFocus")
+        )}</p>
+        <h4>${escapeHtml(t("journeyUi.page.expeditionFocusTitle"))}</h4>
         <div class="journey-story-stats">
           <div class="journey-story-stat">
-            <span>Health</span>
+            <span>${escapeHtml(t("journeyUi.common.health"))}</span>
             <strong>${Math.round(viewModel.state.currentHp)} / ${viewModel.journeyStats.maxHp}</strong>
           </div>
           <div class="journey-story-stat">
-            <span>Hunger</span>
+            <span>${escapeHtml(t("journeyUi.common.hunger"))}</span>
             <strong>${Math.round(viewModel.state.currentHunger)} / ${viewModel.journeyStats.maxHunger}</strong>
           </div>
           <button
@@ -577,12 +874,14 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
             class="journey-story-stat journey-story-stat-button"
             data-journey-action="open-road-history"
           >
-            <span>Roads cleared</span>
+            <span>${escapeHtml(t("journeyUi.page.roadsCleared"))}</span>
             <strong>${viewModel.clearedRoadCount}</strong>
             <span class="journey-story-stat-hint">${escapeHtml(
               viewModel.latestClearedRoad
-                ? `Latest: ${viewModel.latestClearedRoad.title}`
-                : "Open the road log"
+                ? t("journeyUi.page.latestEntry", {
+                    title: getJourneyEventTitle(viewModel.latestClearedRoad.title),
+                  })
+                : t("journeyUi.page.openRoadLog")
             )}</span>
           </button>
           <button
@@ -590,12 +889,14 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
             class="journey-story-stat journey-story-stat-button"
             data-journey-action="open-retreat-history"
           >
-            <span>Retreats</span>
+            <span>${escapeHtml(t("journeyUi.page.retreats"))}</span>
             <strong>${viewModel.retreatCount}</strong>
             <span class="journey-story-stat-hint">${escapeHtml(
               viewModel.latestRetreat
-                ? `Latest: ${viewModel.latestRetreat.title}`
-                : "Open the retreat log"
+                ? t("journeyUi.page.latestEntry", {
+                    title: getJourneyEventTitle(viewModel.latestRetreat.title),
+                  })
+                : t("journeyUi.page.openRetreatLog")
             )}</span>
           </button>
         </div>
@@ -604,8 +905,8 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
 
     <section class="journey-log-grid">
       <article class="journey-log-card">
-        <p class="journey-overline">Travel log</p>
-        <h4>Recent events</h4>
+        <p class="journey-overline">${escapeHtml(t("journeyUi.page.travelLog"))}</p>
+        <h4>${escapeHtml(t("journeyUi.page.recentEvents"))}</h4>
         <div class="journey-log-list">
           ${viewModel.state.log.length
             ? viewModel.state.log
@@ -618,19 +919,23 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
                   `
                 )
                 .join("")
-            : '<div class="journey-log-entry"><p>You have only just arrived. The first ugly lesson is coming.</p></div>'}
+            : `<div class="journey-log-entry"><p>${escapeHtml(
+                t("journeyUi.page.recentEventsEmpty")
+              )}</p></div>`}
         </div>
       </article>
 
       <article class="journey-log-card">
-        <p class="journey-overline">Road notes</p>
-        <h4>What this stretch is asking of you</h4>
+        <p class="journey-overline">${escapeHtml(t("journeyUi.page.roadNotes"))}</p>
+        <h4>${escapeHtml(t("journeyUi.page.roadNotesTitle"))}</h4>
         <div class="journey-character-list">
           <div class="journey-log-entry">
             <p>${escapeHtml(
               viewModel.state.status === "recovering"
                 ? getRecoveryText(viewModel.state)
-                : `Rough ETA to the next threat: ${viewModel.nextThreatLabel}.`
+                : t("journeyUi.page.nextThreatEta", {
+                    value: viewModel.nextThreatLabel,
+                  })
             )}</p>
           </div>
           ${viewModel.knownNotes.length
@@ -643,24 +948,38 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
                   `
                 )
                 .join("")
-            : '<div class="journey-log-entry"><p>You are still learning this world the hard way.</p></div>'}
+            : `<div class="journey-log-entry"><p>${escapeHtml(
+                t("journeyUi.page.learningWorld")
+              )}</p></div>`}
         </div>
       </article>
     </section>
 
     <details class="journey-debug-panel">
-      <summary>Debug tools</summary>
+      <summary>${escapeHtml(t("journeyUi.page.debugTools"))}</summary>
       <div class="journey-debug-panel-body">
         <p class="muted-text">
-          Use these to test passive incidents, travel updates, and queued events without leaving this cleaner layout.
+          ${escapeHtml(t("journeyUi.page.debugBody"))}
         </p>
         <div class="journey-class-list">
-          <button type="button" class="secondary-button" data-journey-action="debug-advance" data-hours="6">Advance 6h</button>
-          <button type="button" class="secondary-button" data-journey-action="debug-advance" data-hours="24">Advance 24h</button>
-          <button type="button" class="secondary-button" data-journey-action="debug-advance" data-hours="72">Advance 3d</button>
-          <button type="button" class="secondary-button" data-journey-action="debug-event">Force event</button>
-          <button type="button" class="secondary-button" data-journey-action="debug-undo">Undo debug step</button>
-          <button type="button" class="secondary-button action-warning" data-journey-action="reset-journey">Reset journey only</button>
+          <button type="button" class="secondary-button" data-journey-action="debug-advance" data-hours="6">${escapeHtml(
+            t("journeyUi.page.advance6h")
+          )}</button>
+          <button type="button" class="secondary-button" data-journey-action="debug-advance" data-hours="24">${escapeHtml(
+            t("journeyUi.page.advance24h")
+          )}</button>
+          <button type="button" class="secondary-button" data-journey-action="debug-advance" data-hours="72">${escapeHtml(
+            t("journeyUi.page.advance3d")
+          )}</button>
+          <button type="button" class="secondary-button" data-journey-action="debug-event">${escapeHtml(
+            t("journeyUi.page.forceEvent")
+          )}</button>
+          <button type="button" class="secondary-button" data-journey-action="debug-undo">${escapeHtml(
+            t("journeyUi.page.undoDebugStep")
+          )}</button>
+          <button type="button" class="secondary-button action-warning" data-journey-action="reset-journey">${escapeHtml(
+            t("journeyUi.page.resetJourneyOnly")
+          )}</button>
         </div>
       </div>
     </details>
@@ -692,7 +1011,9 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
                       type="button"
                       class="character-name-edit-button"
                       data-journey-action="toggle-name-editor"
-                      aria-label="Edit character name"
+                      aria-label="${escapeAttribute(
+                        t("journeyUi.character.editCharacterName")
+                      )}"
                     >
                       ✎
                     </button>
@@ -711,7 +1032,9 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
                       id="journeyCharacterNameInput"
                       type="text"
                       maxlength="30"
-                      placeholder="Name your character"
+                      placeholder="${escapeAttribute(
+                        t("journeyUi.character.namePlaceholder")
+                      )}"
                       value="${escapeAttribute(viewModel.state.characterName)}"
                     />
                     <button
@@ -719,7 +1042,7 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
                       class="secondary-button"
                       data-journey-action="save-name"
                     >
-                      Save name
+                      ${escapeHtml(t("journeyUi.character.saveName"))}
                     </button>
                   </div>
                 `
@@ -729,13 +1052,13 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
           <div class="character-vitals-grid">
             ${renderCharacterVitalChip({
               icon: "♥",
-              label: "HP",
+              label: t("journeyUi.common.hpShort"),
               value: `${Math.round(viewModel.state.currentHp)} / ${viewModel.journeyStats.maxHp}`,
               toneClass: "is-health",
             })}
             ${renderCharacterVitalChip({
               icon: "◔",
-              label: "Hunger",
+              label: t("journeyUi.common.hunger"),
               value: `${Math.round(viewModel.state.currentHunger)} / ${viewModel.journeyStats.maxHunger}`,
               toneClass: "is-hunger",
             })}
@@ -749,37 +1072,54 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
 
     <section class="character-build-grid">
       <article class="journey-side-card character-radar-card">
-        <p class="journey-overline">Loadout</p>
-        <h4>What is shaping this build</h4>
+        <p class="journey-overline">${escapeHtml(t("journeyUi.character.loadout"))}</p>
+        <h4>${escapeHtml(t("journeyUi.character.loadoutTitle"))}</h4>
         <div class="journey-character-list">
           <div class="journey-log-entry">
-            <p><strong>Discipline:</strong> ${escapeHtml(viewModel.classLabel)}</p>
+            <p><strong>${escapeHtml(t("journeyUi.character.discipline"))}:</strong> ${escapeHtml(viewModel.classLabel)}</p>
           </div>
           <div class="journey-log-entry">
-            <p><strong>Equipped weapon:</strong> ${escapeHtml(
-              viewModel.journeyStats.equippedWeaponMeta?.label || "Still unarmed"
+            <p><strong>${escapeHtml(t("journeyUi.character.equippedWeapon"))}:</strong> ${escapeHtml(
+              viewModel.journeyStats.equippedWeaponMeta
+                ? getJourneyWeaponLabel(
+                    viewModel.state.equippedWeaponKey,
+                    viewModel.journeyStats.equippedWeaponMeta.label
+                  )
+                : t("journeyUi.character.stillUnarmed")
             )}</p>
           </div>
           <div class="journey-log-entry">
-            <p><strong>Bag:</strong> ${escapeHtml(viewModel.bagMeta.label)}</p>
+            <p><strong>${escapeHtml(t("journeyUi.character.bag"))}:</strong> ${escapeHtml(
+              getJourneyBagLabel(viewModel.state.bagKey, viewModel.bagMeta.label)
+            )}</p>
           </div>
           <div class="journey-log-entry">
-            <p><strong>Starter keepsake:</strong> ${escapeHtml(viewModel.state.starterItem)}</p>
+            <p><strong>${escapeHtml(t("journeyUi.character.starterKeepsake"))}:</strong> ${escapeHtml(
+              getJourneyStarterItemLabel(viewModel.state.starterItem)
+            )}</p>
           </div>
           <div class="journey-log-entry">
-            <p><strong>Carry limits:</strong> ${viewModel.bagMeta.weaponSlots} weapon slot${viewModel.bagMeta.weaponSlots === 1 ? "" : "s"}, ${viewModel.supplies.rationCapacity} ration${viewModel.supplies.rationCapacity === 1 ? "" : "s"}, ${viewModel.supplies.tonicCapacity} tonic${viewModel.supplies.tonicCapacity === 1 ? "" : "s"}</p>
+            <p><strong>${escapeHtml(t("journeyUi.character.carryLimits"))}:</strong> ${escapeHtml(
+              t("journeyUi.character.carryLimitsValue", {
+                weaponSlots: viewModel.bagMeta.weaponSlots,
+                rationCapacity: viewModel.supplies.rationCapacity,
+                tonicCapacity: viewModel.supplies.tonicCapacity,
+              })
+            )}</p>
           </div>
         </div>
-        <p class="muted-text">${escapeHtml(viewModel.bagMeta.description)}</p>
+        <p class="muted-text">${escapeHtml(
+          getJourneyBagDescription(viewModel.state.bagKey, viewModel.bagMeta.description)
+        )}</p>
       </article>
 
       <article class="journey-side-card">
-        <p class="journey-overline">Inventory</p>
-        <h4>What you are carrying</h4>
+        <p class="journey-overline">${escapeHtml(t("journeyUi.character.inventory"))}</p>
+        <h4>${escapeHtml(t("journeyUi.character.inventoryTitle"))}</h4>
         <div class="summary-row">
-          <span class="summary-pill">Weapons <strong>${viewModel.weaponInventory.length} / ${viewModel.bagMeta.weaponSlots}</strong></span>
-          <span class="summary-pill">Rations <strong>${viewModel.supplies.availableRations} / ${viewModel.supplies.rationCapacity}</strong></span>
-          <span class="summary-pill">Tonics <strong>${viewModel.supplies.availableTonics} / ${viewModel.supplies.tonicCapacity}</strong></span>
+          <span class="summary-pill">${escapeHtml(t("journeyUi.character.weapons"))} <strong>${viewModel.weaponInventory.length} / ${viewModel.bagMeta.weaponSlots}</strong></span>
+          <span class="summary-pill">${escapeHtml(t("journeyUi.character.rations"))} <strong>${viewModel.supplies.availableRations} / ${viewModel.supplies.rationCapacity}</strong></span>
+          <span class="summary-pill">${escapeHtml(t("journeyUi.character.tonics"))} <strong>${viewModel.supplies.availableTonics} / ${viewModel.supplies.tonicCapacity}</strong></span>
         </div>
         <div class="journey-resource-actions character-inventory-actions">
           <button
@@ -788,7 +1128,11 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
             data-journey-action="use-tonic"
             ${viewModel.supplies.availableTonics <= 0 ? "disabled" : ""}
           >
-            Use tonic (${viewModel.supplies.availableTonics})
+            ${escapeHtml(
+              t("journeyUi.character.useTonic", {
+                count: viewModel.supplies.availableTonics,
+              })
+            )}
           </button>
           <button
             type="button"
@@ -796,7 +1140,11 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
             data-journey-action="use-ration"
             ${viewModel.supplies.availableRations <= 0 ? "disabled" : ""}
           >
-            Eat ration (${viewModel.supplies.availableRations})
+            ${escapeHtml(
+              t("journeyUi.character.eatRation", {
+                count: viewModel.supplies.availableRations,
+              })
+            )}
           </button>
         </div>
         <div class="journey-character-list">
@@ -806,7 +1154,7 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
                 .join("")
             : `
                 <div class="journey-log-entry">
-                  <p>You are still travelling light and painfully under-armed.</p>
+                  <p>${escapeHtml(t("journeyUi.character.travellingLight"))}</p>
                 </div>
               `}
         </div>
@@ -814,7 +1162,7 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
           viewModel.supplies.autoConsumedRations || viewModel.supplies.autoConsumedTonics
             ? `
                 <p class="muted-text">
-                  Extra supplies beyond your bag space are automatically consumed on the road.
+                  ${escapeHtml(t("journeyUi.character.autoConsumeNote"))}
                 </p>
               `
             : ""
@@ -841,7 +1189,7 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
 
     <section class="character-build-grid">
       <article class="journey-side-card">
-        <p class="journey-overline">Class discipline</p>
+        <p class="journey-overline">${escapeHtml(t("journeyUi.character.classDiscipline"))}</p>
         <h4>${escapeHtml(viewModel.classLabel)}</h4>
         <p class="muted-text">${escapeHtml(viewModel.classDescription)}</p>
         ${buildJourneyClassSelectionUi(viewModel.state)}
@@ -860,7 +1208,9 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
                   .join("")}
               </div>
             `
-            : '<p class="muted-text">Most of what you know has been learned by surviving one ugly stretch at a time.</p>'
+            : `<p class="muted-text">${escapeHtml(
+                t("journeyUi.character.learnedBySurviving")
+              )}</p>`
         }
       </article>
     </section>
@@ -883,7 +1233,6 @@ export function buildJourneyClassSelectionUi(state) {
         <div class="journey-class-list">
           ${unlockedClasses
             .map((classKey) => {
-              const meta = JOURNEY_CLASS_META[classKey];
               return `
                 <button
                   type="button"
@@ -893,19 +1242,19 @@ export function buildJourneyClassSelectionUi(state) {
                   data-journey-action="set-class"
                   data-class="${classKey}"
                 >
-                  ${escapeHtml(meta.label)}
+                  ${escapeHtml(getJourneyClassLabel(classKey))}
                 </button>
               `;
             })
             .join("")}
         </div>
-        <p class="muted-text">Other paths are still hidden. They reveal themselves through the road, not the menu.</p>
+        <p class="muted-text">${escapeHtml(t("journeyUi.character.hiddenPaths"))}</p>
       `
-    : `<p class="muted-text">No discipline has awakened yet. You are still learning the rules of this world the hard way.</p>`;
+    : `<p class="muted-text">${escapeHtml(t("journeyUi.character.noDiscipline"))}</p>`;
 }
 
 export function getJourneyDisplayName(state) {
-  return state.characterName || "Nameless Wanderer";
+  return state.characterName || t("journeyUi.common.namelessWanderer");
 }
 
 export function initializeJourneySpritePreviews(root = document) {
@@ -963,14 +1312,14 @@ function buildJourneyViewModel(state, games, sessions, xpSummary) {
   const levelProgress =
     storyXpToNextLevel <= xpSummary.xpToNextLevel
       ? {
-          sourceLabel: "Story XP",
+          sourceLabel: t("journeyUi.character.storyXp"),
           current: storyXpIntoLevel,
           goal: JOURNEY_STORY_XP_PER_LEVEL,
           remaining: storyXpToNextLevel,
           progressPercent: storyProgressPercent,
         }
       : {
-          sourceLabel: "Tracker XP",
+          sourceLabel: t("journeyUi.character.trackerXp"),
           current: xpSummary.xpIntoLevel,
           goal: 100,
           remaining: xpSummary.xpToNextLevel,
@@ -990,7 +1339,7 @@ function buildJourneyViewModel(state, games, sessions, xpSummary) {
     activityText,
     nextThreatLabel:
       state.status === "recovering"
-        ? "Recovery comes first"
+        ? t("journeyUi.progress.recoveryComesFirst")
         : formatDurationRangeHours(nextBossEtaHours),
     hpPercent,
     hungerPercent,
@@ -1010,8 +1359,8 @@ function buildJourneyViewModel(state, games, sessions, xpSummary) {
     retreatCount: Math.max(state.townVisits, retreatHistory.length),
     latestClearedRoad: clearedRoads[0] || null,
     latestRetreat: retreatHistory[0] || null,
-    classLabel: JOURNEY_CLASS_META[state.classType].label,
-    classDescription: JOURNEY_CLASS_META[state.classType].description,
+    classLabel: getJourneyClassLabel(state.classType),
+    classDescription: getJourneyClassDescription(state.classType),
     statusLabel: getJourneyStatusLabel(state.status),
     zoneName: getJourneyZoneName(state.bossIndex),
   };
@@ -1019,12 +1368,17 @@ function buildJourneyViewModel(state, games, sessions, xpSummary) {
 
 function renderJourneyStatCards(viewModel) {
   return JOURNEY_STAT_KEYS.map((statKey) => {
-    const statMeta = JOURNEY_STAT_META[statKey];
+    const statMeta = {
+      label: getJourneyStatLabel(statKey),
+      help: getJourneyStatHelp(statKey),
+    };
     const breakdown = viewModel.journeyStats.statBreakdown[statKey];
     const hasClassBonus = breakdown.classBonus > 0;
     const hasWeaponBonus = breakdown.weaponBonus > 0;
     const modifierText = breakdown.modifier
-      ? `Modifier ${breakdown.modifier > 0 ? "+" : ""}${breakdown.modifier}`
+      ? t("journeyUi.stats.modifier", {
+          value: `${breakdown.modifier > 0 ? "+" : ""}${breakdown.modifier}`,
+        })
       : "";
     const modifierSourceMarkup = renderJourneyModifierSourceNotes(breakdown);
 
@@ -1037,15 +1391,21 @@ function renderJourneyStatCards(viewModel) {
           <strong>${breakdown.total}</strong>
         </div>
         <div class="journey-inline-row stat-source-row">
-          <span class="journey-chip">Base ${breakdown.base}</span>
+          <span class="journey-chip">${escapeHtml(
+            t("journeyUi.stats.base", { value: breakdown.base })
+          )}</span>
           ${
             hasClassBonus
-              ? `<span class="journey-chip is-class">Class +${breakdown.classBonus}</span>`
+              ? `<span class="journey-chip is-class">${escapeHtml(
+                  t("journeyUi.stats.classBonus", { value: breakdown.classBonus })
+                )}</span>`
               : ""
           }
           ${
             hasWeaponBonus
-              ? `<span class="journey-chip is-weapon">Weapon +${breakdown.weaponBonus}</span>`
+              ? `<span class="journey-chip is-weapon">${escapeHtml(
+                  t("journeyUi.stats.weaponBonus", { value: breakdown.weaponBonus })
+                )}</span>`
               : ""
           }
           ${
@@ -1064,7 +1424,7 @@ function renderJourneyStatCards(viewModel) {
             data-stat="${statKey}"
             ${viewModel.unspentSkillPoints <= 0 ? "disabled" : ""}
           >
-            +1 ${escapeHtml(statMeta.label)}
+            ${escapeHtml(t("journeyUi.stats.plusOne", { label: statMeta.label }))}
           </button>
         </div>
       </article>
@@ -1077,12 +1437,18 @@ function renderCharacterLevelPanel(viewModel) {
     <section class="character-level-card">
       <div class="character-level-header">
         <div>
-          <p class="journey-overline">Character level</p>
+          <p class="journey-overline">${escapeHtml(t("journeyUi.character.characterLevel"))}</p>
           <div class="character-level-title-row">
-            <strong>Level ${viewModel.journeyLevel}</strong>
+            <strong>${escapeHtml(
+              t("journeyUi.character.levelLabel", { level: viewModel.journeyLevel })
+            )}</strong>
             ${
               viewModel.unspentSkillPoints > 0
-                ? `<span class="journey-chip is-active">${viewModel.unspentSkillPoints} point${viewModel.unspentSkillPoints === 1 ? "" : "s"} ready</span>`
+                ? `<span class="journey-chip is-active">${escapeHtml(
+                    t("journeyUi.character.pointsReady", {
+                      count: viewModel.unspentSkillPoints,
+                    })
+                  )}</span>`
                 : ""
             }
           </div>
@@ -1094,7 +1460,9 @@ function renderCharacterLevelPanel(viewModel) {
                   type="button"
                   class="character-level-up-button"
                   data-journey-action="open-skill-modal"
-                  aria-label="Spend skill points"
+                  aria-label="${escapeAttribute(
+                    t("journeyUi.character.spendSkillPoints")
+                  )}"
                 >
                   +
                 </button>
@@ -1109,8 +1477,17 @@ function renderCharacterLevelPanel(viewModel) {
         ></div>
       </div>
       <div class="journey-progress-meta character-level-meta">
-        <span>XP ${viewModel.levelProgress.current} / ${viewModel.levelProgress.goal}</span>
-        <span>${viewModel.levelProgress.remaining} XP to next level</span>
+        <span>${escapeHtml(
+          t("journeyUi.character.xpProgress", {
+            current: viewModel.levelProgress.current,
+            goal: viewModel.levelProgress.goal,
+          })
+        )}</span>
+        <span>${escapeHtml(
+          t("journeyUi.character.xpToNext", {
+            remaining: viewModel.levelProgress.remaining,
+          })
+        )}</span>
       </div>
       ${renderCharacterLevelBreakdown(viewModel)}
     </section>
@@ -1121,28 +1498,57 @@ function renderCharacterLevelBreakdown(viewModel) {
   return `
     <details class="character-level-breakdown">
       <summary class="character-level-breakdown-summary">
-        <span>See XP sources</span>
+        <span>${escapeHtml(t("journeyUi.character.seeXpSources"))}</span>
         <span class="character-chevron" aria-hidden="true">⌄</span>
       </summary>
       <div class="character-level-breakdown-panel">
         <div class="journey-character-list">
           <div class="journey-log-entry">
-            <p><strong>Total character level:</strong> ${viewModel.journeyLevel}</p>
-            <p class="muted-text">Tracker level ${viewModel.xpSummary.level} + story bonus ${viewModel.storyLevelBonus >= 0 ? `+${viewModel.storyLevelBonus}` : viewModel.storyLevelBonus}.</p>
+            <p><strong>${escapeHtml(t("journeyUi.character.totalCharacterLevel"))}:</strong> ${viewModel.journeyLevel}</p>
+            <p class="muted-text">${escapeHtml(
+              t("journeyUi.character.trackerLevelStoryBonus", {
+                trackerLevel: viewModel.xpSummary.level,
+                storyBonus:
+                  viewModel.storyLevelBonus >= 0
+                    ? `+${viewModel.storyLevelBonus}`
+                    : viewModel.storyLevelBonus,
+              })
+            )}</p>
           </div>
           <div class="journey-log-entry">
-            <p><strong>Tracker XP:</strong> ${viewModel.xpSummary.totalXp}</p>
+            <p><strong>${escapeHtml(t("journeyUi.character.trackerXp"))}:</strong> ${viewModel.xpSummary.totalXp}</p>
             <div class="journey-inline-row stat-source-row">
-              <span class="journey-chip">Sessions ${viewModel.xpSummary.sessionXp}</span>
-              <span class="journey-chip">Completions ${viewModel.xpSummary.completionXp}</span>
-              <span class="journey-chip">Streak ${viewModel.xpSummary.streakBonus}</span>
+              <span class="journey-chip">${escapeHtml(
+                getCurrentLocale() === "ja"
+                  ? `セッション ${viewModel.xpSummary.sessionXp}`
+                  : `Sessions ${viewModel.xpSummary.sessionXp}`
+              )}</span>
+              <span class="journey-chip">${escapeHtml(
+                getCurrentLocale() === "ja"
+                  ? `完了 ${viewModel.xpSummary.completionXp}`
+                  : `Completions ${viewModel.xpSummary.completionXp}`
+              )}</span>
+              <span class="journey-chip">${escapeHtml(
+                getCurrentLocale() === "ja"
+                  ? `連続 ${viewModel.xpSummary.streakBonus}`
+                  : `Streak ${viewModel.xpSummary.streakBonus}`
+              )}</span>
             </div>
           </div>
           <div class="journey-log-entry">
-            <p><strong>Story XP:</strong> ${viewModel.state.storyXp}</p>
+            <p><strong>${escapeHtml(t("journeyUi.character.storyXp"))}:</strong> ${viewModel.state.storyXp}</p>
             <div class="journey-inline-row stat-source-row">
-              <span class="journey-chip">Current story bar ${viewModel.storyXpIntoLevel} / ${JOURNEY_STORY_XP_PER_LEVEL}</span>
-              <span class="journey-chip is-active">Story bonus +${viewModel.storyLevelBonus}</span>
+              <span class="journey-chip">${escapeHtml(
+                t("journeyUi.character.currentStoryBar", {
+                  current: viewModel.storyXpIntoLevel,
+                  total: JOURNEY_STORY_XP_PER_LEVEL,
+                })
+              )}</span>
+              <span class="journey-chip is-active">${escapeHtml(
+                t("journeyUi.character.storyBonusValue", {
+                  value: viewModel.storyLevelBonus,
+                })
+              )}</span>
             </div>
           </div>
         </div>
@@ -1176,7 +1582,7 @@ function renderCharacterSkillModal(viewModel) {
         type="button"
         class="character-skill-backdrop"
         data-journey-action="close-skill-modal"
-        aria-label="Close level up modal"
+        aria-label="${escapeAttribute(t("common.close"))}"
       ></button>
       <div
         class="character-skill-dialog"
@@ -1186,13 +1592,22 @@ function renderCharacterSkillModal(viewModel) {
       >
         <div class="character-skill-modal-header">
           <div>
-            <p class="journey-overline">Level up</p>
+            <p class="journey-overline">${escapeHtml(t("journeyUi.character.levelUp"))}</p>
             <h4 id="characterSkillModalTitle">${escapeHtml(viewModel.displayName)}</h4>
             <p class="character-skill-level-line">
-              Level ${previousLevel} &gt; ${viewModel.journeyLevel}
+              ${escapeHtml(
+                t("journeyUi.character.levelTransition", {
+                  from: previousLevel,
+                  to: viewModel.journeyLevel,
+                })
+              )}
             </p>
             <p class="character-skill-points-line">
-              Skill points available: ${viewModel.unspentSkillPoints}
+              ${escapeHtml(
+                t("journeyUi.character.skillPointsAvailable", {
+                  count: viewModel.unspentSkillPoints,
+                })
+              )}
             </p>
           </div>
           <button
@@ -1200,7 +1615,7 @@ function renderCharacterSkillModal(viewModel) {
             class="secondary-button"
             data-journey-action="close-skill-modal"
           >
-            Close
+            ${escapeHtml(t("common.close"))}
           </button>
         </div>
         <div class="journey-stat-grid character-skill-grid">
@@ -1219,18 +1634,30 @@ function renderJourneyWeaponCard(weapon) {
       weapon.equipped ? "is-equipped" : ""
     }">
       <div class="journey-title-row">
-        <strong>${escapeHtml(weapon.meta.label)}</strong>
-        <span class="journey-chip">${escapeHtml(weapon.meta.tier)}</span>
-        ${weapon.equipped ? '<span class="journey-chip is-active">Equipped</span>' : ""}
+        <strong>${escapeHtml(getJourneyWeaponLabel(weapon.key, weapon.meta.label))}</strong>
+        <span class="journey-chip">${escapeHtml(
+          getJourneyWeaponTier(weapon.key, weapon.meta.tier)
+        )}</span>
+        ${
+          weapon.equipped
+            ? `<span class="journey-chip is-active">${escapeHtml(
+                t("journeyUi.character.equipped")
+              )}</span>`
+            : ""
+        }
       </div>
-      <p class="muted-text">${escapeHtml(weapon.meta.description)}</p>
+      <p class="muted-text">${escapeHtml(
+        getJourneyWeaponDescription(weapon.key, weapon.meta.description)
+      )}</p>
       <div class="journey-inline-row stat-source-row">
         ${renderWeaponBonusChips(weapon.meta.bonuses)}
       </div>
       <div class="journey-skill-actions">
         ${
           weapon.equipped
-            ? '<span class="journey-weapon-status-note">Currently equipped</span>'
+            ? `<span class="journey-weapon-status-note">${escapeHtml(
+                t("journeyUi.character.currentlyEquipped")
+              )}</span>`
             : `
                 <button
                   type="button"
@@ -1238,7 +1665,7 @@ function renderJourneyWeaponCard(weapon) {
                   data-journey-action="equip-weapon"
                   data-weapon="${weapon.key}"
                 >
-                  Equip
+                  ${escapeHtml(t("journeyUi.character.equip"))}
                 </button>
               `
         }
@@ -1253,11 +1680,17 @@ function renderJourneyPendingWeaponCard(weapon, currentWeapons, weaponSlots) {
   return `
     <article class="journey-log-entry journey-weapon-card is-pending">
       <div class="journey-title-row">
-        <strong>${escapeHtml(weapon.meta.label)}</strong>
-        <span class="journey-chip is-warning">New find</span>
-        <span class="journey-chip">${escapeHtml(weapon.meta.tier)}</span>
+        <strong>${escapeHtml(getJourneyWeaponLabel(weapon.key, weapon.meta.label))}</strong>
+        <span class="journey-chip is-warning">${escapeHtml(
+          t("journeyUi.character.newFind")
+        )}</span>
+        <span class="journey-chip">${escapeHtml(
+          getJourneyWeaponTier(weapon.key, weapon.meta.tier)
+        )}</span>
       </div>
-      <p class="muted-text">${escapeHtml(weapon.meta.description)}</p>
+      <p class="muted-text">${escapeHtml(
+        getJourneyWeaponDescription(weapon.key, weapon.meta.description)
+      )}</p>
       <div class="journey-inline-row stat-source-row">
         ${renderWeaponBonusChips(weapon.meta.bonuses)}
       </div>
@@ -1271,7 +1704,7 @@ function renderJourneyPendingWeaponCard(weapon, currentWeapons, weaponSlots) {
                   data-journey-action="keep-weapon"
                   data-weapon="${weapon.key}"
                 >
-                  Keep it
+                  ${escapeHtml(t("journeyUi.character.keepIt"))}
                 </button>
               `
             : currentWeapons
@@ -1284,7 +1717,14 @@ function renderJourneyPendingWeaponCard(weapon, currentWeapons, weaponSlots) {
                       data-weapon="${weapon.key}"
                       data-replace="${currentWeapon.key}"
                     >
-                      Swap with ${escapeHtml(currentWeapon.meta.label)}
+                      ${escapeHtml(
+                        t("journeyUi.character.swapWith", {
+                          weapon: getJourneyWeaponLabel(
+                            currentWeapon.key,
+                            currentWeapon.meta.label
+                          ),
+                        })
+                      )}
                     </button>
                   `
                 )
@@ -1296,7 +1736,7 @@ function renderJourneyPendingWeaponCard(weapon, currentWeapons, weaponSlots) {
           data-journey-action="discard-pending-weapon"
           data-weapon="${weapon.key}"
         >
-          Leave it
+          ${escapeHtml(t("journeyUi.character.leaveIt"))}
         </button>
       </div>
     </article>
@@ -1308,7 +1748,7 @@ function renderWeaponBonusChips(bonuses) {
     .map(
       (statKey) => `
         <span class="journey-chip is-weapon">
-          ${escapeHtml(JOURNEY_STAT_META[statKey].label)} +${bonuses[statKey]}
+          ${escapeHtml(getJourneyStatLabel(statKey))} +${bonuses[statKey]}
         </span>
       `
     )
@@ -1362,13 +1802,13 @@ function getJourneyStretchSprite(state, hpPercent) {
   if (state.status === "recovering" || hpPercent <= 55) {
     return {
       sprite: JOURNEY_INJURED_SPRITE,
-      label: "Recovering",
+      label: t("journeyUi.common.recovering"),
     };
   }
 
   return {
     sprite: JOURNEY_WALK_SPRITE,
-    label: "On the road",
+    label: t("journeyUi.common.onRoad"),
   };
 }
 
@@ -1430,7 +1870,7 @@ function renderJourneyRadarChart(journeyStats) {
 
     return {
       key: statKey,
-      label: JOURNEY_STAT_META[statKey].label,
+      label: getJourneyStatLabel(statKey),
       value: total,
       breakdown,
     };
@@ -1447,7 +1887,7 @@ function renderJourneyRadarChart(journeyStats) {
         class="character-radar-chart"
         viewBox="0 0 260 260"
         role="img"
-        aria-label="Radar chart showing your Might, Finesse, Arcana, Vitality, and Resolve"
+        aria-label="${escapeAttribute(t("journeyUi.radar.ariaLabel"))}"
       >
         <g class="character-radar-rings">
           ${ringFractions
@@ -1533,18 +1973,22 @@ function renderCharacterRadarLegendItem(entry) {
 
 function renderJourneyStatSourcePills(breakdown) {
   const pills = [
-    `Base ${breakdown.base}`,
-    `Spent ${breakdown.allocated}`,
+    t("journeyUi.stats.base", { value: breakdown.base }),
+    t("journeyUi.stats.spent", { value: breakdown.allocated }),
   ];
 
   if (breakdown.classBonus > 0) {
-    pills.push(`Class +${breakdown.classBonus}`);
+    pills.push(t("journeyUi.stats.classBonus", { value: breakdown.classBonus }));
   }
   if (breakdown.weaponBonus > 0) {
-    pills.push(`Weapon +${breakdown.weaponBonus}`);
+    pills.push(t("journeyUi.stats.weaponBonus", { value: breakdown.weaponBonus }));
   }
   if (breakdown.modifier) {
-    pills.push(`Modifier ${breakdown.modifier > 0 ? "+" : ""}${breakdown.modifier}`);
+    pills.push(
+      t("journeyUi.stats.modifier", {
+        value: `${breakdown.modifier > 0 ? "+" : ""}${breakdown.modifier}`,
+      })
+    );
   }
 
   return pills
@@ -1564,7 +2008,7 @@ function renderJourneyModifierSourceNotes(breakdown) {
     <div class="journey-character-list">
       ${modifierSources
         .map((source) => {
-          const statLabel = JOURNEY_STAT_META[source.statKey]?.label || "Stat";
+          const statLabel = getJourneyStatLabel(source.statKey);
           const detailLine = source.detail
             ? `<p class="muted-text">${escapeHtml(source.detail)}</p>`
             : "";
@@ -1839,26 +2283,42 @@ function matchesJourneySpriteBackground(red, green, blue, backgroundPalette) {
 }
 
 export function getJourneyInventoryItems(state, supplies) {
-  const items = [`Starter keepsake: ${state.starterItem}`];
+  const locale = getCurrentLocale();
+  const items = [
+    locale === "ja"
+      ? `最初の持ち物: ${getJourneyStarterItemLabel(state.starterItem)}`
+      : `Starter keepsake: ${getJourneyStarterItemLabel(state.starterItem)}`,
+  ];
 
   const equippedWeapon = getJourneyWeaponInventory(state).find((weapon) => weapon.equipped);
   if (equippedWeapon?.meta) {
-    items.push(`Equipped weapon: ${equippedWeapon.meta.label}`);
+    items.push(
+      locale === "ja"
+        ? `装備武器: ${getJourneyWeaponLabel(equippedWeapon.key, equippedWeapon.meta.label)}`
+        : `Equipped weapon: ${getJourneyWeaponLabel(
+            equippedWeapon.key,
+            equippedWeapon.meta.label
+          )}`
+    );
   }
 
   if (state.storyFlags.boarDefeated) {
-    items.push("Boar trophy");
+    items.push(locale === "ja" ? "猪の戦利品" : "Boar trophy");
   }
 
   if (supplies.availableRations > 0) {
     items.push(
-      `${supplies.availableRations} ration${supplies.availableRations === 1 ? "" : "s"}`
+      locale === "ja"
+        ? `食料 ${supplies.availableRations}`
+        : `${supplies.availableRations} ration${supplies.availableRations === 1 ? "" : "s"}`
     );
   }
 
   if (supplies.availableTonics > 0) {
     items.push(
-      `${supplies.availableTonics} tonic${supplies.availableTonics === 1 ? "" : "s"}`
+      locale === "ja"
+        ? `トニック ${supplies.availableTonics}`
+        : `${supplies.availableTonics} tonic${supplies.availableTonics === 1 ? "" : "s"}`
     );
   }
 
@@ -1866,39 +2326,64 @@ export function getJourneyInventoryItems(state, supplies) {
 }
 
 export function getJourneyKnownNotes(state) {
+  const locale = getCurrentLocale();
   const notes = [];
 
   if (state.storyFlags.foundWeapon) {
-    notes.push("You are no longer completely unarmed.");
+    notes.push(
+      locale === "ja"
+        ? "もう完全に素手というわけではない。"
+        : "You are no longer completely unarmed."
+    );
   }
 
   if (state.bagKey && state.bagKey !== "none") {
-    notes.push("You have enough pack space now to carry a more serious loadout.");
+    notes.push(
+      locale === "ja"
+        ? "より本格的な装備構成を持ち歩けるだけの収納ができた。"
+        : "You have enough pack space now to carry a more serious loadout."
+    );
   }
 
   if (state.storyFlags.boarDefeated) {
-    notes.push("You survived your first brutal hunt in the woods.");
+    notes.push(
+      locale === "ja"
+        ? "森での最初の苛烈な狩りを生き延びた。"
+        : "You survived your first brutal hunt in the woods."
+    );
   }
 
   if (state.storyFlags.slimeSapped) {
-    notes.push("A bad slime meal left your body permanently worse for wear.");
+    notes.push(
+      locale === "ja"
+        ? "まずいスライム食で、身体に消えない負担が残った。"
+        : "A bad slime meal left your body permanently worse for wear."
+    );
   }
 
   for (const bonus of Array.isArray(state.permanentBonuses) ? state.permanentBonuses : []) {
-    const statLabel = JOURNEY_STAT_META[bonus.statKey]?.label || "Stat";
+    const statLabel = getJourneyStatLabel(bonus.statKey);
     notes.push(
-      `${bonus.title} lingers on you: ${statLabel} ${bonus.amount > 0 ? "+" : ""}${bonus.amount}.`
+      locale === "ja"
+        ? `${bonus.title} の余韻が残っている: ${statLabel} ${bonus.amount > 0 ? "+" : ""}${bonus.amount}。`
+        : `${bonus.title} lingers on you: ${statLabel} ${bonus.amount > 0 ? "+" : ""}${bonus.amount}.`
     );
   }
 
   if (state.unlockedClasses.length > 1) {
     notes.push(
-      `A discipline awakened: ${JOURNEY_CLASS_META[state.classType].label}.`
+      locale === "ja"
+        ? `新たな系統が目覚めた: ${getJourneyClassLabel(state.classType)}。`
+        : `A discipline awakened: ${getJourneyClassLabel(state.classType)}.`
     );
   }
 
   if ((state.pendingWeaponKeys || []).length) {
-    notes.push("A fresh weapon find is waiting on you to decide what stays and what goes.");
+    notes.push(
+      locale === "ja"
+        ? "新しい武器が見つかっている。何を残して何を手放すか決める必要がある。"
+        : "A fresh weapon find is waiting on you to decide what stays and what goes."
+    );
   }
 
   return notes;

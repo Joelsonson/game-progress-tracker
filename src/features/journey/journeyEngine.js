@@ -23,10 +23,47 @@ import {
   JOURNEY_ZONE_NAMES,
 } from "../../core/constants.js";
 import { computeStreak } from "../../core/formatters.js";
+import { getCurrentLocale } from "../../core/i18n.js";
 import { appState } from "../../core/state.js";
 import { normalizeJourneyChoice, normalizeJourneyEvent } from "./journeyEvents.js";
 
 const JOURNEY_HISTORY_LIMIT = 24;
+const JOURNEY_ZONE_NAMES_JA = [
+  "未知の森",
+  "小川沿いの茂み",
+  "打ち捨てられた細道",
+  "寂れた集落外れ",
+  "壊れた監視街道",
+  "霧沼の渡り",
+  "石路峠道",
+  "旧辺境街道",
+  "裂け松の谷",
+  "沈んだ土手道",
+  "いばらの関道",
+  "灯籠街道",
+  "灰の九十九折り",
+  "廃門前街道",
+];
+const JOURNEY_BOSS_NAMES_JA = [
+  "追い詰められた森猪",
+  "飢えた狼の群れ",
+  "橋の伏兵",
+  "沼牙の潜伏者",
+  "丘賊の頭目",
+  "遺跡の追跡者",
+  "墓道のオーガ",
+  "嵐尾根のワーム",
+  "境界の暴君",
+  "関道の略奪者",
+  "泥鏡の蛇",
+  "黒い茨角の鹿",
+  "門楼の亡霊",
+  "灰降りのキメラ",
+];
+
+function isJourneyJapaneseLocale() {
+  return getCurrentLocale() === "ja";
+}
 
 export async function syncJourneyState(rawState, games, sessions, xpSummary) {
   const now = new Date();
@@ -588,13 +625,18 @@ export function buildJourneyStretchPresentation(
   supplies = null
 ) {
   const goalMeta = getJourneyGoalMeta(state, boss, progress, journeyStats, supplies);
+  const isJa = isJourneyJapaneseLocale();
 
   return {
     ...goalMeta,
     currentLabel:
       state.status === "recovering"
-        ? `${progress.percent}% of this stretch is behind you.`
-        : `${progress.percent}% of the way to ${goalMeta.goalAction}.`,
+        ? isJa
+          ? `この区間の ${progress.percent}% を乗り越えた。`
+          : `${progress.percent}% of this stretch is behind you.`
+        : isJa
+          ? `${goalMeta.goalAction}まで ${progress.percent}%。`
+          : `${progress.percent}% of the way to ${goalMeta.goalAction}.`,
     remainingLabel: getJourneyProgressFeeling(state, progress.percent),
     innerThoughts: buildJourneyInnerThoughts(state, goalMeta, journeyStats),
   };
@@ -621,6 +663,249 @@ function getJourneyConditionState(state, journeyStats, supplies = null) {
 
 export function getJourneyGoalMeta(state, boss, progress, journeyStats, supplies = null) {
   const condition = getJourneyConditionState(state, journeyStats, supplies);
+  const isJa = isJourneyJapaneseLocale();
+
+  if (isJa) {
+    if (state.status === "recovering") {
+      return {
+        goalTitle: "立て直して態勢を整える",
+        goalAction: "立て直し",
+        innerThoughtAction: "立て直すこと",
+        horizonLabel: "今は",
+        horizonValue: state.recoveryObjective || "距離より、生き延びることの方が大事だ。",
+      };
+    }
+
+    if (state.bossIndex === 0) {
+      if (progress.percent < 18) {
+        return {
+          goalTitle: "勝手をつかむ",
+          goalAction: "勝手をつかむ",
+          innerThoughtAction: "勝手をつかむこと",
+          horizonLabel: "今は",
+          horizonValue: "まだ何ひとつ見覚えがない。",
+        };
+      }
+
+      if (progress.percent < 38) {
+        return {
+          goalTitle: "ちゃんと先へ繋がる道を見つける",
+          goalAction: "先へ繋がる道を見つける",
+          innerThoughtAction: "先へ繋がる道を見つけること",
+          horizonLabel: "この先",
+          horizonValue: "ちゃんと先へ続く道筋が必要だ。",
+        };
+      }
+
+      if (!state.storyFlags.foundWeapon || progress.percent < 56) {
+        return {
+          goalTitle: "戦える物を見つける",
+          goalAction: "戦える物を見つける",
+          innerThoughtAction: "戦える物を見つけること",
+          horizonLabel: "この先",
+          horizonValue: "いつまでも丸腰ではいられない。",
+        };
+      }
+
+      if (progress.percent < 78) {
+        if (condition.needsFood || condition.foodLow) {
+          return {
+            goalTitle: "食べ物を見つけて立て直す",
+            goalAction: "食べ物を見つけて立て直す",
+            innerThoughtAction: "食べ物を見つけて立て直すこと",
+            horizonLabel: "必要",
+            horizonValue:
+              condition.availableRations > 0
+                ? "食料はまだあるけれど、ちゃんと力を戻さないといけない。"
+                : "次に備えるだけの力が必要だ。",
+          };
+        }
+
+        return {
+          goalTitle: "猪の縄張りを読む",
+          goalAction: "猪の縄張りを読む",
+          innerThoughtAction: "猪の縄張りを読むこと",
+          horizonLabel: "痕跡",
+          horizonValue: "ようやく森が、狩りに必要な手掛かりを見せ始めている。",
+        };
+      }
+
+      return {
+        goalTitle: "猪の痕を追う",
+        goalAction: "猪の痕を追う",
+        innerThoughtAction: "猪の痕を追うこと",
+        horizonLabel: "痕跡",
+        horizonValue: "この辺りの森には新しい猪の痕がそこら中にある。",
+      };
+    }
+
+    if (state.bossIndex === 1) {
+      if (progress.percent < 58) {
+        return {
+          goalTitle: "狼より先に動く",
+          goalAction: "狼より先に動く",
+          innerThoughtAction: "狼より先に動くこと",
+          horizonLabel: "この先",
+          horizonValue: "群れはもう無視できない距離にいる。",
+        };
+      }
+
+      return {
+        goalTitle: "より安全な地まで抜ける",
+        goalAction: "より安全な地まで抜ける",
+        innerThoughtAction: "より安全な地まで抜けること",
+        horizonLabel: "区間終点",
+        horizonValue: boss.name,
+      };
+    }
+
+    if (state.bossIndex === 2) {
+      if (progress.percent < 52) {
+        return {
+          goalTitle: "安全な渡りを見つける",
+          goalAction: "安全な渡りを見つける",
+          innerThoughtAction: "安全な渡りを見つけること",
+          horizonLabel: "この先",
+          horizonValue: "道は橋へ向かって狭まっていて、誰かに見張られていそうだ。",
+        };
+      }
+
+      return {
+        goalTitle: "橋の伏兵を崩す",
+        goalAction: "橋の伏兵を崩す",
+        innerThoughtAction: "橋の伏兵を崩すこと",
+        horizonLabel: "区間終点",
+        horizonValue: boss.name,
+      };
+    }
+
+    if (state.bossIndex === 3) {
+      if (progress.percent < 56) {
+        return {
+          goalTitle: "硬い地面を外さない",
+          goalAction: "硬い地面を外さない",
+          innerThoughtAction: "硬い地面を外さないこと",
+          horizonLabel: "必要",
+          horizonValue: "沼は、静かな水を浅い水だと思った者から罰してくる。",
+        };
+      }
+
+      return {
+        goalTitle: "潜むものをあぶり出す",
+        goalAction: "潜むものをあぶり出す",
+        innerThoughtAction: "潜むものをあぶり出すこと",
+        horizonLabel: "区間終点",
+        horizonValue: boss.name,
+      };
+    }
+
+    if (state.bossIndex === 4) {
+      if (progress.percent < 54) {
+        return {
+          goalTitle: "目を付けられずに登る",
+          goalAction: "目を付けられずに登る",
+          innerThoughtAction: "目を付けられずに登ること",
+          horizonLabel: "この先",
+          horizonValue: "九十九折りの道は、高所を知り尽くした賊に見張られている。",
+        };
+      }
+
+      return {
+        goalTitle: "頭目の支配を崩す",
+        goalAction: "頭目の支配を崩す",
+        innerThoughtAction: "頭目の支配を崩すこと",
+        horizonLabel: "区間終点",
+        horizonValue: boss.name,
+      };
+    }
+
+    if (state.bossIndex === 5) {
+      if (progress.percent < 52) {
+        return {
+          goalTitle: "崩れた一帯を読む",
+          goalAction: "崩れた一帯を読む",
+          innerThoughtAction: "崩れた一帯を読むこと",
+          horizonLabel: "必要",
+          horizonValue: "砕けた石は悪い足場や死角だけでなく、盗賊より古い何かまで隠している。",
+        };
+      }
+
+      return {
+        goalTitle: "遺跡で追跡者を狩る",
+        goalAction: "遺跡で追跡者を狩る",
+        innerThoughtAction: "遺跡で追跡者を狩ること",
+        horizonLabel: "区間終点",
+        horizonValue: boss.name,
+      };
+    }
+
+    if (state.bossIndex === 6) {
+      if (progress.percent < 50) {
+        return {
+          goalTitle: "墓道を静かに進む",
+          goalAction: "墓道を静かに進む",
+          innerThoughtAction: "墓道を静かに進むこと",
+          horizonLabel: "この先",
+          horizonValue: "古い標が道に近すぎる。まるで見届け人を求めているみたいだ。",
+        };
+      }
+
+      return {
+        goalTitle: "オーガの通行料を生き延びる",
+        goalAction: "オーガの通行料を生き延びる",
+        innerThoughtAction: "オーガの通行料を生き延びること",
+        horizonLabel: "区間終点",
+        horizonValue: boss.name,
+      };
+    }
+
+    if (state.bossIndex === 7) {
+      if (progress.percent < 55) {
+        return {
+          goalTitle: "無事に尾根へ届く",
+          goalAction: "無事に尾根へ届く",
+          innerThoughtAction: "無事に尾根へ届くこと",
+          horizonLabel: "天候",
+          horizonValue: "高所の道は、風と露出した岩、それから翼ある厄介ごとばかりだ。",
+        };
+      }
+
+      return {
+        goalTitle: "嵐の上でワームと向き合う",
+        goalAction: "嵐の上でワームと向き合う",
+        innerThoughtAction: "嵐の上でワームと向き合うこと",
+        horizonLabel: "区間終点",
+        horizonValue: boss.name,
+      };
+    }
+
+    if (progress.percent < 62) {
+      const zoneName = getJourneyZoneName(state.bossIndex);
+      return {
+        goalTitle: condition.needsShelter
+          ? `${zoneName}で身を寄せる`
+          : `${zoneName}を押し通る`,
+        goalAction: condition.needsShelter
+          ? `${zoneName}で身を寄せる`
+          : `${zoneName}を押し通る`,
+        innerThoughtAction: condition.needsShelter
+          ? `${zoneName}で身を寄せること`
+          : `${zoneName}を押し通ること`,
+        horizonLabel: condition.needsShelter ? "必要" : "この先",
+        horizonValue: condition.needsShelter
+          ? "道がさらに何かを求める前に、息をつける場所が要る。"
+          : "道はまだ敵意を残したまま、半端にしか読めない。",
+      };
+    }
+
+    return {
+      goalTitle: `${boss.name}へ届く`,
+      goalAction: `${boss.name}へ届く`,
+      innerThoughtAction: `${boss.name}へ届くこと`,
+      horizonLabel: "区間終点",
+      horizonValue: boss.name,
+    };
+  }
 
   if (state.status === "recovering") {
     return {
@@ -839,6 +1124,18 @@ export function getJourneyGoalMeta(state, boss, progress, journeyStats, supplies
 }
 
 export function getJourneyProgressFeeling(state, progressPercent) {
+  if (isJourneyJapaneseLocale()) {
+    if (state.status === "recovering") {
+      return "今は距離よりも、立て直すことを優先したい。";
+    }
+
+    if (progressPercent < 20) return "まだようやく感覚をつかみ始めたところだ。";
+    if (progressPercent < 45) return "まだ雑だけれど、少なくとも意図を持って動けている。";
+    if (progressPercent < 75) return "この区間の輪郭が少しずつ見えてきた。";
+    if (progressPercent < 95) return "この区間の終わりがだいぶ近く感じられる。";
+    return "もうすぐこの道のりを抜けられそうだ。";
+  }
+
   if (state.status === "recovering") {
     return "Distance can wait until you are steady again.";
   }
@@ -852,26 +1149,37 @@ export function getJourneyProgressFeeling(state, progressPercent) {
 
 export function buildJourneyInnerThoughts(state, goalMeta, journeyStats) {
   const innerThoughtAction = goalMeta.innerThoughtAction || goalMeta.goalAction;
+  const isJa = isJourneyJapaneseLocale();
 
   if (state.status === "recovering") {
-    return `I need to slow down and ${innerThoughtAction} before I even think about pushing any farther.`;
+    return isJa
+      ? `これ以上進むことを考える前に、まずは落ち着いて${innerThoughtAction}ないといけない。`
+      : `I need to slow down and ${innerThoughtAction} before I even think about pushing any farther.`;
   }
 
   const stretchChallenge = buildJourneyStretchChallenge(state, journeyStats);
 
   if (stretchChallenge.successChance >= 0.74) {
-    return `I think I can handle this. If I keep my head, I should manage ${innerThoughtAction} before this stretch turns ugly.`;
+    return isJa
+      ? `たぶんやれる。頭を冷やしていれば、この区間がひどくなる前に${innerThoughtAction}はできるはずだ。`
+      : `I think I can handle this. If I keep my head, I should manage ${innerThoughtAction} before this stretch turns ugly.`;
   }
 
   if (stretchChallenge.successChance >= 0.56) {
-    return `I am not comfortable, but I can probably manage ${innerThoughtAction} if I stay focused and do not panic.`;
+    return isJa
+      ? `余裕はない。でも、集中を切らさず取り乱さなければ、たぶん${innerThoughtAction}くらいはできる。`
+      : `I am not comfortable, but I can probably manage ${innerThoughtAction} if I stay focused and do not panic.`;
   }
 
   if (stretchChallenge.successChance >= 0.38) {
-    return `I keep second-guessing myself. Maybe I can manage ${innerThoughtAction}, but it feels like one mistake could ruin the whole thing.`;
+    return isJa
+      ? `ずっと自分を疑ってしまう。${innerThoughtAction}はできるかもしれないけれど、ひとつ間違えれば全部だめになりそうだ。`
+      : `I keep second-guessing myself. Maybe I can manage ${innerThoughtAction}, but it feels like one mistake could ruin the whole thing.`;
   }
 
-  return `Things are not looking good. I can barely trust my own sense of direction right now, and ${innerThoughtAction} feels farther away every time I look up.`;
+  return isJa
+    ? `かなりまずい。いまは自分の感覚すら信用しきれないし、顔を上げるたびに${innerThoughtAction}が遠のいていく気がする。`
+    : `Things are not looking good. I can barely trust my own sense of direction right now, and ${innerThoughtAction} feels farther away every time I look up.`;
 }
 
 export function buildJourneyRecoveryObjective(state, journeyLevel, journeyStats) {
@@ -3987,7 +4295,8 @@ export function getUnspentSkillPoints(state, journeyLevel) {
 
 export function getJourneyBoss(index) {
   const cycle = Math.floor(index / JOURNEY_BOSS_NAMES.length);
-  const baseName = JOURNEY_BOSS_NAMES[index % JOURNEY_BOSS_NAMES.length];
+  const bossNames = isJourneyJapaneseLocale() ? JOURNEY_BOSS_NAMES_JA : JOURNEY_BOSS_NAMES;
+  const baseName = bossNames[index % bossNames.length];
 
   return {
     name: cycle ? `${baseName} ${romanize(cycle + 1)}` : baseName,
@@ -3996,7 +4305,8 @@ export function getJourneyBoss(index) {
 }
 
 export function getJourneyZoneName(bossIndex) {
-  return JOURNEY_ZONE_NAMES[bossIndex % JOURNEY_ZONE_NAMES.length];
+  const zoneNames = isJourneyJapaneseLocale() ? JOURNEY_ZONE_NAMES_JA : JOURNEY_ZONE_NAMES;
+  return zoneNames[bossIndex % zoneNames.length];
 }
 
 export function getJourneySegmentProgress(totalDistance, bossIndex) {
@@ -4028,9 +4338,74 @@ export function getJourneyActivityText(
   supplies = null
 ) {
   const condition = getJourneyConditionState(state, journeyStats, supplies);
+  const isJa = isJourneyJapaneseLocale();
 
   if (state.status === "recovering") {
     return state.recoveryObjective || getRecoveryText(state);
+  }
+
+  if (isJa) {
+    if (state.bossIndex === 0) {
+      if (progress.percent < 18) {
+        return "弱く、混乱し、ひどく準備不足のまま異世界へ放り出されて、まだ勝手をつかんでいる最中だ。";
+      }
+
+      if (progress.percent < 38) {
+        return "森で道を見失い、残り少ない体力を焦りで無駄にしないよう必死に踏みとどまっている。";
+      }
+
+      if (!state.storyFlags.foundWeapon || progress.percent < 56) {
+        return "森の方が自分を食べ物だと判断する前に、せめて武器の代わりになるものを探している。";
+      }
+
+      if (progress.percent < 78) {
+        if (condition.needsFood || condition.foodLow) {
+          return condition.availableRations > 0
+            ? "ようやく腹は満たせたが、狩りが本格化する前に本当の意味で力を戻さないといけない。"
+            : "食べられるものを探し、何が危険かを覚え、飢えたままでも進む方法を探っている。";
+        }
+
+        return "いまは森を前より丁寧に読めている。猪が餌を食み、休み、引き返す場所を少しずつ覚えてきた。";
+      }
+
+      return "猪の痕を追い続けたせいで、最初の本物の狩りは可能性というより約束事に近くなってきた。";
+    }
+
+    if (state.bossIndex === 1) {
+      return `${getJourneyZoneName(
+        state.bossIndex
+      )}を進みながら、狼を警戒し、ようやく少しだけ知恵をつけた獲物のように動こうとしている。`;
+    }
+
+    if (state.bossIndex === 2) {
+      return "どの進入路も狭く、目立ちすぎる橋へ近づいている。待ち伏せる側が好みそうな場所そのものだ。";
+    }
+
+    if (state.bossIndex === 3) {
+      return "濡れた地面と危うい足場を拾いながら、静かな沼と、その下に潜む何かの違いを見極めようとしている。";
+    }
+
+    if (state.bossIndex === 4) {
+      return "見張りに話を決められる前に頭目へ届くため、賊の領分を一つひとつ登っている。";
+    }
+
+    if (state.bossIndex === 5) {
+      return "壊れた石と崩れた壁のあいだを縫っている。古い道が覚えている暴力は、あまりに色濃すぎる。";
+    }
+
+    if (state.bossIndex === 6) {
+      return "生者が夜にそこを歩いていいのか問うてくるような墓道を進んでいる。";
+    }
+
+    if (state.bossIndex === 7) {
+      return "嵐の境目へ押し上げられている。風が熱も言葉も慎重さも削ぎ落としていく。";
+    }
+
+    return `${getJourneyZoneName(
+      state.bossIndex
+    )}を進み、${boss.name}へ向かっている。何も狂わなければ、あとおよそ ${formatDurationRangeHours(
+      progress.remainingDistance / Math.max(0.01, journeyStats.speedPerHour)
+    )}。`;
   }
 
   if (state.bossIndex === 0) {
@@ -4097,6 +4472,21 @@ export function getJourneyActivityText(
 }
 
 export function getRecoveryText(state) {
+  if (isJourneyJapaneseLocale()) {
+    const missionText = state.recoveryObjective
+      ? `小さな目的: ${state.recoveryObjective} `
+      : "";
+
+    if (!state.restUntil) {
+      return `${missionText}もう一度道に出る前に、安全な場所で立て直している。`.trim();
+    }
+
+    const remainingMs = Math.max(0, new Date(state.restUntil).getTime() - Date.now());
+    return `${missionText}あとおよそ ${formatDurationRangeMs(
+      remainingMs
+    )} は傷を癒やしてから、道へ戻るつもりだ。`.trim();
+  }
+
   const missionText = state.recoveryObjective
     ? `Mini mission: ${state.recoveryObjective} `
     : "";
@@ -4112,6 +4502,10 @@ export function getRecoveryText(state) {
 }
 
 export function getJourneyStatusLabel(status) {
+  if (isJourneyJapaneseLocale()) {
+    return status === "recovering" ? "療養中" : "旅の途中";
+  }
+
   return status === "recovering" ? "Resting" : "Traveling";
 }
 
@@ -4141,11 +4535,19 @@ export function formatSignedNumber(value) {
 }
 
 export function formatDurationHours(hours) {
-  if (!Number.isFinite(hours) || hours <= 0) return "under 1h";
+  if (!Number.isFinite(hours) || hours <= 0) {
+    return isJourneyJapaneseLocale() ? "1時間未満" : "under 1h";
+  }
 
   const totalMinutes = Math.max(1, Math.round(hours * 60));
   const wholeHours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
+
+  if (isJourneyJapaneseLocale()) {
+    if (wholeHours === 0) return `${minutes}分`;
+    if (minutes === 0) return `${wholeHours}時間`;
+    return `${wholeHours}時間${minutes}分`;
+  }
 
   if (wholeHours === 0) return `${minutes}m`;
   if (minutes === 0) return `${wholeHours}h`;
@@ -4153,20 +4555,26 @@ export function formatDurationHours(hours) {
 }
 
 export function formatDurationRangeHours(hours) {
-  if (!Number.isFinite(hours) || hours <= 0.95) return "under 1h";
+  if (!Number.isFinite(hours) || hours <= 0.95) {
+    return isJourneyJapaneseLocale() ? "1時間未満" : "under 1h";
+  }
 
   const low = Math.max(1, Math.floor(hours));
   const high = Math.max(low + 1, Math.ceil(hours));
-  return `${low}-${high}h`;
+  return isJourneyJapaneseLocale() ? `${low}-${high}時間` : `${low}-${high}h`;
 }
 
 export function formatDurationMs(ms) {
-  if (!Number.isFinite(ms) || ms <= 0) return "under 1h";
+  if (!Number.isFinite(ms) || ms <= 0) {
+    return isJourneyJapaneseLocale() ? "1時間未満" : "under 1h";
+  }
   return formatDurationHours(ms / (1000 * 60 * 60));
 }
 
 export function formatDurationRangeMs(ms) {
-  if (!Number.isFinite(ms) || ms <= 0) return "under 1h";
+  if (!Number.isFinite(ms) || ms <= 0) {
+    return isJourneyJapaneseLocale() ? "1時間未満" : "under 1h";
+  }
   return formatDurationRangeHours(ms / (1000 * 60 * 60));
 }
 

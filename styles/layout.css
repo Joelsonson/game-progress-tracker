@@ -847,7 +847,6 @@
 .home-focus-panel,
 .home-progress-panel,
 .home-snapshot-panel,
-.home-actions-panel,
 .home-win-panel {
   overflow: hidden;
 }
@@ -883,10 +882,6 @@
   margin: 0;
 }
 
-.home-panel-note {
-  margin-top: 2px;
-}
-
 .home-stat-grid,
 .home-action-grid {
   display: grid;
@@ -919,19 +914,13 @@
   line-height: 1.35;
 }
 
+.tracker-shell-panel {
+  display: grid;
+  gap: 16px;
+}
+
 .home-action-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.home-action-button,
-.home-action-grid > button {
-  min-height: 52px;
-  justify-content: center;
-  text-align: center;
-}
-
-.home-action-button-wide {
-  grid-column: span 2;
 }
 
 .summary-stat {

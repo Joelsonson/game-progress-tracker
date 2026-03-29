@@ -224,6 +224,19 @@
   min-height: 144px;
 }
 
+.tracker-shell-panel {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.tracker-shell-panel > .section-header {
+  padding: 0 4px;
+  margin-bottom: 0;
+}
+
 .mobile-tabbar {
   display: none !important;
 }
@@ -357,6 +370,10 @@
 
 .game-card-banner {
   aspect-ratio: 16 / 9;
+}
+
+.games-section-header .muted-text {
+  margin-top: 2px;
 }
 
 .quest-hero-banner {
@@ -521,12 +538,36 @@
   }
 
   .game-card-banner-hero {
-    gap: 12px;
+    gap: 10px;
   }
 
   .game-card-banner-copy {
+    max-width: 100%;
     padding: 11px 12px 12px;
     border-radius: 18px;
+  }
+
+  .tracker-shell-panel > .section-header {
+    padding: 0 2px;
+  }
+
+  .games-section {
+    padding: 14px;
+  }
+
+  .games-section-header .muted-text {
+    display: none;
+  }
+
+  .game-card-banner-hero {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: end;
+  }
+
+  .game-card-banner .game-cover-thumb,
+  .game-card-banner .game-art-placeholder {
+    width: 58px;
+    height: 78px;
   }
 
   .game-cover-thumb,

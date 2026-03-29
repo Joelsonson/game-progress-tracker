@@ -77,7 +77,6 @@ import {
   handleSessionsTabClick,
   renderRecentSessions,
   renderSessionGameOptions,
-  setActiveSessionsTab,
   syncSessionsTabUi,
 } from "./features/sessions/sessionsView.js";
 
@@ -109,7 +108,6 @@ function bindEvents() {
   sessionForm.addEventListener("submit", handleAddSession);
   gamesListEl.addEventListener("click", handleListClick);
   homeOverviewEl?.addEventListener("click", handleListClick);
-  homeOverviewEl?.addEventListener("click", handleHomeOverviewClick);
   gameActionsBodyEl?.addEventListener("click", handleListClick);
   journeyContentEl?.addEventListener("click", handleJourneyClick);
   characterContentEl?.addEventListener("click", handleJourneyClick);
@@ -286,41 +284,6 @@ export async function renderApp() {
   syncThemePreferenceInput();
   syncLanguagePreferenceInput();
   syncGameDifficultyPresentation();
-}
-
-function handleHomeOverviewClick(event) {
-  const button = event.target instanceof HTMLElement
-    ? event.target.closest("button[data-home-shortcut]")
-    : null;
-  if (!button) return;
-
-  const shortcut = button.dataset.homeShortcut;
-
-  if (shortcut === "log-session") {
-    setActiveSessionsTab("log-session");
-    setActiveScreen("sessions", { store: true, scrollToTop: true });
-    return;
-  }
-
-  if (shortcut === "add-game") {
-    setActiveSessionsTab("new-game");
-    setActiveScreen("sessions", { store: true, scrollToTop: true });
-    return;
-  }
-
-  if (shortcut === "tracker") {
-    setActiveScreen("tracker", { store: true, scrollToTop: true });
-    return;
-  }
-
-  if (shortcut === "journey") {
-    setActiveScreen("journey", { store: true, scrollToTop: true });
-    return;
-  }
-
-  if (shortcut === "character") {
-    setActiveScreen("character", { store: true, scrollToTop: true });
-  }
 }
 
 function handleThemePreferenceChange(event) {

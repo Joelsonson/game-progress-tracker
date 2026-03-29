@@ -112,7 +112,6 @@ export function renderHomeOverview(games, sessions, sessionStats, xpSummary) {
         <div>
           <p class="eyebrow">${escapeHtml(t("home.focusEyebrow"))}</p>
           <h2>${escapeHtml(t("home.focusTitle"))}</h2>
-          <p class="muted-text">${escapeHtml(t("home.focusBody"))}</p>
         </div>
       </div>
 
@@ -123,14 +122,6 @@ export function renderHomeOverview(games, sessions, sessionStats, xpSummary) {
             <div class="home-focus-empty">
               <h3>${escapeHtml(t("home.focusEmptyTitle"))}</h3>
               <p class="muted-text">${escapeHtml(t("home.focusEmptyBody"))}</p>
-              <div class="home-action-grid">
-                <button type="button" class="primary-button" data-home-shortcut="add-game">
-                  ${escapeHtml(t("home.quickAddGame"))}
-                </button>
-                <button type="button" class="secondary-button" data-home-shortcut="tracker">
-                  ${escapeHtml(t("home.quickViewTracker"))}
-                </button>
-              </div>
             </div>
           `
       }
@@ -161,7 +152,6 @@ export function renderHomeOverview(games, sessions, sessionStats, xpSummary) {
           </span>
         </div>
 
-        <p class="muted-text home-panel-note">${escapeHtml(t("home.progressBody"))}</p>
       </section>
 
       <section class="panel home-snapshot-panel">
@@ -169,7 +159,6 @@ export function renderHomeOverview(games, sessions, sessionStats, xpSummary) {
           <div>
             <p class="eyebrow">${escapeHtml(t("home.snapshotEyebrow"))}</p>
             <h2>${escapeHtml(t("home.snapshotTitle"))}</h2>
-            <p class="muted-text">${escapeHtml(t("home.snapshotBody"))}</p>
           </div>
         </div>
 
@@ -202,34 +191,6 @@ export function renderHomeOverview(games, sessions, sessionStats, xpSummary) {
       </section>
     </div>
 
-    <section class="panel home-actions-panel">
-      <div class="section-header home-section-header">
-        <div>
-          <p class="eyebrow">${escapeHtml(t("home.actionsEyebrow"))}</p>
-          <h2>${escapeHtml(t("home.actionsTitle"))}</h2>
-          <p class="muted-text">${escapeHtml(t("home.actionsBody"))}</p>
-        </div>
-      </div>
-
-      <div class="home-action-grid">
-        <button type="button" class="secondary-button home-action-button" data-home-shortcut="log-session">
-          ${escapeHtml(t("home.quickLogSession"))}
-        </button>
-        <button type="button" class="secondary-button home-action-button" data-home-shortcut="add-game">
-          ${escapeHtml(t("home.quickAddGame"))}
-        </button>
-        <button type="button" class="secondary-button home-action-button" data-home-shortcut="tracker">
-          ${escapeHtml(t("home.quickViewTracker"))}
-        </button>
-        <button type="button" class="secondary-button home-action-button" data-home-shortcut="journey">
-          ${escapeHtml(t("home.quickOpenJourney"))}
-        </button>
-        <button type="button" class="primary-button home-action-button home-action-button-wide" data-home-shortcut="character">
-          ${escapeHtml(t("home.quickCharacter"))}
-        </button>
-      </div>
-    </section>
-
     ${
       latestCompletedGame
         ? `
@@ -238,7 +199,6 @@ export function renderHomeOverview(games, sessions, sessionStats, xpSummary) {
               <div>
                 <p class="eyebrow">${escapeHtml(t("home.recentWinEyebrow"))}</p>
                 <h2>${escapeHtml(t("home.recentWinTitle"))}</h2>
-                <p class="muted-text">${escapeHtml(t("home.recentWinBody"))}</p>
               </div>
               <button
                 type="button"

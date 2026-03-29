@@ -18,6 +18,7 @@ import {
   JOURNEY_STAT_META,
 } from "../../core/constants.js";
 import { buildXpSummary, clamp, enforceMainGameRules, escapeHtml, formatDateTime, getErrorMessage, randomInt } from "../../core/formatters.js";
+import { t } from "../../core/i18n.js";
 import { appState } from "../../core/state.js";
 import { showMessage, showToast, syncBodyScrollLock } from "../../core/ui.js";
 import { applyScreenHash, setActiveScreen } from "../navigation/navigation.js";
@@ -57,12 +58,12 @@ function showJourneyFeedback(message, isError = false) {
 }
 
 function openJourneyHistoryModal({
-  eyebrow = "Journey history",
-  title = "Journey history",
-  meta = "A record of the road behind you.",
+  eyebrow = t("journeyUi.modals.historyEyebrow"),
+  title = t("journeyUi.modals.historyTitle"),
+  meta = t("journeyUi.modals.historyMeta"),
   entries = [],
-  emptyTitle = "Nothing recorded yet",
-  emptyBody = "The road has not given you anything to file here yet.",
+  emptyTitle = t("journeyUi.modals.historyEmptyTitle"),
+  emptyBody = t("journeyUi.modals.historyEmptyBody"),
 } = {}) {
   if (
     !journeyHistoryModal ||
@@ -89,7 +90,7 @@ function openJourneyHistoryModal({
                       <p class="journey-history-entry-kicker">${escapeHtml(
                         entry.kicker || eyebrow
                       )}</p>
-                      <h4>${escapeHtml(entry.title || "Untitled entry")}</h4>
+                      <h4>${escapeHtml(entry.title || t("journeyUi.modals.untitledEntry"))}</h4>
                     </div>
                     <time class="journey-history-entry-time">${formatDateTime(
                       entry.at
@@ -211,46 +212,46 @@ export async function handleJourneyClick(event) {
 
     if (action === "open-road-history") {
       openJourneyHistoryModal({
-        eyebrow: "Expedition focus",
-        title: "Roads cleared",
+        eyebrow: t("journeyUi.history.expeditionFocusEyebrow"),
+        title: t("journeyUi.history.roadsClearedTitle"),
         meta:
           state.bossIndex === 0
-            ? "No stretches cleared yet."
-            : `${state.bossIndex} cleared ${state.bossIndex === 1 ? "road" : "roads"} so far.`,
+            ? t("journeyUi.history.roadsClearedMetaEmpty")
+            : t("journeyUi.history.roadsClearedMeta", { count: state.bossIndex }),
         entries: (Array.isArray(state.clearedRoads) ? state.clearedRoads : []).map(
           (entry) => ({
             ...entry,
-            kicker: "Cleared stretch",
+            kicker: t("journeyUi.history.clearedStretch"),
           })
         ),
-        emptyTitle: "No road clears logged yet",
+        emptyTitle: t("journeyUi.history.noRoadClearsTitle"),
         emptyBody:
           state.bossIndex > 0
-            ? "Some earlier progress predates the detailed road log, so only newer clears will appear here."
-            : "Win a stretch and it will show up here with its timestamp.",
+            ? t("journeyUi.history.noRoadClearsLegacyBody")
+            : t("journeyUi.history.noRoadClearsBody"),
       });
       return;
     }
 
     if (action === "open-retreat-history") {
       openJourneyHistoryModal({
-        eyebrow: "Expedition focus",
-        title: "Retreats",
+        eyebrow: t("journeyUi.history.expeditionFocusEyebrow"),
+        title: t("journeyUi.history.retreatsTitle"),
         meta:
           state.townVisits === 0
-            ? "You have not had to fall back yet."
-            : `${state.townVisits} ${state.townVisits === 1 ? "retreat" : "retreats"} recorded so far.`,
+            ? t("journeyUi.history.retreatsMetaEmpty")
+            : t("journeyUi.history.retreatsMeta", { count: state.townVisits }),
         entries: (Array.isArray(state.retreatHistory) ? state.retreatHistory : []).map(
           (entry) => ({
             ...entry,
-            kicker: "Fallback",
+            kicker: t("journeyUi.history.fallback"),
           })
         ),
-        emptyTitle: "No retreats logged yet",
+        emptyTitle: t("journeyUi.history.noRetreatsTitle"),
         emptyBody:
           state.townVisits > 0
-            ? "Some earlier retreats predate the detailed log, so only newer ones will appear here."
-            : "If the road forces you to fall back, it will be recorded here.",
+            ? t("journeyUi.history.noRetreatsLegacyBody")
+            : t("journeyUi.history.noRetreatsBody"),
       });
       return;
     }
