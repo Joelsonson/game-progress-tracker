@@ -9,7 +9,7 @@ const translations = {
       documentTitle: "Tabi no Kiroku — Journey Log",
     },
     brand: {
-      eyebrow: "Journey Log",
+      eyebrow: "旅の記録",
       titleSub: "Journey Log",
     },
     nav: {
