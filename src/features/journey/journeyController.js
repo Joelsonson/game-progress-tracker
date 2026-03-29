@@ -2,7 +2,14 @@ import { normalizeGameRecord, normalizeSessionRecord } from "../../data/db.js";
 import { getAllGames } from "../../data/gamesRepo.js";
 import { getMeta, setMeta } from "../../data/metaRepo.js";
 import { getAllSessions } from "../../data/sessionsRepo.js";
-import { journeyMessageEl } from "../../core/dom.js";
+import {
+  journeyHistoryBodyEl,
+  journeyHistoryEyebrowEl,
+  journeyHistoryMetaEl,
+  journeyHistoryModal,
+  journeyHistoryTitleEl,
+  journeyMessageEl,
+} from "../../core/dom.js";
 import {
   IDLE_JOURNEY_META_KEY,
   JOURNEY_CLASS_META,
@@ -10,9 +17,9 @@ import {
   JOURNEY_STAT_KEYS,
   JOURNEY_STAT_META,
 } from "../../core/constants.js";
-import { buildXpSummary, clamp, enforceMainGameRules, getErrorMessage, randomInt } from "../../core/formatters.js";
+import { buildXpSummary, clamp, enforceMainGameRules, escapeHtml, formatDateTime, getErrorMessage, randomInt } from "../../core/formatters.js";
 import { appState } from "../../core/state.js";
-import { showMessage, showToast } from "../../core/ui.js";
+import { showMessage, showToast, syncBodyScrollLock } from "../../core/ui.js";
 import { applyScreenHash, setActiveScreen } from "../navigation/navigation.js";
 import {
   addJourneyLog,
@@ -41,13 +48,73 @@ import {
   closeJourneyEventModal,
   closeJourneyOutcomeModal,
   openJourneyEventModal,
-  openJourneyHistoryModal,
   openJourneyOutcomeModal,
   showJourneyEventThinking,
 } from "./journeyView.js";
 
 function showJourneyFeedback(message, isError = false) {
   showMessage(journeyMessageEl, message, isError);
+}
+
+function openJourneyHistoryModal({
+  eyebrow = "Journey history",
+  title = "Journey history",
+  meta = "A record of the road behind you.",
+  entries = [],
+  emptyTitle = "Nothing recorded yet",
+  emptyBody = "The road has not given you anything to file here yet.",
+} = {}) {
+  if (
+    !journeyHistoryModal ||
+    !journeyHistoryBodyEl ||
+    !journeyHistoryTitleEl ||
+    !journeyHistoryMetaEl ||
+    !journeyHistoryEyebrowEl
+  ) {
+    return;
+  }
+
+  journeyHistoryEyebrowEl.textContent = eyebrow;
+  journeyHistoryTitleEl.textContent = title;
+  journeyHistoryMetaEl.textContent = meta;
+  journeyHistoryBodyEl.innerHTML = entries.length
+    ? `
+        <div class="journey-history-list">
+          ${entries
+            .map(
+              (entry) => `
+                <article class="journey-history-entry">
+                  <div class="journey-history-entry-head">
+                    <div>
+                      <p class="journey-history-entry-kicker">${escapeHtml(
+                        entry.kicker || eyebrow
+                      )}</p>
+                      <h4>${escapeHtml(entry.title || "Untitled entry")}</h4>
+                    </div>
+                    <time class="journey-history-entry-time">${formatDateTime(
+                      entry.at
+                    )}</time>
+                  </div>
+                  ${
+                    entry.detail
+                      ? `<p class="journey-history-entry-copy">${escapeHtml(entry.detail)}</p>`
+                      : ""
+                  }
+                </article>
+              `
+            )
+            .join("")}
+        </div>
+      `
+    : `
+        <div class="journey-event-panel journey-history-empty">
+          <h4>${escapeHtml(emptyTitle)}</h4>
+          <p>${escapeHtml(emptyBody)}</p>
+        </div>
+      `;
+
+  journeyHistoryModal.hidden = false;
+  syncBodyScrollLock();
 }
 
 export async function handleHomeJourneyClick(event) {

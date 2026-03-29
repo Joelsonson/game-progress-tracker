@@ -48,7 +48,7 @@ import { IDLE_JOURNEY_META_KEY } from "./core/constants.js";
 import { buildSessionStats, buildXpSummary, enforceMainGameRules, sortGames } from "./core/formatters.js";
 import { applyStaticTranslations, normalizeLocale, setActiveLocale, t } from "./core/i18n.js";
 import { appState } from "./core/state.js";
-import { closeSettingsModal, openSettingsModal, showMessage } from "./core/ui.js";
+import { closeSettingsModal, openSettingsModal, showMessage, syncBodyScrollLock } from "./core/ui.js";
 import { handleClearData, handleExportData, handleImportData, handleResetJourneyData } from "./features/backup/backupController.js";
 import { cancelCropSelection, confirmCropSelection, handleCropControlInput, handleCropModalClick, resetCropControls } from "./features/art/imageCropper.js";
 import {
@@ -65,9 +65,7 @@ import { handleHomeJourneyClick, handleJourneyClick, handleJourneyEventModalClic
 import { buildJourneySupplies, syncJourneyState } from "./features/journey/journeyEngine.js";
 import {
   closeJourneyEventModal,
-  closeJourneyHistoryModal,
   closeJourneyOutcomeModal,
-  handleJourneyHistoryModalClick,
   initializeJourneySpritePreviews,
   renderCharacterSheet,
   renderHomeJourney,
@@ -204,6 +202,23 @@ function handleSettingsModalClick(event) {
   if (event.target.closest("[data-close-settings-modal]")) {
     closeSettingsModal();
   }
+}
+
+function handleJourneyHistoryModalClick(event) {
+  if (!(event.target instanceof HTMLElement)) return;
+  if (event.target.closest("[data-close-journey-history]")) {
+    closeJourneyHistoryModal();
+  }
+}
+
+function closeJourneyHistoryModal() {
+  if (!journeyHistoryModal) return;
+  journeyHistoryModal.hidden = true;
+  const historyBody = journeyHistoryModal.querySelector("#journeyHistoryBody");
+  if (historyBody) {
+    historyBody.innerHTML = "";
+  }
+  syncBodyScrollLock();
 }
 
 function handleWindowScroll() {
