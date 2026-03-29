@@ -271,6 +271,49 @@ const JOURNEY_LOCALIZED_META = {
   },
 };
 
+const JOURNEY_LOG_TRANSLATIONS_JA = {
+  "A passing traveler shared dried meat and better directions after seeing the state you were in.":
+    "通りすがりの旅人が、こちらの有り様を見て干し肉と少しまともな道案内を分けてくれた。",
+  "You spent half an hour convincing yourself the strange sky was real.":
+    "見慣れない空が本物だと自分に言い聞かせるだけで、三十分ほどかかった。",
+  "You followed a game trail, lost it, and had to start over from scratch.":
+    "獣道を追ったものの見失い、最初からやり直す羽目になった。",
+  "Every snapping twig sounded like a monster until you realized some were only rabbits.":
+    "折れる枝の音が全部魔物に聞こえたが、そのいくつかはただの兎だった。",
+  "You tested bark, roots, and berries with the caution of someone who badly wants to stay alive.":
+    "どうしても生き延びたい人間らしく、樹皮や根や木の実を慎重に確かめた。",
+  "You stopped twice just to make sure the distant bells were real and not your imagination.":
+    "遠くの鐘が幻聴ではないと確かめるためだけに、二度も立ち止まった。",
+  "A patch of flattened grass became a landmark simply because you were desperate for anything familiar.":
+    "見慣れたものが何でも欲しくて、踏み潰された草地ですら目印になった。",
+  "You found a flatter patch of ground and counted that as shelter.":
+    "少し平らな地面を見つけ、それをひとまずの寝場所とした。",
+  "A stream saved the day, even if the water tasted like leaves and mud.":
+    "水が葉と泥の味でも、小川が今日は命を繋いでくれた。",
+  "You practised gripping your makeshift weapon until your hands stopped shaking.":
+    "手の震えが止まるまで、間に合わせの武器の握り方を何度も確かめた。",
+  "You learned the hard way that panic wastes more energy than walking does.":
+    "焦りは歩くこと以上に体力を削ると、痛い形で思い知った。",
+  "You spotted old cut marks on a tree and followed them longer than you care to admit.":
+    "木に残った古い刻み傷を見つけて、思った以上に長くそれを辿ってしまった。",
+  "A stretch of quiet road felt more threatening than the things that usually announce themselves.":
+    "妙に静かな道は、気配を隠さない連中よりもかえって不気味だった。",
+  "A distant chimney reminded you civilization exists somewhere beyond the trees.":
+    "遠くの煙突を見て、木々の向こうにまだ人の営みがあると思い出した。",
+  "You moved slower today, but you chose the safer trail and kept your footing.":
+    "今日は歩みが遅くても、より安全な道を選んで足元を守れた。",
+  "You caught yourself scanning every hedgerow before committing to the road.":
+    "道に踏み出す前に、生け垣のひとつひとつを無意識に確認していた。",
+  "You are not comfortable out here yet, but you are no longer completely helpless.":
+    "まだここが落ち着く場所ではないが、もう完全に無力というわけでもない。",
+  "An old milestone told you someone once believed this road could be civilized.":
+    "古い里程標が、この道もかつてはまともになり得ると誰かが信じていたことを教えてくれた。",
+  "You crossed a stretch of road that had been cleared recently enough to make you suspicious.":
+    "つい最近まで誰かが手入れしていたような道を渡り、かえって警戒が強まった。",
+  "You found wagon ruts deep enough to promise trade, trouble, or both.":
+    "荷車の轍は深く、交易か厄介事か、その両方を予感させた。",
+};
+
 const JOURNEY_SPRITE_BOUNDING_PADDING = 12;
 const JOURNEY_SPRITE_BACKGROUND_TOLERANCE = 24;
 const JOURNEY_SPRITE_ALPHA_THRESHOLD = 12;
@@ -343,6 +386,14 @@ function getJourneyStarterItemLabel(item) {
 
 function getJourneyEventTitle(title) {
   return JOURNEY_LOCALIZED_META[getCurrentLocale()]?.eventTitles?.[title] || title;
+}
+
+function getJourneyLogText(text) {
+  if (getCurrentLocale() !== "ja") {
+    return text;
+  }
+
+  return JOURNEY_LOG_TRANSLATIONS_JA[text] || text;
 }
 
 export function renderHomeJourney(state, xpSummary, supplies) {
@@ -913,7 +964,7 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
                 .map(
                   (entry) => `
                     <div class="journey-log-entry">
-                      <p>${escapeHtml(entry.text)}</p>
+                      <p>${escapeHtml(getJourneyLogText(entry.text))}</p>
                       <time>${formatDateTime(entry.at)}</time>
                     </div>
                   `

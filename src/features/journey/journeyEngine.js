@@ -28,6 +28,10 @@ import { appState } from "../../core/state.js";
 import { normalizeJourneyChoice, normalizeJourneyEvent } from "./journeyEvents.js";
 
 const JOURNEY_HISTORY_LIMIT = 24;
+const JOURNEY_AMBIENT_LOG_COOLDOWN_MS = 1000 * 60 * 60 * 4;
+const JOURNEY_AMBIENT_REPEAT_MEMORY = 3;
+const JOURNEY_TRAVELER_AID_LOG =
+  "A passing traveler shared dried meat and better directions after seeing the state you were in.";
 const JOURNEY_ZONE_NAMES_JA = [
   "未知の森",
   "小川沿いの茂み",
@@ -1743,7 +1747,7 @@ export function maybeApplyJourneyIncident(state, atDate, journeyStats, journeyCo
     state.storyXp += 6;
     addJourneyLog(
       state,
-      "A passing traveler shared dried meat and better directions after seeing the state you were in.",
+      JOURNEY_TRAVELER_AID_LOG,
       atDate.toISOString()
     );
   }
@@ -3737,13 +3741,36 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
 }
 
 export function maybeAddAmbientJourneyLog(state, atDate) {
-  if (Math.random() > 0.18) return;
+  if (Math.random() > 0.08) return;
 
   const phase = getJourneyPhase(state);
   const pool = JOURNEY_AMBIENT_INTERACTIONS[phase] || JOURNEY_AMBIENT_INTERACTIONS.frontier;
   if (!pool?.length) return;
 
-  addJourneyLog(state, pool[randomInt(0, pool.length - 1)], atDate.toISOString());
+  const recentLogs = Array.isArray(state.log) ? state.log : [];
+  const recentAmbientTexts = recentLogs
+    .map((entry) => String(entry?.text || "").trim())
+    .filter((text) => pool.includes(text))
+    .slice(0, JOURNEY_AMBIENT_REPEAT_MEMORY);
+  const latestAmbientEntry = recentLogs.find((entry) =>
+    pool.includes(String(entry?.text || "").trim())
+  );
+
+  if (latestAmbientEntry?.at) {
+    const elapsedSinceLastAmbient =
+      atDate.getTime() - new Date(latestAmbientEntry.at).getTime();
+    if (elapsedSinceLastAmbient < JOURNEY_AMBIENT_LOG_COOLDOWN_MS) {
+      return;
+    }
+  }
+
+  const filteredPool = pool.filter((text) => !recentAmbientTexts.includes(text));
+  const candidatePool = filteredPool.length ? filteredPool : pool;
+  addJourneyLog(
+    state,
+    candidatePool[randomInt(0, candidatePool.length - 1)],
+    atDate.toISOString()
+  );
 }
 
 export function getJourneyChoiceSuccessChance(choice, journeyStats) {
