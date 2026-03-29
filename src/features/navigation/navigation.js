@@ -1,27 +1,28 @@
-import { addGamePanel, appScreens, screenNavButtons, settingsPanel } from "../../core/dom.js";
-import { DEFAULT_SCREEN_ID, SCREEN_STORAGE_KEY } from "../../core/constants.js";
+import { appScreens, screenNavButtons } from "../../core/dom.js";
+import {
+  DEFAULT_SCREEN_ID,
+  DEFAULT_SESSIONS_TAB,
+  SCREEN_STORAGE_KEY,
+  SESSIONS_TABS,
+} from "../../core/constants.js";
 import { appState } from "../../core/state.js";
+import { setActiveSessionsTab } from "../sessions/sessionsView.js";
 
 export function handleScreenNavClick(event) {
   const targetScreenId = event.currentTarget?.dataset.screenTarget;
   const openPanel = event.currentTarget?.dataset.openPanel;
   if (!targetScreenId) return;
 
-  const panel = getPanelForShortcut(openPanel);
-  if (panel) {
-    panel.open = true;
+  if (targetScreenId === "sessions") {
+    setActiveSessionsTab(
+      openPanel === "add-game" ? SESSIONS_TABS.NEW_GAME : DEFAULT_SESSIONS_TAB
+    );
   }
 
   setActiveScreen(targetScreenId, {
     store: true,
     scrollToTop: true,
   });
-
-  if (panel) {
-    window.requestAnimationFrame(() => {
-      panel.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  }
 }
 
 export function handleViewportResize() {
@@ -81,10 +82,4 @@ export function applyScreenHash(screenId) {
   } catch (error) {
     // Ignore history update failures.
   }
-}
-
-function getPanelForShortcut(openPanel) {
-  if (openPanel === "add-game") return addGamePanel;
-  if (openPanel === "settings") return settingsPanel;
-  return null;
 }

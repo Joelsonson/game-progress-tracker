@@ -14,6 +14,7 @@ export const GAME_STATUSES = {
 
 export const DEFAULT_GAME_STATUS = GAME_STATUSES.BACKLOG;
 export const GAME_DIFFICULTIES = {
+  NOT_APPLICABLE: "not-applicable",
   VERY_EASY: "very-easy",
   EASY: "easy",
   STANDARD: "standard",

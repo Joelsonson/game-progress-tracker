@@ -43,6 +43,7 @@ const translations = {
         `${current} / ${total} XP to level ${nextLevel}`,
     },
     difficulty: {
+      notApplicable: "N/A",
       veryEasy: "Very Easy",
       easy: "Easy",
       standard: "Standard",
@@ -50,6 +51,8 @@ const translations = {
       veryHard: "Very Hard",
       preview: ({ difficulty, rewardXp }) =>
         `${difficulty} clear reward: +${rewardXp} XP when you finish it.`,
+      previewNoReward: ({ difficulty }) =>
+        `${difficulty} game. Track playtime and sessions without a clear reward.`,
     },
     home: {
       playerProgressEyebrow: "Player progression",
@@ -88,6 +91,8 @@ const translations = {
       actions: "Actions",
       actionSheetMeta: ({ platform, difficulty, rewardXp }) =>
         `${platform} • ${difficulty} • +${rewardXp} XP clear reward`,
+      actionSheetMetaNoReward: ({ platform, difficulty }) =>
+        `${platform} • ${difficulty} • no clear reward`,
       summaryPills: {
         questXp: ({ xp }) => `XP: ${xp}`,
         sessions: ({ count }) => `Sessions: ${count}`,
@@ -97,6 +102,7 @@ const translations = {
         platform: ({ value }) => `Platform: ${value}`,
         difficulty: ({ value }) => `Difficulty: ${value}`,
         reward: ({ rewardXp }) => `Clear reward: +${rewardXp} XP`,
+        rewardNone: "Clear reward: N/A",
       },
       notes: {
         currentObjective: "Current objective",
@@ -105,6 +111,7 @@ const translations = {
       },
       state: {
         completed: ({ date, rewardXp }) => `Finished on ${date} • +${rewardXp} XP`,
+        completedNoReward: ({ date }) => `Finished on ${date} • no clear reward`,
         paused: ({ date }) => `Paused on ${date}`,
         dropped: ({ date }) => `Dropped on ${date}`,
       },
@@ -183,6 +190,11 @@ const translations = {
       completionReplaySuffix: " (completed replay)",
     },
     sessions: {
+      tabs: {
+        log: "Log Session",
+        newGame: "New Game +",
+        history: "Session History",
+      },
       logTitle: "Log a play session",
       logBody:
         "Session logging is for in-progress games and completed replays. Backlog, paused, and dropped games should be moved first.",
@@ -197,10 +209,13 @@ const translations = {
       meaningfulLabel: "This session felt like meaningful progress",
       submit: "Log session",
       addGameSummary: "Add a game",
+      addGameBody: "Choose whether this game has a finish line, then set it up for tracking.",
+      historyTitle: "Session history",
       recentTitle: "Recent sessions",
       recentEmptySummary: "No sessions logged yet.",
       recentEmptyState: "Log your first session to start building momentum.",
       recentSingle: "Showing your 1 logged session.",
+      historySummary: ({ total }) => `Showing all ${total} logged sessions.`,
       recentMany: ({ visible, total }) =>
         `Showing your latest ${visible} of ${total} sessions.`,
       showOlder: ({ count, sessionWord }) => `Show ${count} older ${sessionWord}`,
@@ -236,6 +251,7 @@ const translations = {
         difficultyLabel: "Completion difficulty",
         difficultyHint:
           "Pick how demanding the full clear feels. Harder clears pay out more when completed.",
+        noClearReward: "No clear XP",
         objectiveLabel: "Current objective",
         objectivePlaceholder:
           "Where you left off, your current goal, next objective...",
@@ -264,6 +280,7 @@ const translations = {
         statusNotSupported: "That status change is not supported.",
         movedStatus: ({ title, statusLabel }) =>
           `Moved "${title}" to ${statusLabel}.`,
+        cannotComplete: "This game is marked as non-completable, so it cannot be finished for clear XP.",
         updateFailed: "Could not update game.",
         artUpdated: ({ kindLabel, title }) =>
           `Updated ${kindLabel} for "${title}".`,
@@ -280,6 +297,7 @@ const translations = {
     },
     settings: {
       summary: "Settings & data",
+      modalBody: "Theme, language, backups, and local data tools all live here now.",
       appearanceEyebrow: "Appearance",
       appearanceTitle: "Choose your reading mode",
       appearanceBody: "Switch between light, dark, or follow your device setting.",
@@ -385,6 +403,7 @@ const translations = {
         `レベル${nextLevel}まで ${current} / ${total} XP`,
     },
     difficulty: {
+      notApplicable: "対象外",
       veryEasy: "とても簡単",
       easy: "簡単",
       standard: "標準",
@@ -392,6 +411,8 @@ const translations = {
       veryHard: "とても難しい",
       preview: ({ difficulty, rewardXp }) =>
         `${difficulty}クリア: 完了時に +${rewardXp} XP`,
+      previewNoReward: ({ difficulty }) =>
+        `${difficulty}のゲームです。クリア報酬なしでプレイ時間とセッションを記録します。`,
     },
     home: {
       playerProgressEyebrow: "プレイヤー進行度",
@@ -429,6 +450,8 @@ const translations = {
       actions: "操作",
       actionSheetMeta: ({ platform, difficulty, rewardXp }) =>
         `${platform} • ${difficulty} • クリア報酬 +${rewardXp} XP`,
+      actionSheetMetaNoReward: ({ platform, difficulty }) =>
+        `${platform} • ${difficulty} • クリア報酬なし`,
       summaryPills: {
         questXp: ({ xp }) => `XP: ${xp}`,
         sessions: ({ count }) => `セッション: ${count}`,
@@ -438,6 +461,7 @@ const translations = {
         platform: ({ value }) => `機種: ${value}`,
         difficulty: ({ value }) => `難易度: ${value}`,
         reward: ({ rewardXp }) => `クリア報酬: +${rewardXp} XP`,
+        rewardNone: "クリア報酬: 対象外",
       },
       notes: {
         currentObjective: "現在の目標",
@@ -446,6 +470,7 @@ const translations = {
       },
       state: {
         completed: ({ date, rewardXp }) => `${date} に完了 • +${rewardXp} XP`,
+        completedNoReward: ({ date }) => `${date} に完了 • クリア報酬なし`,
         paused: ({ date }) => `${date} に一時停止`,
         dropped: ({ date }) => `${date} に中断`,
       },
@@ -523,6 +548,11 @@ const translations = {
       completionReplaySuffix: "（クリア後の再プレイ）",
     },
     sessions: {
+      tabs: {
+        log: "記録する",
+        newGame: "ゲーム追加 +",
+        history: "履歴",
+      },
       logTitle: "プレイセッションを記録",
       logBody:
         "セッション記録は「進行中」と「完了後の再プレイ」向けです。積み・一時停止・中断は先に状態を変えてください。",
@@ -537,10 +567,13 @@ const translations = {
       meaningfulLabel: "今回はしっかり進んだと感じた",
       submit: "記録する",
       addGameSummary: "ゲームを追加",
+      addGameBody: "このゲームに終わりがあるかを選んでから、追跡内容を設定します。",
+      historyTitle: "セッション履歴",
       recentTitle: "最近のセッション",
       recentEmptySummary: "セッションはまだありません。",
       recentEmptyState: "最初のセッションを記録して勢いを作りましょう。",
       recentSingle: "記録済みの1件を表示中です。",
+      historySummary: ({ total }) => `記録済み ${total} 件をすべて表示中です。`,
       recentMany: ({ visible, total }) =>
         `最新 ${visible} 件 / 全 ${total} 件を表示中です。`,
       showOlder: ({ count }) => `過去の ${count} 件を表示`,
@@ -576,6 +609,7 @@ const translations = {
         difficultyLabel: "クリア難易度",
         difficultyHint:
           "全体のクリア難度を選びます。難しいほど完了時の報酬が増えます。",
+        noClearReward: "クリアXPなし",
         objectiveLabel: "現在の目標",
         objectivePlaceholder:
           "どこで止めたか、今の目標、次にやること…",
@@ -604,6 +638,7 @@ const translations = {
         statusNotSupported: "その状態変更はサポートされていません。",
         movedStatus: ({ title, statusLabel }) =>
           `「${title}」を「${statusLabel}」へ移動しました。`,
+        cannotComplete: "このゲームは非クリア型として登録されているため、クリア報酬付きの完了にはできません。",
         updateFailed: "ゲームを更新できませんでした。",
         artUpdated: ({ kindLabel, title }) =>
           `「${title}」の${kindLabel}を更新しました。`,
@@ -620,6 +655,7 @@ const translations = {
     },
     settings: {
       summary: "設定とデータ",
+      modalBody: "テーマ、言語、バックアップ、ローカルデータ操作をここにまとめました。",
       appearanceEyebrow: "見た目",
       appearanceTitle: "表示テーマを選ぶ",
       appearanceBody: "ライト、ダーク、または端末設定に合わせて切り替えます。",

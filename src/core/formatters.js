@@ -435,6 +435,58 @@ export function getGameCompletionXp(game) {
   return getGameDifficultyMeta(game?.difficulty).rewardXp;
 }
 
+export function isGameCompletable(gameOrDifficulty) {
+  const difficulty =
+    typeof gameOrDifficulty === "string"
+      ? gameOrDifficulty
+      : gameOrDifficulty?.difficulty;
+
+  return getGameCompletionXp({ difficulty }) > 0;
+}
+
+export function getDifficultyPreviewText(difficulty) {
+  return isGameCompletable(difficulty)
+    ? t("difficulty.preview", {
+        difficulty: getGameDifficultyLabel(difficulty),
+        rewardXp: getGameCompletionXp({ difficulty }),
+      })
+    : t("difficulty.previewNoReward", {
+        difficulty: getGameDifficultyLabel(difficulty),
+      });
+}
+
+export function getGameRewardText(game) {
+  return isGameCompletable(game)
+    ? t("tracker.summaryPills.reward", {
+        rewardXp: getGameCompletionXp(game),
+      })
+    : t("tracker.summaryPills.rewardNone");
+}
+
+export function getGameActionSheetMetaText(game, platform) {
+  return isGameCompletable(game)
+    ? t("tracker.actionSheetMeta", {
+        platform,
+        difficulty: getGameDifficultyLabel(game.difficulty),
+        rewardXp: getGameCompletionXp(game),
+      })
+    : t("tracker.actionSheetMetaNoReward", {
+        platform,
+        difficulty: getGameDifficultyLabel(game.difficulty),
+      });
+}
+
+export function getCompletedStateText(game, date) {
+  return isGameCompletable(game)
+    ? t("tracker.state.completed", {
+        date,
+        rewardXp: getGameCompletionXp(game),
+      })
+    : t("tracker.state.completedNoReward", {
+        date,
+      });
+}
+
 export function rollFocusPenalty({ selectedGame, allGames, meaningfulProgress, minutes }) {
   const mainGame = allGames.find((game) => game.isMain);
 

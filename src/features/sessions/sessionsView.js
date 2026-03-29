@@ -1,5 +1,11 @@
-import { recentSessionsListEl, recentSessionsSummaryEl, sessionGameSelect } from "../../core/dom.js";
-import { GAME_STATUSES } from "../../core/constants.js";
+import {
+  recentSessionsListEl,
+  recentSessionsSummaryEl,
+  sessionGameSelect,
+  sessionsPanels,
+  sessionsTabButtons,
+} from "../../core/dom.js";
+import { DEFAULT_SESSIONS_TAB, GAME_STATUSES, SESSIONS_TABS } from "../../core/constants.js";
 import {
   canLogSessionForGame,
   escapeHtml,
@@ -9,6 +15,34 @@ import {
   sortSessionTargets,
 } from "../../core/formatters.js";
 import { t } from "../../core/i18n.js";
+import { appState } from "../../core/state.js";
+
+export function handleSessionsTabClick(event) {
+  const button = event.target.closest("button[data-sessions-tab]");
+  if (!button) return;
+
+  setActiveSessionsTab(button.dataset.sessionsTab);
+}
+
+export function setActiveSessionsTab(tabId) {
+  appState.activeSessionsTab = normalizeSessionsTab(tabId);
+  syncSessionsTabUi();
+}
+
+export function syncSessionsTabUi() {
+  const activeTab = normalizeSessionsTab(appState.activeSessionsTab);
+
+  for (const button of sessionsTabButtons) {
+    const isActive = button.dataset.sessionsTab === activeTab;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", isActive ? "true" : "false");
+    button.setAttribute("tabindex", isActive ? "0" : "-1");
+  }
+
+  for (const panel of sessionsPanels) {
+    panel.hidden = panel.dataset.sessionsPanel !== activeTab;
+  }
+}
 
 export function renderSessionGameOptions(games) {
   const previousValue = sessionGameSelect.value;
@@ -61,39 +95,21 @@ export function renderRecentSessions(games, sessions) {
   const sortedSessions = [...sessions].sort(
     (a, b) => new Date(b.playedAt) - new Date(a.playedAt)
   );
-  const visibleSessions = sortedSessions.slice(0, 3);
-  const hiddenSessions = sortedSessions.slice(3);
 
   recentSessionsSummaryEl.textContent =
     sortedSessions.length === 1
       ? t("sessions.recentSingle")
-      : t("sessions.recentMany", {
-          visible: visibleSessions.length,
+      : t("sessions.historySummary", {
           total: sortedSessions.length,
         });
 
-  recentSessionsListEl.innerHTML = `
-    ${renderSessionCards(visibleSessions, gameMap)}
-    ${
-      hiddenSessions.length
-        ? `
-            <details class="sessions-expand-panel">
-              <summary>${escapeHtml(
-                t("sessions.showOlder", {
-                  count: hiddenSessions.length,
-                  sessionWord: t("common.sessionWord", {
-                    count: hiddenSessions.length,
-                  }),
-                })
-              )}</summary>
-              <div class="sessions-expand-list">
-                ${renderSessionCards(hiddenSessions, gameMap)}
-              </div>
-            </details>
-          `
-        : ""
-    }
-  `;
+  recentSessionsListEl.innerHTML = renderSessionCards(sortedSessions, gameMap);
+}
+
+function normalizeSessionsTab(tabId) {
+  return Object.values(SESSIONS_TABS).includes(tabId)
+    ? tabId
+    : DEFAULT_SESSIONS_TAB;
 }
 
 function renderSessionCards(sessions, gameMap) {

@@ -2,7 +2,6 @@ import { isMainEligibleStatus, normalizeGameRecord, normalizeSessionRecord } fro
 import { addGame, getAllGames, setMainGame, updateGame, updateGames } from "../../data/gamesRepo.js";
 import { getAllSessions } from "../../data/sessionsRepo.js";
 import {
-  addGamePanel,
   bannerArtPickerInput,
   bannerImageInput,
   coverArtPickerInput,
@@ -31,12 +30,14 @@ import {
   buildGameForStatus,
   buildSessionStats,
   enforceMainGameRules,
+  getDifficultyPreviewText,
   getErrorMessage,
+  getGameActionSheetMetaText,
   getGameCompletionXp,
-  getGameDifficultyLabel,
   getStatusLabel,
   hasGameChanged,
   isCropCancelError,
+  isGameCompletable,
   isValidStatus,
 } from "../../core/formatters.js";
 import { t } from "../../core/i18n.js";
@@ -56,11 +57,7 @@ export function openGameActionsSheet(game) {
       ? game.platform
       : t("common.unspecified");
   gameActionsTitleEl.textContent = game.title;
-  gameActionsMetaEl.textContent = t("tracker.actionSheetMeta", {
-    platform: platformLabel,
-    difficulty: getGameDifficultyLabel(game.difficulty),
-    rewardXp: getGameCompletionXp(game),
-  });
+  gameActionsMetaEl.textContent = getGameActionSheetMetaText(game, platformLabel);
   gameActionsBodyEl.innerHTML = renderGameActionSheet(game);
   gameActionsModal.hidden = false;
   document.body.classList.add("has-overlay");
@@ -112,6 +109,11 @@ export async function handleAddGame(event) {
     return;
   }
 
+  if (status === GAME_STATUSES.COMPLETED && !isGameCompletable(difficulty)) {
+    showMessage(formMessage, t("games.messages.cannotComplete"), true);
+    return;
+  }
+
   try {
     const existingGames = await getAllGames(appState.db);
     const coverImage = await optimizeUploadedImage(
@@ -153,7 +155,6 @@ export async function handleAddGame(event) {
     gameStatusInput.value = DEFAULT_GAME_STATUS;
     resetGameDifficultySelection();
     syncGameDifficultyPresentation();
-    if (addGamePanel) addGamePanel.open = false;
 
     if (newGame.status === GAME_STATUSES.COMPLETED) {
       showMessage(
@@ -195,10 +196,18 @@ export function syncGameDifficultyPresentation() {
   if (!difficultyRewardPreview) return;
 
   const difficulty = getSelectedGameDifficulty();
-  difficultyRewardPreview.textContent = t("difficulty.preview", {
-    difficulty: getGameDifficultyLabel(difficulty),
-    rewardXp: getGameCompletionXp({ difficulty }),
-  });
+  const completedOption = gameStatusInput?.querySelector('option[value="completed"]');
+  const canComplete = isGameCompletable(difficulty);
+
+  if (completedOption instanceof HTMLOptionElement) {
+    completedOption.disabled = !canComplete;
+  }
+
+  if (!canComplete && gameStatusInput?.value === GAME_STATUSES.COMPLETED) {
+    gameStatusInput.value = DEFAULT_GAME_STATUS;
+  }
+
+  difficultyRewardPreview.textContent = getDifficultyPreviewText(difficulty);
 }
 
 function getSelectedGameDifficulty() {
@@ -301,6 +310,11 @@ export async function handleListClick(event) {
     if (action === "set-status") {
       if (!isValidStatus(status)) {
         showMessage(formMessage, t("games.messages.statusNotSupported"), true);
+        return;
+      }
+
+      if (status === GAME_STATUSES.COMPLETED && !isGameCompletable(game)) {
+        showMessage(formMessage, t("games.messages.cannotComplete"), true);
         return;
       }
 

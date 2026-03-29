@@ -28,10 +28,14 @@ import {
   formatDateTime,
   formatMinutes,
   getCompletionTier,
+  getCompletedStateText,
+  getGameActionSheetMetaText,
   getGameCompletionXp,
   getGameDifficultyLabel,
+  getGameRewardText,
   getGameObjectiveText,
   getStatusMeta,
+  isGameCompletable,
   renderCoverVisual,
 } from "../../core/formatters.js";
 import { t } from "../../core/i18n.js";
@@ -509,9 +513,7 @@ export function renderGameCard(game, sessionStats) {
             })
           )}</span>
           <span class="summary-pill">${escapeHtml(
-            t("tracker.summaryPills.reward", {
-              rewardXp: getGameCompletionXp(game),
-            })
+            getGameRewardText(game)
           )}</span>
         </div>
 
@@ -559,10 +561,7 @@ export function renderGameStateHighlight(game) {
     return `
       <div class="state-highlight state-highlight-completed">
         🏆 ${escapeHtml(
-          t("tracker.state.completed", {
-            date: formatDate(game.completedAt),
-            rewardXp: getGameCompletionXp(game),
-          })
+          getCompletedStateText(game, formatDate(game.completedAt))
         )}
       </div>
     `;
@@ -641,13 +640,15 @@ export function renderGameActions(game) {
         className: "secondary-button action-warning",
       })
     );
-    actions.push(
-      createActionButton("set-status", game.id, {
-        label: t("tracker.actionsMenu.complete"),
-        nextStatus: GAME_STATUSES.COMPLETED,
-        className: "secondary-button action-success",
-      })
-    );
+    if (isGameCompletable(game)) {
+      actions.push(
+        createActionButton("set-status", game.id, {
+          label: t("tracker.actionsMenu.complete"),
+          nextStatus: GAME_STATUSES.COMPLETED,
+          className: "secondary-button action-success",
+        })
+      );
+    }
     actions.push(
       createActionButton("set-status", game.id, {
         label: t("tracker.actionsMenu.drop"),
@@ -672,13 +673,15 @@ export function renderGameActions(game) {
         className: "secondary-button",
       })
     );
-    actions.push(
-      createActionButton("set-status", game.id, {
-        label: t("tracker.actionsMenu.complete"),
-        nextStatus: GAME_STATUSES.COMPLETED,
-        className: "secondary-button action-success",
-      })
-    );
+    if (isGameCompletable(game)) {
+      actions.push(
+        createActionButton("set-status", game.id, {
+          label: t("tracker.actionsMenu.complete"),
+          nextStatus: GAME_STATUSES.COMPLETED,
+          className: "secondary-button action-success",
+        })
+      );
+    }
     actions.push(
       createActionButton("set-status", game.id, {
         label: t("tracker.actionsMenu.drop"),
@@ -796,13 +799,7 @@ export function renderGameActionSheet(game) {
   )}</span>
           </div>
           <p class="game-action-sheet-meta">
-            ${escapeHtml(
-              t("tracker.actionSheetMeta", {
-                platform: getPlatformText(game),
-                difficulty: getGameDifficultyLabel(game.difficulty),
-                rewardXp: getGameCompletionXp(game),
-              })
-            )}
+            ${escapeHtml(getGameActionSheetMetaText(game, getPlatformText(game)))}
           </p>
         </div>
       </div>

@@ -6,11 +6,11 @@
     <title>Tabi no Kiroku — Journey Log</title>
     <meta name="theme-color" content="#f8f4f1" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20260328a" />
-    <link rel="stylesheet" href="./styles/tokens.css?v=20260328e" />
-    <link rel="stylesheet" href="./styles/base.css?v=20260328e" />
-    <link rel="stylesheet" href="./styles/layout.css?v=20260328e" />
-    <link rel="stylesheet" href="./styles/components.css?v=20260328e" />
-    <link rel="stylesheet" href="./styles/screens.css?v=20260328e" />
+    <link rel="stylesheet" href="./styles/tokens.css?v=20260329a" />
+    <link rel="stylesheet" href="./styles/base.css?v=20260329a" />
+    <link rel="stylesheet" href="./styles/layout.css?v=20260329a" />
+    <link rel="stylesheet" href="./styles/components.css?v=20260329a" />
+    <link rel="stylesheet" href="./styles/screens.css?v=20260329a" />
   </head>
   <body>
     <main class="app-shell">
@@ -202,7 +202,41 @@
         </section>
 
         <section id="screenSessions" class="mobile-screen" data-screen="sessions">
-          <section class="panel">
+          <section class="panel sessions-tab-shell" aria-label="Sessions workspace">
+            <div class="sessions-tab-bar" role="tablist" aria-label="Sessions sections">
+              <button
+                type="button"
+                class="sessions-tab-button is-active"
+                data-sessions-tab="log-session"
+                role="tab"
+                aria-selected="true"
+              >
+                <span data-i18n="sessions.tabs.log">Log Session</span>
+              </button>
+              <button
+                type="button"
+                class="sessions-tab-button"
+                data-sessions-tab="new-game"
+                role="tab"
+                aria-selected="false"
+                tabindex="-1"
+              >
+                <span data-i18n="sessions.tabs.newGame">New Game +</span>
+              </button>
+              <button
+                type="button"
+                class="sessions-tab-button"
+                data-sessions-tab="session-history"
+                role="tab"
+                aria-selected="false"
+                tabindex="-1"
+              >
+                <span data-i18n="sessions.tabs.history">Session History</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="panel sessions-panel" data-sessions-panel="log-session">
             <h2 data-i18n="sessions.logTitle">Log a play session</h2>
             <p class="muted-text compact-note" data-i18n="sessions.logBody">
               Session logging is for in-progress games and completed replays.
@@ -265,9 +299,15 @@
             </form>
           </section>
 
-          <details id="addGamePanel" class="panel add-game-panel">
-            <summary data-i18n="sessions.addGameSummary">Add a game</summary>
-
+          <section class="panel sessions-panel" data-sessions-panel="new-game" hidden>
+            <div class="section-header">
+              <div>
+                <h2 data-i18n="sessions.addGameSummary">Add a game</h2>
+                <p class="muted-text" data-i18n="sessions.addGameBody">
+                  Choose whether this game has a finish line, then set it up for tracking.
+                </p>
+              </div>
+            </div>
             <form id="gameForm" class="stack-form">
               <div class="field">
                 <label for="title" data-i18n="games.add.titleLabel">Game title</label>
@@ -309,6 +349,12 @@
                   Pick how demanding the full clear feels. Harder clears pay out more when completed.
                 </p>
                 <div id="gameDifficultySelector" class="difficulty-selector" role="radiogroup">
+                  <input id="gameDifficultyNotApplicable" type="radio" name="gameDifficulty" value="not-applicable" />
+                  <label class="difficulty-option" for="gameDifficultyNotApplicable">
+                    <span data-i18n="difficulty.notApplicable">N/A</span>
+                    <strong data-i18n="games.add.noClearReward">No clear XP</strong>
+                  </label>
+
                   <input id="gameDifficultyVeryEasy" type="radio" name="gameDifficulty" value="very-easy" />
                   <label class="difficulty-option" for="gameDifficultyVeryEasy">
                     <span data-i18n="difficulty.veryEasy">Very Easy</span>
@@ -392,12 +438,12 @@
               <button type="submit" class="primary-button" data-i18n="games.add.submit">Add game</button>
               <p id="formMessage" class="form-message"></p>
             </form>
-          </details>
+          </section>
 
-          <section class="panel">
+          <section class="panel sessions-panel" data-sessions-panel="session-history" hidden>
             <div class="section-header">
               <div>
-                <h2 data-i18n="sessions.recentTitle">Recent sessions</h2>
+                <h2 data-i18n="sessions.historyTitle">Session history</h2>
                 <p id="recentSessionsSummary" class="muted-text">
                   No sessions logged yet.
                 </p>
@@ -406,95 +452,6 @@
 
             <div id="recentSessionsList" class="sessions-list"></div>
           </section>
-
-          <details id="settingsPanel" class="panel settings-panel">
-            <summary data-i18n="settings.summary">Settings &amp; data</summary>
-
-            <div class="settings-grid">
-              <article class="settings-card">
-                <p class="eyebrow" data-i18n="settings.appearanceEyebrow">Appearance</p>
-                <h3 data-i18n="settings.appearanceTitle">Choose your reading mode</h3>
-                <p class="muted-text" data-i18n="settings.appearanceBody">
-                  Switch between light, dark, or follow your device setting.
-                </p>
-                <div class="field">
-                  <label for="themePreference" data-i18n="settings.themeLabel">Theme</label>
-                  <select id="themePreference" name="themePreference">
-                    <option value="system" data-i18n="settings.themeSystem">Match device</option>
-                    <option value="light" data-i18n="settings.themeLight">Light</option>
-                    <option value="dark" data-i18n="settings.themeDark">Dark</option>
-                  </select>
-                </div>
-              </article>
-
-              <article class="settings-card">
-                <p class="eyebrow" data-i18n="settings.languageEyebrow">Language</p>
-                <h3 data-i18n="settings.languageTitle">Choose your interface language</h3>
-                <p class="muted-text" data-i18n="settings.languageBody">
-                  Switch the app between English and Japanese. Dates and interface labels will update right away.
-                </p>
-                <div class="field">
-                  <label for="languagePreference" data-i18n="settings.languageLabel">Language</label>
-                  <select id="languagePreference" name="languagePreference">
-                    <option value="en" data-i18n="settings.languageEn">English</option>
-                    <option value="ja" data-i18n="settings.languageJa">Japanese</option>
-                  </select>
-                </div>
-              </article>
-
-              <article class="settings-card">
-                <p class="eyebrow" data-i18n="settings.artEyebrow">Artwork guide</p>
-                <h3 data-i18n="settings.artTitle">Better-looking cards start with the right framing</h3>
-                <p class="muted-text" data-i18n="settings.artBody">
-                  Covers should be portrait and readable even when small. Banners
-                  should keep the subject near the center so the hero panels and
-                  deck cards still look clean on smaller screens.
-                </p>
-                <div class="summary-row">
-                  <span class="summary-pill" data-i18n="settings.artCover">Cover: 3:4 portrait</span>
-                  <span class="summary-pill" data-i18n="settings.artBanner">Banner: 16:9 wide</span>
-                  <span class="summary-pill" data-i18n="settings.artCrop">Crop editor included</span>
-                </div>
-              </article>
-
-              <article class="settings-card">
-                <p class="eyebrow" data-i18n="settings.backupEyebrow">Local backup</p>
-                <h3 data-i18n="settings.backupTitle">Move your tracker to another device</h3>
-                <p class="muted-text" data-i18n="settings.backupBody">
-                  Export saves your games, sessions, XP progress, artwork, and idle journey into
-                  one JSON backup. Import replaces the current local tracker with the
-                  backup you choose.
-                </p>
-
-                <div class="settings-actions">
-                  <button id="exportDataButton" type="button" class="secondary-button" data-i18n="settings.export">
-                    Export progress
-                  </button>
-                  <button id="importDataButton" type="button" class="secondary-button" data-i18n="settings.import">
-                    Import progress
-                  </button>
-                  <button
-                    id="clearJourneyButton"
-                    type="button"
-                    class="secondary-button action-warning"
-                    data-i18n="settings.resetJourney"
-                  >
-                    Reset journey only
-                  </button>
-                  <button
-                    id="clearDataButton"
-                    type="button"
-                    class="secondary-button action-danger"
-                    data-i18n="settings.clearData"
-                  >
-                    Clear all data
-                  </button>
-                </div>
-
-                <p id="settingsMessage" class="form-message"></p>
-              </article>
-            </div>
-          </details>
         </section>
       </div>
 
@@ -504,10 +461,9 @@
           <p class="muted-text" data-i18n="footer.body">Theme, language, backup</p>
         </div>
         <button
+          id="openSettingsButton"
           type="button"
           class="secondary-button app-footer-button"
-          data-screen-target="sessions"
-          data-open-panel="settings"
           data-i18n="footer.button"
         >
           Open settings
@@ -518,6 +474,123 @@
     <input id="coverArtPicker" class="visually-hidden-file-input" type="file" accept="image/*" aria-hidden="true" tabindex="-1" />
     <input id="bannerArtPicker" class="visually-hidden-file-input" type="file" accept="image/*" aria-hidden="true" tabindex="-1" />
     <input id="importDataInput" class="visually-hidden-file-input" type="file" accept="application/json" aria-hidden="true" tabindex="-1" />
+
+    <div id="settingsModal" class="settings-modal" hidden>
+      <div class="settings-modal-backdrop" data-close-settings-modal></div>
+
+      <div
+        class="settings-modal-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settingsModalTitle"
+      >
+        <div class="settings-modal-header">
+          <div>
+            <p class="eyebrow" data-i18n="common.settings">Settings</p>
+            <h2 id="settingsModalTitle" data-i18n="settings.summary">Settings &amp; data</h2>
+            <p class="muted-text" data-i18n="settings.modalBody">
+              Theme, language, backups, and local data tools all live here now.
+            </p>
+          </div>
+          <button
+            id="settingsModalCloseButton"
+            type="button"
+            class="secondary-button"
+            data-close-settings-modal
+            data-i18n="common.close"
+          >
+            Close
+          </button>
+        </div>
+
+        <div class="settings-modal-body">
+          <div class="settings-grid">
+            <article class="settings-card">
+              <p class="eyebrow" data-i18n="settings.appearanceEyebrow">Appearance</p>
+              <h3 data-i18n="settings.appearanceTitle">Choose your reading mode</h3>
+              <p class="muted-text" data-i18n="settings.appearanceBody">
+                Switch between light, dark, or follow your device setting.
+              </p>
+              <div class="field">
+                <label for="themePreference" data-i18n="settings.themeLabel">Theme</label>
+                <select id="themePreference" name="themePreference">
+                  <option value="system" data-i18n="settings.themeSystem">Match device</option>
+                  <option value="light" data-i18n="settings.themeLight">Light</option>
+                  <option value="dark" data-i18n="settings.themeDark">Dark</option>
+                </select>
+              </div>
+            </article>
+
+            <article class="settings-card">
+              <p class="eyebrow" data-i18n="settings.languageEyebrow">Language</p>
+              <h3 data-i18n="settings.languageTitle">Choose your interface language</h3>
+              <p class="muted-text" data-i18n="settings.languageBody">
+                Switch the app between English and Japanese. Dates and interface labels will update right away.
+              </p>
+              <div class="field">
+                <label for="languagePreference" data-i18n="settings.languageLabel">Language</label>
+                <select id="languagePreference" name="languagePreference">
+                  <option value="en" data-i18n="settings.languageEn">English</option>
+                  <option value="ja" data-i18n="settings.languageJa">Japanese</option>
+                </select>
+              </div>
+            </article>
+
+            <article class="settings-card">
+              <p class="eyebrow" data-i18n="settings.artEyebrow">Artwork guide</p>
+              <h3 data-i18n="settings.artTitle">Better-looking cards start with the right framing</h3>
+              <p class="muted-text" data-i18n="settings.artBody">
+                Covers should be portrait and readable even when small. Banners
+                should keep the subject near the center so the hero panels and
+                deck cards still look clean on smaller screens.
+              </p>
+              <div class="summary-row">
+                <span class="summary-pill" data-i18n="settings.artCover">Cover: 3:4 portrait</span>
+                <span class="summary-pill" data-i18n="settings.artBanner">Banner: 16:9 wide</span>
+                <span class="summary-pill" data-i18n="settings.artCrop">Crop editor included</span>
+              </div>
+            </article>
+
+            <article class="settings-card">
+              <p class="eyebrow" data-i18n="settings.backupEyebrow">Local backup</p>
+              <h3 data-i18n="settings.backupTitle">Move your tracker to another device</h3>
+              <p class="muted-text" data-i18n="settings.backupBody">
+                Export saves your games, sessions, XP progress, artwork, and idle journey into
+                one JSON backup. Import replaces the current local tracker with the
+                backup you choose.
+              </p>
+
+              <div class="settings-actions">
+                <button id="exportDataButton" type="button" class="secondary-button" data-i18n="settings.export">
+                  Export progress
+                </button>
+                <button id="importDataButton" type="button" class="secondary-button" data-i18n="settings.import">
+                  Import progress
+                </button>
+                <button
+                  id="clearJourneyButton"
+                  type="button"
+                  class="secondary-button action-warning"
+                  data-i18n="settings.resetJourney"
+                >
+                  Reset journey only
+                </button>
+                <button
+                  id="clearDataButton"
+                  type="button"
+                  class="secondary-button action-danger"
+                  data-i18n="settings.clearData"
+                >
+                  Clear all data
+                </button>
+              </div>
+
+              <p id="settingsMessage" class="form-message"></p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div id="artCropModal" class="crop-modal" hidden>
       <div class="crop-modal-backdrop" data-close-crop-modal></div>
@@ -714,6 +787,6 @@
     <div id="characterSkillModalRoot"></div>
     <div id="toastViewport" class="toast-viewport" aria-live="polite" aria-atomic="true"></div>
 
-    <script type="module" src="./src/main.js?v=20260328e"></script>
+    <script type="module" src="./src/main.js?v=20260329a"></script>
   </body>
 </html>

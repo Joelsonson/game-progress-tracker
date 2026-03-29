@@ -32,7 +32,11 @@ import {
   languagePreferenceInput,
   journeyOutcomeCloseButton,
   journeyOutcomeModal,
+  openSettingsButton,
   screenNavButtons,
+  sessionsTabButtons,
+  settingsModal,
+  settingsModalCloseButton,
   sessionForm,
   themePreferenceInput,
   artCropModal,
@@ -41,7 +45,7 @@ import { IDLE_JOURNEY_META_KEY } from "./core/constants.js";
 import { buildSessionStats, buildXpSummary, enforceMainGameRules, sortGames } from "./core/formatters.js";
 import { applyStaticTranslations, normalizeLocale, setActiveLocale, t } from "./core/i18n.js";
 import { appState } from "./core/state.js";
-import { showMessage } from "./core/ui.js";
+import { closeSettingsModal, openSettingsModal, showMessage } from "./core/ui.js";
 import { handleClearData, handleExportData, handleImportData, handleResetJourneyData } from "./features/backup/backupController.js";
 import { cancelCropSelection, confirmCropSelection, handleCropControlInput, handleCropModalClick, resetCropControls } from "./features/art/imageCropper.js";
 import {
@@ -66,7 +70,12 @@ import {
 } from "./features/journey/journeyView.js";
 import { getPreferredScreenId, handleScreenNavClick, handleViewportResize, setActiveScreen } from "./features/navigation/navigation.js";
 import { handleAddSession } from "./features/sessions/sessionsController.js";
-import { renderRecentSessions, renderSessionGameOptions } from "./features/sessions/sessionsView.js";
+import {
+  handleSessionsTabClick,
+  renderRecentSessions,
+  renderSessionGameOptions,
+  syncSessionsTabUi,
+} from "./features/sessions/sessionsView.js";
 
 document.addEventListener("DOMContentLoaded", init);
 
@@ -107,6 +116,9 @@ function bindEvents() {
   importDataInput?.addEventListener("change", handleImportData);
   themePreferenceInput?.addEventListener("change", handleThemePreferenceChange);
   languagePreferenceInput?.addEventListener("change", handleLanguagePreferenceChange);
+  openSettingsButton?.addEventListener("click", openSettingsModal);
+  settingsModal?.addEventListener("click", handleSettingsModalClick);
+  settingsModalCloseButton?.addEventListener("click", closeSettingsModal);
   document
     .querySelector("#gameDifficultySelector")
     ?.addEventListener("change", syncGameDifficultyPresentation);
@@ -131,10 +143,19 @@ function bindEvents() {
     button.addEventListener("click", handleScreenNavClick);
   }
 
+  for (const button of sessionsTabButtons) {
+    button.addEventListener("click", handleSessionsTabClick);
+  }
+
   window.addEventListener("resize", handleViewportResize);
 }
 
 function handleGlobalKeyDown(event) {
+  if (event.key === "Escape" && settingsModal && !settingsModal.hidden) {
+    closeSettingsModal();
+    return;
+  }
+
   if (event.key === "Escape" && appState.cropSession) {
     cancelCropSelection();
     return;
@@ -158,6 +179,13 @@ function handleGlobalKeyDown(event) {
 
   if (event.key === "Escape" && journeyEventModal && !journeyEventModal.hidden) {
     closeJourneyEventModal();
+  }
+}
+
+function handleSettingsModalClick(event) {
+  if (!(event.target instanceof HTMLElement)) return;
+  if (event.target.closest("[data-close-settings-modal]")) {
+    closeSettingsModal();
   }
 }
 
@@ -186,6 +214,7 @@ export async function renderApp() {
   renderSessionGameOptions(sortedGames);
   renderGames(sortedGames, sessionStats);
   renderRecentSessions(sortedGames, sessions);
+  syncSessionsTabUi();
   syncThemePreferenceInput();
   syncLanguagePreferenceInput();
   syncGameDifficultyPresentation();

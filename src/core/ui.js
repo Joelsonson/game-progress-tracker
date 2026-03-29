@@ -3,6 +3,7 @@ import {
   characterSkillModalRoot,
   journeyEventModal,
   journeyOutcomeModal,
+  settingsModal,
   toastViewport,
 } from "./dom.js";
 import { appState } from "./state.js";
@@ -75,10 +76,23 @@ export function showToast(message, options = {}) {
   }, Math.max(1200, duration));
 }
 
+export function openSettingsModal() {
+  if (!settingsModal) return;
+  settingsModal.hidden = false;
+  syncBodyScrollLock();
+}
+
+export function closeSettingsModal() {
+  if (!settingsModal) return;
+  settingsModal.hidden = true;
+  syncBodyScrollLock();
+}
+
 export function syncBodyScrollLock() {
   document.body.style.overflow =
     appState.cropSession ||
     characterSkillModalRoot?.firstElementChild ||
+    (settingsModal && !settingsModal.hidden) ||
     (journeyEventModal && !journeyEventModal.hidden) ||
     (journeyOutcomeModal && !journeyOutcomeModal.hidden) ||
     (artCropModal && !artCropModal.hidden)

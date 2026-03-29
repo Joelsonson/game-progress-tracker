@@ -28,6 +28,11 @@ export const XP_RULES = {
 };
 
 export const GAME_DIFFICULTY_META = {
+  [GAME_DIFFICULTIES.NOT_APPLICABLE]: {
+    rewardXp: 0,
+    badgeClass: "difficulty-not-applicable",
+    labelKey: "difficulty.notApplicable",
+  },
   [GAME_DIFFICULTIES.VERY_EASY]: {
     rewardXp: 60,
     badgeClass: "difficulty-very-easy",
@@ -54,6 +59,14 @@ export const GAME_DIFFICULTY_META = {
     labelKey: "difficulty.veryHard",
   },
 };
+
+export const SESSIONS_TABS = {
+  LOG: "log-session",
+  NEW_GAME: "new-game",
+  HISTORY: "session-history",
+};
+
+export const DEFAULT_SESSIONS_TAB = SESSIONS_TABS.LOG;
 
 export const IMAGE_PRESET = {
   cover: {

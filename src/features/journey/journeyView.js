@@ -923,7 +923,6 @@ function renderJourneyStatCards(viewModel) {
         <div class="stat-row">
           <h4>${escapeHtml(statMeta.label)}</h4>
           <strong>${breakdown.total}</strong>
-          <span class="journey-chip">Spent ${breakdown.allocated}</span>
         </div>
         <div class="journey-inline-row stat-source-row">
           <span class="journey-chip">Base ${breakdown.base}</span>
@@ -944,13 +943,6 @@ function renderJourneyStatCards(viewModel) {
           }
         </div>
         <p class="stat-help">${escapeHtml(statMeta.help)}</p>
-        <p class="muted-text">
-          ${
-            hasClassBonus || hasWeaponBonus
-              ? "Bonus sources are lighting this stat up right now."
-              : "This stat is currently driven by your base training and spent skill points."
-          }
-        </p>
         <div class="journey-skill-actions">
           <button
             type="button"
@@ -1057,6 +1049,11 @@ function renderCharacterSkillModal(viewModel) {
     return;
   }
 
+  const previousLevel = Math.max(
+    1,
+    viewModel.journeyLevel - Math.max(1, viewModel.unspentSkillPoints)
+  );
+
   characterSkillModalRoot.innerHTML = `
     <div
       class="character-skill-modal"
@@ -1077,9 +1074,12 @@ function renderCharacterSkillModal(viewModel) {
         <div class="character-skill-modal-header">
           <div>
             <p class="journey-overline">Level up</p>
-            <h4 id="characterSkillModalTitle">Spend your skill points</h4>
-            <p class="muted-text">
-              You have ${viewModel.unspentSkillPoints} point${viewModel.unspentSkillPoints === 1 ? "" : "s"} ready to place.
+            <h4 id="characterSkillModalTitle">${escapeHtml(viewModel.displayName)}</h4>
+            <p class="character-skill-level-line">
+              Level ${previousLevel} &gt; ${viewModel.journeyLevel}
+            </p>
+            <p class="character-skill-points-line">
+              Skill points available: ${viewModel.unspentSkillPoints}
             </p>
           </div>
           <button

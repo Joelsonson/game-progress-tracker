@@ -1,5 +1,4 @@
 export const gameForm = document.querySelector("#gameForm");
-export const addGamePanel = document.querySelector("#addGamePanel");
 export const titleInput = document.querySelector("#title");
 export const platformInput = document.querySelector("#platform");
 export const gameStatusInput = document.querySelector("#gameStatus");
@@ -43,6 +42,12 @@ export const recentSessionsSummaryEl = document.querySelector(
   "#recentSessionsSummary"
 );
 export const recentSessionsListEl = document.querySelector("#recentSessionsList");
+export const sessionsTabButtons = Array.from(
+  document.querySelectorAll("[data-sessions-tab]")
+);
+export const sessionsPanels = Array.from(
+  document.querySelectorAll("[data-sessions-panel]")
+);
 export const journeyContentEl = document.querySelector("#journeyContent");
 export const journeyMessageEl = document.querySelector("#journeyMessage");
 export const homeJourneyContentEl = document.querySelector("#homeJourneyContent");
@@ -59,7 +64,11 @@ export const importDataInput = document.querySelector("#importDataInput");
 export const settingsMessage = document.querySelector("#settingsMessage");
 export const themePreferenceInput = document.querySelector("#themePreference");
 export const languagePreferenceInput = document.querySelector("#languagePreference");
-export const settingsPanel = document.querySelector("#settingsPanel");
+export const openSettingsButton = document.querySelector("#openSettingsButton");
+export const settingsModal = document.querySelector("#settingsModal");
+export const settingsModalCloseButton = document.querySelector(
+  "#settingsModalCloseButton"
+);
 
 export const artCropModal = document.querySelector("#artCropModal");
 export const cropPreviewCanvas = document.querySelector("#cropPreviewCanvas");
