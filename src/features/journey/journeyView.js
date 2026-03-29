@@ -927,9 +927,6 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
           >
             <span>${escapeHtml(t("journeyUi.page.roadsCleared"))}</span>
             <strong>${viewModel.clearedRoadCount}</strong>
-            <span class="journey-story-stat-hint">${escapeHtml(
-              t("journeyUi.page.openLog")
-            )}</span>
           </button>
           <button
             type="button"
@@ -938,9 +935,6 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
           >
             <span>${escapeHtml(t("journeyUi.page.retreats"))}</span>
             <strong>${viewModel.retreatCount}</strong>
-            <span class="journey-story-stat-hint">${escapeHtml(
-              t("journeyUi.page.openLog")
-            )}</span>
           </button>
         </div>
       </article>

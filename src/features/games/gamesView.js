@@ -739,7 +739,12 @@ export function renderGameCard(game, sessionStats) {
     : "";
 
   const statusMeta = getStatusMeta(game.status);
-  const difficultyMeta = GAME_DIFFICULTY_META[game.difficulty];
+  const statusBadge = TRACKER_BANNER_STATUSES.has(game.status)
+    ? `<span class="badge badge-status ${statusMeta.badgeClass}">${escapeHtml(
+        statusMeta.label
+      )}</span>`
+    : "";
+  const bannerBadges = [mainBadge, statusBadge].filter(Boolean).join("");
 
   const cardClasses = ["game-card"];
   if (game.isMain) cardClasses.push("game-card-main");
@@ -764,21 +769,10 @@ export function renderGameCard(game, sessionStats) {
             <div class="game-card-banner-copy">
               <div class="game-card-banner-heading">
                 <h4 class="game-title">${escapeHtml(game.title)}</h4>
-                <p class="game-meta">${escapeHtml(
-                  t("tracker.summaryPills.platform", {
-                    value: getPlatformText(game),
-                  })
-                )}</p>
               </div>
-              <div class="game-card-banner-badges">
-                ${mainBadge}
-                <span class="badge badge-status ${statusMeta.badgeClass}">${escapeHtml(
-    statusMeta.label
-  )}</span>
-                <span class="badge badge-difficulty ${difficultyMeta?.badgeClass || ""}">${escapeHtml(
-    getGameDifficultyLabel(game.difficulty)
-  )}</span>
-              </div>
+              ${bannerBadges
+                ? `<div class="game-card-banner-badges">${bannerBadges}</div>`
+                : ""}
             </div>
           </div>
         </div>
@@ -854,6 +848,13 @@ export function renderGameCard(game, sessionStats) {
     </article>
   `;
 }
+
+const TRACKER_BANNER_STATUSES = new Set([
+  GAME_STATUSES.BACKLOG,
+  GAME_STATUSES.IN_PROGRESS,
+  GAME_STATUSES.COMPLETED,
+  GAME_STATUSES.DROPPED,
+]);
 
 export function renderGameStateHighlight(game) {
   if (game.status === GAME_STATUSES.COMPLETED && game.completedAt) {

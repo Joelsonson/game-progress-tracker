@@ -248,8 +248,6 @@
 .settings-modal-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(2, 6, 23, 0.76);
-  backdrop-filter: blur(10px);
 }
 
 .settings-modal-dialog {
@@ -302,8 +300,6 @@
 .crop-modal-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(2, 6, 23, 0.78);
-  backdrop-filter: blur(6px);
 }
 
 .crop-modal-dialog {
@@ -1204,8 +1200,6 @@
   inset: 0;
   border: 0;
   padding: 0;
-  background: rgba(2, 6, 23, 0.72);
-  backdrop-filter: blur(10px);
   cursor: pointer;
 }
 
@@ -1364,8 +1358,6 @@
 .journey-event-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(2, 6, 23, 0.76);
-  backdrop-filter: blur(10px);
 }
 
 .journey-event-dialog {
@@ -1762,9 +1754,13 @@
   stroke: rgba(var(--panel-rgb), 0.94);
 }
 
-.journey-event-backdrop,
-.crop-modal-backdrop {
-  background: rgba(var(--ink-rgb), 0.42);
+.settings-modal-backdrop,
+.crop-modal-backdrop,
+.character-skill-backdrop,
+.journey-event-backdrop {
+  background: var(--modal-backdrop-fill);
+  backdrop-filter: var(--modal-backdrop-filter);
+  -webkit-backdrop-filter: var(--modal-backdrop-filter);
 }
 
 #homeJourneyPanel {
@@ -1989,17 +1985,6 @@
   box-shadow:
     0 14px 24px rgba(var(--ink-rgb), 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.16);
-}
-
-.journey-story-stat-hint {
-  display: block;
-  margin-top: 2px;
-  padding-right: 28px;
-  font-size: 0.76rem;
-  line-height: 1.45;
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--muted);
 }
 
 .journey-alert-card {
