@@ -761,6 +761,69 @@
   margin-top: 0;
 }
 
+.character-level-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.92), rgba(var(--surface-rgb), 0.82)),
+    rgba(var(--panel-rgb), 0.72);
+}
+
+.character-level-header,
+.character-level-title-row,
+.character-skill-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.character-level-title-row {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.character-level-title-row strong {
+  font-size: 1.08rem;
+  line-height: 1.2;
+}
+
+.character-level-progress {
+  height: 12px;
+}
+
+.character-level-progress-fill {
+  background: linear-gradient(90deg, rgba(96, 165, 250, 0.92), rgba(52, 211, 153, 0.88));
+}
+
+.character-level-meta {
+  margin-top: 0;
+  font-size: 0.88rem;
+}
+
+.character-level-up-button {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--accent-rgb), 0.24);
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent-2);
+  font-size: 1.35rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.character-level-up-button:hover {
+  background: rgba(var(--accent-rgb), 0.18);
+}
+
 .journey-pending-weapon-list {
   margin-top: 6px;
 }
@@ -909,8 +972,9 @@
 
 .character-radar-chart {
   width: 100%;
-  max-width: 360px;
+  max-width: 400px;
   justify-self: center;
+  overflow: visible;
 }
 
 .character-radar-rings polygon {
@@ -942,10 +1006,46 @@
 
 .character-radar-labels text {
   fill: #dbeafe;
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 700;
   text-anchor: middle;
   dominant-baseline: middle;
+}
+
+.character-skill-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  align-items: end;
+  padding: 20px 16px;
+  background: rgba(var(--ink-rgb), 0.44);
+}
+
+.character-skill-dialog {
+  width: min(100%, 680px);
+  max-height: min(84vh, 860px);
+  margin: 0 auto;
+  overflow: auto;
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 26px;
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.98), rgba(var(--surface-rgb), 0.9)),
+    rgba(var(--panel-rgb), 0.82);
+  box-shadow:
+    0 24px 48px rgba(var(--ink-rgb), 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.character-skill-modal-header {
+  align-items: flex-start;
+}
+
+.character-skill-grid {
+  grid-template-columns: 1fr;
 }
 
 .character-radar-legend {

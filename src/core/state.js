@@ -6,6 +6,7 @@ export const appState = {
   cropSession: null,
   activeScreenId: DEFAULT_SCREEN_ID,
   editingCharacterName: false,
+  showCharacterSkillModal: false,
   isJourneyEventResolving: false,
   themePreference: "system",
   locale: "en",

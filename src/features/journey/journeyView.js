@@ -16,6 +16,7 @@ import {
   JOURNEY_CLASS_META,
   JOURNEY_STAT_KEYS,
   JOURNEY_STAT_META,
+  JOURNEY_STORY_XP_PER_LEVEL,
 } from "../../core/constants.js";
 import {
   clamp,
@@ -642,14 +643,7 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
               toneClass: "is-hunger",
             })}
           </div>
-
-          <div class="summary-row character-summary-row">
-            <span class="summary-pill">Journey Lv. <strong>${viewModel.journeyLevel}</strong></span>
-            <span class="summary-pill">Tracker Lv. <strong>${viewModel.xpSummary.level}</strong></span>
-            <span class="summary-pill">Story bonus <strong>+${viewModel.storyLevelBonus}</strong></span>
-            <span class="summary-pill">Story XP <strong>${viewModel.state.storyXp}</strong></span>
-            <span class="summary-pill">Skill points <strong>${viewModel.unspentSkillPoints}</strong></span>
-          </div>
+          ${renderCharacterLevelPanel(viewModel)}
 
           ${renderJourneyRadarChart(viewModel.journeyStats.stats)}
         </div>
@@ -773,11 +767,10 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
         }
       </article>
     </section>
-
-    <section class="journey-stat-grid character-stat-grid">
-      ${renderJourneyStatCards(viewModel)}
-    </section>
+    ${renderCharacterSkillModal(viewModel)}
   `;
+
+  syncBodyScrollLock();
 }
 
 export function buildJourneyClassSelectionUi(state) {
@@ -849,11 +842,34 @@ function buildJourneyViewModel(state, games, sessions, xpSummary) {
     100
   );
   const storyLevelBonus = getJourneyStoryLevelBonus(state.storyXp);
+  const storyXpIntoLevel = state.storyXp % JOURNEY_STORY_XP_PER_LEVEL;
+  const storyXpToNextLevel =
+    storyXpIntoLevel === 0
+      ? JOURNEY_STORY_XP_PER_LEVEL
+      : JOURNEY_STORY_XP_PER_LEVEL - storyXpIntoLevel;
+  const storyProgressPercent =
+    (storyXpIntoLevel / JOURNEY_STORY_XP_PER_LEVEL) * 100;
   const displayName = getJourneyDisplayName(state);
   const bagMeta = getJourneyBagMeta(state.bagKey);
   const weaponInventory = getJourneyWeaponInventory(state);
   const pendingWeapons = getJourneyPendingWeapons(state);
   const knownNotes = getJourneyKnownNotes(state);
+  const levelProgress =
+    storyXpToNextLevel <= xpSummary.xpToNextLevel
+      ? {
+          sourceLabel: "Story XP",
+          current: storyXpIntoLevel,
+          goal: JOURNEY_STORY_XP_PER_LEVEL,
+          remaining: storyXpToNextLevel,
+          progressPercent: storyProgressPercent,
+        }
+      : {
+          sourceLabel: "Tracker XP",
+          current: xpSummary.xpIntoLevel,
+          goal: 100,
+          remaining: xpSummary.xpToNextLevel,
+          progressPercent: xpSummary.progressPercent,
+        };
 
   return {
     state,
@@ -873,6 +889,10 @@ function buildJourneyViewModel(state, games, sessions, xpSummary) {
     hpPercent,
     hungerPercent,
     storyLevelBonus,
+    storyXpIntoLevel,
+    storyXpToNextLevel,
+    storyProgressPercent,
+    levelProgress,
     displayName,
     bagMeta,
     weaponInventory,
@@ -944,6 +964,82 @@ function renderJourneyStatCards(viewModel) {
       </article>
     `;
   }).join("");
+}
+
+function renderCharacterLevelPanel(viewModel) {
+  return `
+    <section class="character-level-card">
+      <div class="character-level-header">
+        <div>
+          <p class="journey-overline">Character level</p>
+          <div class="character-level-title-row">
+            <strong>Level ${viewModel.journeyLevel}</strong>
+            ${
+              viewModel.unspentSkillPoints > 0
+                ? `<span class="journey-chip is-active">${viewModel.unspentSkillPoints} point${viewModel.unspentSkillPoints === 1 ? "" : "s"} ready</span>`
+                : ""
+            }
+          </div>
+        </div>
+        ${
+          viewModel.unspentSkillPoints > 0
+            ? `
+                <button
+                  type="button"
+                  class="character-level-up-button"
+                  data-journey-action="open-skill-modal"
+                  aria-label="Spend skill points"
+                >
+                  +
+                </button>
+              `
+            : ""
+        }
+      </div>
+      <div class="journey-progress-track character-level-progress">
+        <div
+          class="journey-progress-fill character-level-progress-fill"
+          style="width: ${viewModel.levelProgress.progressPercent}%"
+        ></div>
+      </div>
+      <div class="journey-progress-meta character-level-meta">
+        <span>${escapeHtml(viewModel.levelProgress.sourceLabel)} ${viewModel.levelProgress.current} / ${viewModel.levelProgress.goal}</span>
+        <span>${viewModel.levelProgress.remaining} XP to next level</span>
+      </div>
+    </section>
+  `;
+}
+
+function renderCharacterSkillModal(viewModel) {
+  if (!appState.showCharacterSkillModal) {
+    return "";
+  }
+
+  return `
+    <div class="character-skill-modal" role="dialog" aria-modal="true" aria-labelledby="characterSkillModalTitle">
+      <div class="character-skill-dialog">
+        <div class="character-skill-modal-header">
+          <div>
+            <p class="journey-overline">Level up</p>
+            <h4 id="characterSkillModalTitle">Spend your skill points</h4>
+            <p class="muted-text">
+              You have ${viewModel.unspentSkillPoints} point${viewModel.unspentSkillPoints === 1 ? "" : "s"} ready to place.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="secondary-button"
+            data-journey-action="close-skill-modal"
+          >
+            Close
+          </button>
+        </div>
+        <div class="journey-stat-grid character-skill-grid">
+          ${renderJourneyStatCards(viewModel)}
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function renderJourneyWeaponCard(weapon) {
@@ -1163,8 +1259,8 @@ function renderJourneyRadarChart(stats) {
     value: Number(stats[statKey] || 0),
   }));
   const maxValue = Math.max(10, ...entries.map((entry) => entry.value), 1);
-  const center = 110;
-  const radius = 72;
+  const center = 130;
+  const radius = 76;
   const ringFractions = [0.25, 0.5, 0.75, 1];
   const dataPolygon = buildRadarPolygon(entries, center, radius, maxValue);
 
@@ -1172,7 +1268,7 @@ function renderJourneyRadarChart(stats) {
     <div class="character-radar-shell">
       <svg
         class="character-radar-chart"
-        viewBox="0 0 220 220"
+        viewBox="0 0 260 260"
         role="img"
         aria-label="Radar chart showing your Might, Finesse, Arcana, Vitality, and Resolve"
       >
@@ -1187,7 +1283,7 @@ function renderJourneyRadarChart(stats) {
         <g class="character-radar-axes">
           ${entries
             .map((entry, index) => {
-              const axisPoint = getRadarPoint(index, entries.length, center, radius + 10);
+              const axisPoint = getRadarPoint(index, entries.length, center, radius + 12);
               return `<line x1="${center}" y1="${center}" x2="${axisPoint.x}" y2="${axisPoint.y}" />`;
             })
             .join("")}
@@ -1210,7 +1306,7 @@ function renderJourneyRadarChart(stats) {
         <g class="character-radar-labels">
           ${entries
             .map((entry, index) => {
-              const point = getRadarPoint(index, entries.length, center, radius + 28);
+              const point = getRadarPoint(index, entries.length, center, radius + 40);
               return `<text x="${point.x}" y="${point.y}">${escapeHtml(entry.label)}</text>`;
             })
             .join("")}

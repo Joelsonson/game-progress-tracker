@@ -2,7 +2,7 @@ import { normalizeGameRecord, normalizeSessionRecord } from "../../data/db.js";
 import { getAllGames } from "../../data/gamesRepo.js";
 import { getMeta, setMeta } from "../../data/metaRepo.js";
 import { getAllSessions } from "../../data/sessionsRepo.js";
-import { characterMessageEl, journeyMessageEl } from "../../core/dom.js";
+import { journeyMessageEl } from "../../core/dom.js";
 import {
   IDLE_JOURNEY_META_KEY,
   JOURNEY_CLASS_META,
@@ -47,7 +47,6 @@ import {
 
 function showJourneyFeedback(message, isError = false) {
   showMessage(journeyMessageEl, message, isError);
-  showMessage(characterMessageEl, message, isError);
 }
 
 export async function handleHomeJourneyClick(event) {
@@ -157,6 +156,24 @@ export async function handleJourneyClick(event) {
       return;
     }
 
+    if (action === "open-skill-modal") {
+      const unspent = getUnspentSkillPoints(state, journeyLevel);
+      if (unspent <= 0) {
+        showJourneyFeedback("No skill points available right now.", true);
+        return;
+      }
+
+      appState.showCharacterSkillModal = true;
+      await appState.renderApp();
+      return;
+    }
+
+    if (action === "close-skill-modal") {
+      appState.showCharacterSkillModal = false;
+      await appState.renderApp();
+      return;
+    }
+
     if (action === "set-class") {
       const classType = button.dataset.class;
       if (!JOURNEY_CLASS_META[classType] || !hasJourneyClassUnlocked(state, classType)) {
@@ -196,6 +213,8 @@ export async function handleJourneyClick(event) {
         new Date().toISOString()
       );
       await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
+      appState.showCharacterSkillModal =
+        getUnspentSkillPoints(state, journeyLevel) > 0;
       showJourneyFeedback(`${JOURNEY_STAT_META[statKey].label} increased.`);
       await appState.renderApp();
       return;
