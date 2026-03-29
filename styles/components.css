@@ -1089,12 +1089,12 @@
   font-size: 0.98rem;
 }
 
-.journey-event-choice span {
+.journey-event-choice-preview {
   color: var(--muted);
   font-weight: 500;
 }
 
-.journey-event-choice-highlight,
+.journey-event-choice-title .journey-event-choice-highlight,
 .journey-outcome-choice-text .journey-event-choice-highlight {
   color: var(--accent-2);
   font-weight: 700;
