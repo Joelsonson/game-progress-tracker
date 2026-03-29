@@ -215,8 +215,8 @@ export function openJourneyEventModal(eventEntry) {
               data-event-id="${eventEntry.id}"
               data-choice-id="${choice.id}"
             >
-              <span class="journey-event-choice-title">${escapeHtml(
-                choice.label
+              <span class="journey-event-choice-title">${renderJourneyChoiceLabel(
+                choice
               )}</span>
               <span class="journey-event-choice-preview">${escapeHtml(
                 choice.preview
@@ -271,7 +271,29 @@ export function showJourneyEventThinking(choiceLabel) {
   );
 }
 
-export function openJourneyOutcomeModal(eventEntry, choice, resultText, outcomeItems) {
+function renderJourneyChoiceLabel(choice) {
+  const label = String(choice?.label || "Choose");
+  const highlightWord = String(choice?.highlightWord || "").trim();
+
+  if (!highlightWord) {
+    return escapeHtml(label);
+  }
+
+  const labelLower = label.toLowerCase();
+  const highlightLower = highlightWord.toLowerCase();
+  const highlightStart = labelLower.indexOf(highlightLower);
+
+  if (highlightStart === -1) {
+    return escapeHtml(label);
+  }
+
+  const highlightEnd = highlightStart + highlightWord.length;
+  return `${escapeHtml(label.slice(0, highlightStart))}<span class="journey-event-choice-highlight">${escapeHtml(
+    label.slice(highlightStart, highlightEnd)
+  )}</span>${escapeHtml(label.slice(highlightEnd))}`;
+}
+
+export function openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeItems) {
   if (
     !journeyOutcomeModal ||
     !journeyOutcomeBodyEl ||
@@ -282,12 +304,44 @@ export function openJourneyOutcomeModal(eventEntry, choice, resultText, outcomeI
   }
 
   journeyOutcomeTitleEl.textContent = eventEntry?.title || "What happened next";
-  journeyOutcomeMetaEl.textContent = choice?.label
-    ? `You chose: ${choice.label}`
-    : "The road answered your choice.";
+  journeyOutcomeMetaEl.textContent = resolution
+    ? `${resolution.success ? "Succeeded" : "Failed"} • ${resolution.statLabel} • ${resolution.successPercent}% chance`
+    : choice?.label
+      ? `You chose: ${choice.label}`
+      : "The road answered your choice.";
   journeyOutcomeBodyEl.innerHTML = `
     <div class="journey-event-panel journey-outcome-panel">
-      <p>${escapeHtml(resultText)}</p>
+      ${
+        resolution
+          ? `
+            <div class="journey-outcome-summary">
+              <span class="journey-outcome-result ${escapeAttribute(
+                resolution.success ? "is-success" : "is-failure"
+              )}">
+                ${escapeHtml(resolution.success ? "Succeeded" : "Failed")}
+              </span>
+              <p class="journey-outcome-meta-copy">
+                ${escapeHtml(
+                  `Used ${resolution.statLabel} ${resolution.statValue} against a ${resolution.successPercent}% chance.`
+                )}
+              </p>
+            </div>
+          `
+          : ""
+      }
+      ${
+        choice
+          ? `
+            <p class="journey-outcome-choice-copy">
+              You tried:
+              <span class="journey-outcome-choice-text">${renderJourneyChoiceLabel(
+                choice
+              )}</span>
+            </p>
+          `
+          : ""
+      }
+      <p>${escapeHtml(resolution?.resultText || "The road answered your choice.")}</p>
       ${
         outcomeItems.length
           ? `

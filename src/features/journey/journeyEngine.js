@@ -566,7 +566,7 @@ export function rememberJourneyEventKey(state, eventKey) {
   ].slice(0, JOURNEY_RECENT_EVENT_LIMIT);
 }
 
-export function buildJourneyOutcomeItems(beforeState, afterState) {
+export function buildJourneyOutcomeItems(beforeState, afterState, resolution = null) {
   const items = [];
   const addDelta = (label, value) => {
     if (!value) return;
@@ -576,6 +576,21 @@ export function buildJourneyOutcomeItems(beforeState, afterState) {
       className: value > 0 ? "is-positive" : "is-negative",
     });
   };
+
+  if (resolution) {
+    items.push({
+      label: resolution.success ? "Succeeded" : "Failed",
+      className: resolution.success ? "is-positive" : "is-negative",
+    });
+    items.push({
+      label: `${resolution.statLabel} ${resolution.statValue}`,
+      className: "is-neutral",
+    });
+    items.push({
+      label: `Chance ${resolution.successPercent}%`,
+      className: "is-neutral",
+    });
+  }
 
   addDelta("Health", Math.round(afterState.currentHp - beforeState.currentHp));
   addDelta("Hunger", Math.round(afterState.currentHunger - beforeState.currentHunger));
@@ -1126,10 +1141,41 @@ export function maybeQueueJourneyEvent(state, atDate, journeyLevel, journeyConte
   );
 }
 
-export function getJourneyEventCandidates(state, journeyLevel, atDate, journeyContext) {
+function createJourneyStatChoice({
+  label,
+  preview,
+  highlightWord,
+  statKey,
+  successText,
+  failureText,
+  successEffects,
+  failureEffects,
+  chanceBase = 0.24,
+  chancePerStat = 0.08,
+  minChance = 0.14,
+  maxChance = 0.9,
+}) {
+  return {
+    label,
+    preview,
+    highlightWord,
+    statKey,
+    chanceBase,
+    chancePerStat,
+    minChance,
+    maxChance,
+    successText,
+    failureText,
+    successEffects,
+    failureEffects,
+  };
+}
+
+export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyContext) {
   const eventTime = atDate.toISOString();
   const candidates = [];
   const journeyStats = buildJourneyDerived(state, journeyLevel);
+  const journeyPhase = getJourneyPhase(state);
   const pushCandidate = (key, weight, build, kind = "normal") => {
     candidates.push({ key, weight, build, kind });
   };
@@ -1149,30 +1195,74 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, journeyCo
           "A traveling healer reins in beside you, takes one long look, and decides you are too close to collapsing to be left alone.",
         createdAt: eventTime,
         choices: [
-          {
-            label: "Accept proper treatment",
-            preview: "Lose time, but get patched up and restocked.",
-            resultText:
-              "The healer cleans your wounds, forces you to sit still, and presses supplies into your hands before letting you move on.",
-            effects: {
-              hp: 22,
+          createJourneyStatChoice({
+            label: "Stay still and let him work",
+            preview: "Trust patience over pride for once.",
+            highlightWord: "still",
+            statKey: "resolve",
+            chanceBase: 0.38,
+            chancePerStat: 0.06,
+            minChance: 0.28,
+            successText:
+              "You keep yourself calm long enough for the healer to clean the worst wounds, bind your ribs, and press proper supplies into your hands.",
+            failureText:
+              "You try to stay composed, but pain keeps breaking your focus. The treatment helps, just not as much as it should have.",
+            successEffects: {
+              hp: 24,
               hunger: 8,
               bonusTonics: 1,
               bonusRations: 1,
               storyXp: 10,
             },
-          },
-          {
-            label: "Take supplies and keep moving",
-            preview: "Recover a little without stopping for long.",
-            resultText:
-              "You refuse the full stop, but the healer still hands over enough to keep you upright.",
-            effects: {
-              hp: 12,
-              bonusTonics: 1,
-              storyXp: 6,
+            failureEffects: {
+              hp: 11,
+              hunger: 4,
+              storyXp: 5,
             },
-          },
+          }),
+          createJourneyStatChoice({
+            label: "Endure a quick field patch",
+            preview: "Take the rough version and keep your feet under you.",
+            highlightWord: "Endure",
+            statKey: "vitality",
+            chanceBase: 0.34,
+            chancePerStat: 0.07,
+            minChance: 0.24,
+            successText:
+              "You grit through the fast stitching and rough bandages, then walk away patched up enough to keep going.",
+            failureText:
+              "The rushed work leaves you dizzy and half-finished, forcing you onward with only a little relief.",
+            successEffects: {
+              hp: 16,
+              bonusTonics: 1,
+              storyXp: 8,
+            },
+            failureEffects: {
+              hp: 7,
+              storyXp: 4,
+            },
+          }),
+          createJourneyStatChoice({
+            label: "Pocket a spare tonic while he works",
+            preview: "Keep one eye on his satchel and one on the road.",
+            highlightWord: "Pocket",
+            statKey: "finesse",
+            chanceBase: 0.24,
+            chancePerStat: 0.08,
+            successText:
+              "While the healer fusses over your scrapes, your hand is already moving. You leave steadier, with one more tonic than he meant to give.",
+            failureText:
+              "Your hand strays once too often. He notices, snorts, and sends you off with less sympathy than before.",
+            successEffects: {
+              hp: 12,
+              bonusTonics: 2,
+              storyXp: 9,
+            },
+            failureEffects: {
+              hp: 8,
+              storyXp: 3,
+            },
+          }),
         ],
       }),
       "aid"
@@ -1188,28 +1278,72 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, journeyCo
           "An herbalist sorting roots by the roadside sees you limping and offers a fast trade: listen to her advice, and she will share what you need most.",
         createdAt: eventTime,
         choices: [
-          {
-            label: "Take the restorative brew",
-            preview: "Best if your body is the problem.",
-            resultText:
-              "The brew tastes awful, but warmth starts pushing the pain back out of your limbs.",
-            effects: {
+          createJourneyStatChoice({
+            label: "Read the brew before you drink",
+            preview: "Watch the steam, scent, and color before committing.",
+            highlightWord: "Read",
+            statKey: "arcana",
+            chanceBase: 0.28,
+            chancePerStat: 0.09,
+            successText:
+              "You catch the little signs in the mixture, choose the safer cup, and feel the warmth settle in exactly where you need it.",
+            failureText:
+              "You overthink it, pick the wrong bottle, and end up with something useful but weaker than you hoped.",
+            successEffects: {
               hp: 18,
               bonusTonics: 1,
-              storyXp: 8,
+              storyXp: 10,
             },
-          },
-          {
-            label: "Take trail food and herbs",
-            preview: "Best if you are running empty.",
-            resultText:
-              "She packs dried roots, bitter leaves, and enough food to get you through the next bad stretch.",
-            effects: {
-              hunger: 16,
+            failureEffects: {
+              hp: 9,
+              storyXp: 4,
+            },
+          }),
+          createJourneyStatChoice({
+            label: "Carry the crate she points to",
+            preview: "Earn the better supplies the hard way.",
+            highlightWord: "Carry",
+            statKey: "might",
+            chanceBase: 0.3,
+            chancePerStat: 0.08,
+            successText:
+              "You shoulder the heavy crate without complaint, and the herbalist rewards the effort with food, salves, and a little respect.",
+            failureText:
+              "You get the crate moving, but not gracefully. By the end you are winded and only half-rewarded for the trouble.",
+            successEffects: {
+              hunger: 14,
               bonusRations: 2,
+              hp: 6,
               storyXp: 8,
             },
-          },
+            failureEffects: {
+              hunger: 8,
+              hp: -3,
+              storyXp: 3,
+            },
+          }),
+          createJourneyStatChoice({
+            label: "Listen until she changes her mind",
+            preview: "Let patience and good timing do the bargaining.",
+            highlightWord: "Listen",
+            statKey: "resolve",
+            chanceBase: 0.35,
+            chancePerStat: 0.06,
+            minChance: 0.26,
+            successText:
+              "You hear out every warning and every side note. By the time you part, she has packed enough careful advice and trail food to matter.",
+            failureText:
+              "You hold the conversation together, but only barely. She still helps, just without the extra care she gives the truly patient.",
+            successEffects: {
+              hunger: 16,
+              bonusRations: 1,
+              storyXp: 9,
+            },
+            failureEffects: {
+              hunger: 9,
+              storyXp: 4,
+            },
+          }),
         ],
       }),
       "aid"
@@ -1225,66 +1359,157 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, journeyCo
           "You spot a spring giving off a pale glow, untouched by mud or rot. The air around it feels unnaturally calm.",
         createdAt: eventTime,
         choices: [
-          {
-            label: "Drink deeply",
-            preview: "Recover quickly and trust the strange water.",
-            resultText:
-              "The water leaves your chest lighter, your hunger quieter, and your thoughts clearer.",
-            effects: {
+          createJourneyStatChoice({
+            label: "Listen to the water before touching it",
+            preview: "Give the strange place a moment to reveal itself.",
+            highlightWord: "Listen",
+            statKey: "arcana",
+            chanceBase: 0.28,
+            chancePerStat: 0.09,
+            successText:
+              "You catch the rhythm in the spring before you touch it. When you finally drink, the strange water settles cleanly through you.",
+            failureText:
+              "You think you have the spring figured out, but the pulse of it shifts under your hand. You still gain something, just not the full blessing.",
+            successEffects: {
               hp: 16,
               hunger: 12,
               storyXp: 12,
             },
-          },
-          {
-            label: "Bottle what you can",
-            preview: "Take the blessing with you instead of spending it now.",
-            resultText:
-              "You fill what containers you can and move on with medicine worth more than coin.",
-            effects: {
+            failureEffects: {
+              hp: 7,
+              hunger: 5,
+              storyXp: 5,
+            },
+          }),
+          createJourneyStatChoice({
+            label: "Brace yourself and drink anyway",
+            preview: "Trust your body to survive what it cannot understand.",
+            highlightWord: "Brace",
+            statKey: "vitality",
+            chanceBase: 0.3,
+            chancePerStat: 0.08,
+            successText:
+              "The cold shock hits like lightning, but your body takes it and comes out steadier on the other side.",
+            failureText:
+              "The water burns colder than expected. You stagger back shaking, helped more by stubbornness than by the spring itself.",
+            successEffects: {
+              hp: 14,
+              hunger: 8,
               bonusTonics: 1,
+              storyXp: 10,
+            },
+            failureEffects: {
+              hp: 4,
+              storyXp: 4,
+            },
+          }),
+          createJourneyStatChoice({
+            label: "Cup only what you can carry",
+            preview: "Take a measured amount and leave the rest alone.",
+            highlightWord: "Cup",
+            statKey: "finesse",
+            chanceBase: 0.33,
+            chancePerStat: 0.07,
+            minChance: 0.24,
+            successText:
+              "You move carefully, saving enough of the glowing water to turn into trail medicine without wasting a drop.",
+            failureText:
+              "The bottle slips in your fingers and part of the spring's gift spills into the dirt before you can save it.",
+            successEffects: {
+              bonusTonics: 2,
               bonusRations: 1,
               storyXp: 10,
             },
-          },
+            failureEffects: {
+              bonusTonics: 1,
+              storyXp: 4,
+            },
+          }),
         ],
       }),
       "aid"
     );
 
     pushCandidate(
-      "aid:wagon",
+      "aid:bandit-camp",
       5 + state.aidUrgency,
       () => ({
-        title: "A raided wagon left on the roadside",
-        teaser: "The bandits are gone, but not everything useful went with them.",
+        title: "A raider's camp by the looted carriage",
+        teaser: "The bandit looks half-asleep beside a pile of stolen supplies.",
         detail:
-          "A supply wagon sits half-turned in the ditch, stripped in a hurry. Under torn canvas you find crates the raiders missed.",
+          "You spot the carriage first, wheels sunk in the mud, then the camp beyond it. One bandit is dozing by a tent with the wagon's missing goods stacked close at hand.",
         createdAt: eventTime,
         choices: [
-          {
-            label: "Grab food and move",
-            preview: "Quick supplies without lingering.",
-            resultText:
-              "You haul off what trail food you can carry and leave before whoever did this comes back.",
-            effects: {
+          createJourneyStatChoice({
+            label: "Slip in and lift the loot",
+            preview: "Trust quiet feet more than a fair fight.",
+            highlightWord: "Slip",
+            statKey: "finesse",
+            chanceBase: 0.26,
+            chancePerStat: 0.09,
+            successText:
+              "You move between the tent ropes like a shadow, gather what matters, and vanish before the bandit ever fully wakes.",
+            failureText:
+              "A pot shifts under your boot and the bandit jerks awake. You still wrench something free, but not before taking a rough hit on the way out.",
+            successEffects: {
               hunger: 10,
               bonusRations: 2,
-              storyXp: 7,
-            },
-          },
-          {
-            label: "Search for proper medicine",
-            preview: "Risk a longer stop for better recovery.",
-            resultText:
-              "Buried under broken boards you find bandages, a tonic, and just enough luck to matter.",
-            effects: {
-              hp: 10,
               bonusTonics: 1,
-              bonusRations: 1,
-              storyXp: 9,
+              storyXp: 12,
             },
-          },
+            failureEffects: {
+              hp: -8,
+              bonusRations: 1,
+              storyXp: 5,
+            },
+          }),
+          createJourneyStatChoice({
+            label: "Press him before he finds his feet",
+            preview: "Hit the problem head-on while surprise still matters.",
+            highlightWord: "Press",
+            statKey: "might",
+            chanceBase: 0.24,
+            chancePerStat: 0.09,
+            successText:
+              "You are on him before the sleep leaves his eyes. One brutal exchange later, the supplies are yours and the camp is quiet again.",
+            failureText:
+              "He wakes faster than expected and the scuffle turns ugly. You drive him off in the end, but pay for it.",
+            successEffects: {
+              hp: -3,
+              hunger: 8,
+              bonusRations: 2,
+              storyXp: 14,
+            },
+            failureEffects: {
+              hp: -11,
+              bonusRations: 1,
+              storyXp: 6,
+            },
+          }),
+          createJourneyStatChoice({
+            label: "Sprint for the stash when he turns",
+            preview: "Bet on your legs and accept the bruises later.",
+            highlightWord: "Sprint",
+            statKey: "vitality",
+            chanceBase: 0.31,
+            chancePerStat: 0.08,
+            successText:
+              "Your thrown stone buys only a heartbeat, but that is enough. You tear through the camp, grab what you can, and keep running until the shouting fades behind you.",
+            failureText:
+              "You break cover too early and the chase comes hard. You escape with scraps and a pounding chest, not the full haul.",
+            successEffects: {
+              hunger: 8,
+              distance: 6,
+              bonusRations: 1,
+              bonusTonics: 1,
+              storyXp: 11,
+            },
+            failureEffects: {
+              hp: -6,
+              distance: 3,
+              storyXp: 4,
+            },
+          }),
         ],
       }),
       "aid"
@@ -1299,43 +1524,81 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, journeyCo
             "Roots have half-swallowed an overturned cart. A cracked spear shaft, a rusted belt knife, and a few ruined travel goods are still tangled in the frame.",
           createdAt: eventTime,
           choices: [
-            {
-              label: "Free the belt knife",
-              preview: "Take the cut if it means finally having a real blade.",
-              resultText:
-                "You cut your palm freeing the knife, but it is still the first thing you own here that feels like a weapon.",
-              effects: {
-                hp: -4,
+            createJourneyStatChoice({
+              label: "Tease the knife free from the frame",
+              preview: "Trust careful hands with the tight, dangerous work.",
+              highlightWord: "Tease",
+              statKey: "finesse",
+              chanceBase: 0.28,
+              chancePerStat: 0.08,
+              successText:
+                "The rusted knife comes loose with only a scrape across your knuckles, but now you finally have a real blade.",
+              failureText:
+                "The blade gives all at once and slices your palm on the way out. It still ends up in your hand, warm with your own blood.",
+              successEffects: {
+                hp: -2,
                 distance: 4,
                 storyXp: 14,
                 weaponName: "Rust-worn belt knife",
                 flags: { foundWeapon: true },
               },
-            },
-            {
-              label: "Break the shaft into a club",
-              preview: "Crude, but less likely to fail in your hands.",
-              resultText:
-                "The wood is ugly but solid enough. You also find a few dry scraps worth keeping.",
-              effects: {
+              failureEffects: {
+                hp: -6,
+                distance: 2,
+                storyXp: 8,
+                weaponName: "Rust-worn belt knife",
+                flags: { foundWeapon: true },
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Wrench the shaft into something useful",
+              preview: "Take the loud, direct option and make it work.",
+              highlightWord: "Wrench",
+              statKey: "might",
+              chanceBase: 0.33,
+              chancePerStat: 0.07,
+              successText:
+                "You rip free the surviving wood and turn it into a crude spear-club sturdy enough to trust in a panic.",
+              failureText:
+                "The first pull splinters half the shaft, but you still salvage a brutal little club from the wreckage.",
+              successEffects: {
                 distance: 3,
-                storyXp: 10,
+                storyXp: 11,
                 bonusRations: 1,
                 weaponName: "Crude spear-club",
                 flags: { foundWeapon: true },
               },
-            },
-            {
-              label: "Leave it and keep moving",
-              preview: "Choose speed over another dangerous delay.",
-              resultText:
-                "You walk away hungry and nervous, hoping the next chance is kinder.",
-              effects: {
-                hunger: -6,
-                distance: 8,
-                storyXp: -4,
+              failureEffects: {
+                hp: -4,
+                storyXp: 7,
+                weaponName: "Crude spear-club",
+                flags: { foundWeapon: true },
               },
-            },
+            }),
+            createJourneyStatChoice({
+              label: "Steady yourself and salvage only what matters",
+              preview: "Take a breath, ignore the junk, and leave with the best piece.",
+              highlightWord: "Steady",
+              statKey: "resolve",
+              chanceBase: 0.36,
+              chancePerStat: 0.06,
+              minChance: 0.28,
+              successText:
+                "You resist the urge to paw through every scrap, spot the one usable weapon quickly, and get moving before the stop costs too much.",
+              failureText:
+                "You try to stay disciplined, but hesitation keeps eating the moment. By the time you leave, you have only scraps and lost time.",
+              successEffects: {
+                distance: 5,
+                storyXp: 9,
+                weaponName: "Rust-worn belt knife",
+                flags: { foundWeapon: true },
+              },
+              failureEffects: {
+                hunger: -5,
+                distance: 3,
+                storyXp: 2,
+              },
+            }),
           ],
         })
     );
@@ -1349,38 +1612,70 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, journeyCo
             "You find dark berries growing where the light breaks through the trees. Some are pecked at by birds. Some are untouched.",
           createdAt: eventTime,
           choices: [
-            {
-              label: "Test them carefully",
-              preview: "Slow, cautious, and probably the least stupid option.",
-              resultText:
-                "You wait, watch, and only keep the ones that seem safe. It is not much, but it helps.",
-              effects: {
+            createJourneyStatChoice({
+              label: "Sort the safe ones from the rest",
+              preview: "Take your time and let small signs guide you.",
+              highlightWord: "Sort",
+              statKey: "resolve",
+              chanceBase: 0.37,
+              chancePerStat: 0.06,
+              minChance: 0.28,
+              successText:
+                "You test patiently, keep only what proves itself, and leave with a modest meal that does not fight back.",
+              failureText:
+                "You stay cautious, but not cautious enough. A few bad berries slip through and sour the whole stop.",
+              successEffects: {
                 hunger: 10,
-                storyXp: 10,
+                storyXp: 9,
               },
-            },
-            {
-              label: "Eat quickly and hope",
-              preview: "Hunger is louder than caution right now.",
-              resultText:
-                "Some were fine. Some definitely were not. You gain something, but not cleanly.",
-              effects: {
+              failureEffects: {
+                hunger: 4,
+                hp: -3,
+                storyXp: 3,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Taste them before hunger gets louder",
+              preview: "Trust your body to tell you what belongs in it.",
+              highlightWord: "Taste",
+              statKey: "vitality",
+              chanceBase: 0.29,
+              chancePerStat: 0.08,
+              successText:
+                "Your stomach takes the test better than expected. The berries are not perfect, but they fill the ache without doing real harm.",
+              failureText:
+                "The gamble turns on you fast. You force down enough to matter, then spend the next stretch wishing you had not.",
+              successEffects: {
                 hunger: 14,
-                hp: -6,
-                storyXp: 6,
+                storyXp: 8,
               },
-            },
-            {
-              label: "Ignore them",
-              preview: "You do not know enough to gamble with poison.",
-              resultText:
-                "You move on empty-stomached but alive, which still counts for something.",
-              effects: {
-                hunger: -4,
-                distance: 6,
+              failureEffects: {
+                hunger: 8,
+                hp: -7,
                 storyXp: 4,
               },
-            },
+            }),
+            createJourneyStatChoice({
+              label: "Read what the birds left behind",
+              preview: "Look for patterns before you commit your own stomach.",
+              highlightWord: "Read",
+              statKey: "finesse",
+              chanceBase: 0.3,
+              chancePerStat: 0.08,
+              successText:
+                "You notice which branches were pecked clean and which were avoided. The clues are enough to turn the patch into a useful stop.",
+              failureText:
+                "You misread the signs and collect more trouble than food, leaving with a lighter pack and an annoyed stomach.",
+              successEffects: {
+                hunger: 11,
+                distance: 3,
+                storyXp: 10,
+              },
+              failureEffects: {
+                hunger: 5,
+                storyXp: 2,
+              },
+            }),
           ],
         })
     );
@@ -1392,44 +1687,153 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, journeyCo
             "Fresh prints cut into the mud beside the water. They are too wide to ignore and too recent to feel safe.",
           createdAt: eventTime,
           choices: [
-            {
-              label: "Follow the tracks",
-              preview: "If you understand the threat, you might survive it.",
-              resultText:
-                "You learn how the animal moves and where it feeds, even if the whole exercise makes your nerves worse.",
-              effects: {
-                hp: -3,
-                distance: 5,
+            createJourneyStatChoice({
+              label: "Stalk the trail a little farther",
+              preview: "Learn what made the tracks before it learns you.",
+              highlightWord: "Stalk",
+              statKey: "finesse",
+              chanceBase: 0.25,
+              chancePerStat: 0.09,
+              successText:
+                "You move lightly enough to watch the creature's route without becoming part of it. The knowledge makes the next miles feel less blind.",
+              failureText:
+                "A snapped branch gives you away and the lesson becomes a chase. You escape, but not elegantly.",
+              successEffects: {
+                hp: -2,
+                distance: 6,
                 storyXp: 13,
               },
-            },
-            {
-              label: "Circle away quietly",
-              preview: "Live first. Hunt confidence later.",
-              resultText:
-                "You lose time staying cautious, but avoiding a bad surprise feels smart.",
-              effects: {
-                hunger: -5,
-                storyXp: 8,
+              failureEffects: {
+                hp: -8,
+                distance: 2,
+                storyXp: 5,
               },
-            },
-            {
-              label: "Run for open ground",
-              preview: "Panic has an argument, and right now it is convincing.",
-              resultText:
-                "You make distance fast and burn through what little energy you had.",
-              effects: {
+            }),
+            createJourneyStatChoice({
+              label: "Brace and drive it from the creek",
+              preview: "Make noise first and hope confidence carries the rest.",
+              highlightWord: "Brace",
+              statKey: "might",
+              chanceBase: 0.23,
+              chancePerStat: 0.09,
+              successText:
+                "You step in hard, shout louder than you feel, and the beast finally gives way. The water is yours for a brief, dangerous minute.",
+              failureText:
+                "You come on strong, but the animal does not care. You retreat bruised, angry, and very aware of your own size.",
+              successEffects: {
+                hp: -4,
+                hunger: 7,
+                storyXp: 14,
+              },
+              failureEffects: {
+                hp: -10,
+                storyXp: 6,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Push past before your nerves win",
+              preview: "Use momentum to outrun the worst of the fear.",
+              highlightWord: "Push",
+              statKey: "vitality",
+              chanceBase: 0.33,
+              chancePerStat: 0.07,
+              successText:
+                "You keep moving at a hard pace until the creek and the tracks are both behind you. It costs energy, but buys real distance.",
+              failureText:
+                "You force the pace too early and burn yourself out halfway through. The escape still works, just badly.",
+              successEffects: {
                 distance: 10,
-                hunger: -8,
-                storyXp: -3,
+                hunger: -6,
+                storyXp: 7,
               },
-            },
+              failureEffects: {
+                distance: 4,
+                hunger: -9,
+                hp: -3,
+                storyXp: 2,
+              },
+            }),
+          ],
+        })
+    );
+
+    pushCandidate("arrival:watchtower", 2, () => ({
+          title: "A collapsed watchtower in the reeds",
+          teaser: "Most of it is rotten, but the top still overlooks the road ahead.",
+          detail:
+            "A watchtower leans at an ugly angle above the marsh grass. The lower door is jammed, the ladder is splintered, and old signal marks still cling to the timber.",
+          createdAt: eventTime,
+          choices: [
+            createJourneyStatChoice({
+              label: "Climb the frame before it gives way",
+              preview: "Risk the old height for a better read of the road.",
+              highlightWord: "Climb",
+              statKey: "vitality",
+              chanceBase: 0.26,
+              chancePerStat: 0.08,
+              successText:
+                "You reach the upper ledge, catch a long view of the route ahead, and come down with a clearer line through the next stretch.",
+              failureText:
+                "Halfway up, the frame shudders and drops you back into the reeds. You salvage a glimpse, but not without pain.",
+              successEffects: {
+                distance: 12,
+                storyXp: 10,
+              },
+              failureEffects: {
+                hp: -7,
+                distance: 4,
+                storyXp: 4,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Force the lower door open",
+              preview: "The quiet route is ruined anyway, so lean into it.",
+              highlightWord: "Force",
+              statKey: "might",
+              chanceBase: 0.3,
+              chancePerStat: 0.08,
+              successText:
+                "The rotten latch gives under your shoulder. Inside, you find a dry corner with a little food and an old watchman's tonic.",
+              failureText:
+                "You batter the door apart, but most of what waited inside has already gone bad. Only scraps remain worth taking.",
+              successEffects: {
+                bonusRations: 1,
+                bonusTonics: 1,
+                storyXp: 9,
+              },
+              failureEffects: {
+                hp: -3,
+                bonusRations: 1,
+                storyXp: 3,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Trace the old signal marks",
+              preview: "Let the people who built this place tell you what they saw.",
+              highlightWord: "Trace",
+              statKey: "arcana",
+              chanceBase: 0.24,
+              chancePerStat: 0.09,
+              successText:
+                "The chalk and carved lines resolve into a warning route and a safer one. You leave with a strange little confidence about where to step next.",
+              failureText:
+                "You find a pattern in the marks, but it is only half the truth. The detour helps less than expected, though the lesson stays with you.",
+              successEffects: {
+                distance: 8,
+                bonusSkillPoints: 1,
+                storyXp: 12,
+              },
+              failureEffects: {
+                distance: 3,
+                storyXp: 5,
+              },
+            }),
           ],
         })
     );
   }
 
-  if (getJourneyPhase(state) !== "frontier") {
+  if (journeyPhase !== "frontier") {
     pushCandidate("weather:cold-rain", 2, () => ({
           title: "Cold rain before dusk",
           teaser: "You need to decide whether to stop or suffer through it.",
@@ -1437,39 +1841,74 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, journeyCo
             "The weather turns without warning. The air is suddenly bitter and the path is starting to vanish under rain and leaf litter.",
           createdAt: eventTime,
           choices: [
-            {
-              label: "Build rough shelter",
-              preview: "Lose time now to avoid a worse night.",
-              resultText:
-                "It is miserable, but you stay warmer than you would have on the move.",
-              effects: {
+            createJourneyStatChoice({
+              label: "Knot together rough shelter",
+              preview: "Lose distance now so the night does not take more later.",
+              highlightWord: "Knot",
+              statKey: "resolve",
+              chanceBase: 0.37,
+              chancePerStat: 0.06,
+              minChance: 0.28,
+              successText:
+                "Your hands stay steady long enough to make a miserable little shelter that still keeps the worst of the cold off you.",
+              failureText:
+                "The shelter goes up crooked and late. It helps, but not before the weather has already worked its way into your bones.",
+              successEffects: {
                 distance: -4,
-                hp: 5,
+                hp: 6,
                 storyXp: 9,
               },
-            },
-            {
-              label: "Push on through it",
-              preview: "You need distance more than comfort.",
-              resultText:
-                "You gain ground, but by the end your clothes are soaked and every muscle hates you.",
-              effects: {
-                distance: 9,
-                hp: -7,
-                hunger: -5,
-                storyXp: 7,
+              failureEffects: {
+                distance: -2,
+                hp: -2,
+                storyXp: 3,
               },
-            },
-            {
-              label: "Collect rainwater and wait it out",
-              preview: "Slow progress, but at least you solve one problem.",
-              resultText:
-                "You lose momentum, but the clean water helps and the pause clears your head.",
-              effects: {
-                hunger: 7,
+            }),
+            createJourneyStatChoice({
+              label: "Shoulder through the storm",
+              preview: "Trade comfort for distance and trust your legs.",
+              highlightWord: "Shoulder",
+              statKey: "vitality",
+              chanceBase: 0.31,
+              chancePerStat: 0.08,
+              successText:
+                "You keep your body moving hard enough to stay warm, forcing out useful ground before the storm can claim the evening.",
+              failureText:
+                "The cold drains you faster than expected. You still make progress, but every step after feels heavier than the last.",
+              successEffects: {
+                distance: 10,
+                hp: -4,
+                hunger: -4,
                 storyXp: 8,
               },
-            },
+              failureEffects: {
+                distance: 5,
+                hp: -8,
+                hunger: -6,
+                storyXp: 3,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Catch what the storm is trying to give",
+              preview: "Use the rain instead of simply suffering it.",
+              highlightWord: "Catch",
+              statKey: "arcana",
+              chanceBase: 0.27,
+              chancePerStat: 0.08,
+              successText:
+                "You turn the downpour into something useful, saving clean water and a strange calm that leaves you better than before.",
+              failureText:
+                "You try to make use of the weather, but end up only damp and delayed, with less to show for it than you wanted.",
+              successEffects: {
+                hunger: 8,
+                bonusTonics: 1,
+                storyXp: 9,
+              },
+              failureEffects: {
+                hunger: 3,
+                storyXp: 3,
+              },
+            }),
           ],
         })
     );
@@ -1483,27 +1922,68 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, journeyCo
             "A tired local guard is warming his hands beside a watchfire. After hearing about the boar, he laughs once and says you still grip your weapon like someone who expects it to apologize.",
           createdAt: eventTime,
           choices: [
-            {
-              label: "Train with him",
-              preview: "Accept the bruises if it means learning how to stand your ground.",
-              resultText:
-                "The lesson is blunt, practical, and painful. It works.",
-              effects: {
+            createJourneyStatChoice({
+              label: "Match his stance and hold it",
+              preview: "Meet the lesson directly and let the bruises come.",
+              highlightWord: "Match",
+              statKey: "might",
+              chanceBase: 0.24,
+              chancePerStat: 0.09,
+              successText:
+                "You meet every correction with force instead of flinching. By the time the fire burns low, the guard nods once and says you finally look like a warrior.",
+              failureText:
+                "You can feel the shape of the lesson, but not hold it. The guard still leaves you with hard advice and a few new bruises.",
+              successEffects: {
                 hp: -4,
                 storyXp: 20,
                 unlockClass: "warrior",
               },
-            },
-            {
-              label: "Trade stories and rest",
-              preview: "Take the company and keep moving afterward.",
-              resultText:
-                "You do not learn the stance, but the meal and advice still matter.",
-              effects: {
-                bonusRations: 1,
+              failureEffects: {
+                hp: -6,
                 storyXp: 8,
               },
-            },
+            }),
+            createJourneyStatChoice({
+              label: "Absorb the drill and keep rising",
+              preview: "Treat stubborn endurance as its own kind of weapon.",
+              highlightWord: "rising",
+              statKey: "vitality",
+              chanceBase: 0.28,
+              chancePerStat: 0.08,
+              successText:
+                "He knocks you down until your body learns not to stay there. The lesson sinks in through sheer repetition and pain.",
+              failureText:
+                "You last longer than he expects, but not long enough to earn the full lesson. The practice still leaves a mark.",
+              successEffects: {
+                hp: -3,
+                storyXp: 18,
+                unlockClass: "warrior",
+              },
+              failureEffects: {
+                hp: -5,
+                storyXp: 7,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Study the rhythm behind each strike",
+              preview: "Look past the strength and read the intent.",
+              highlightWord: "rhythm",
+              statKey: "resolve",
+              chanceBase: 0.29,
+              chancePerStat: 0.07,
+              successText:
+                "You stop reacting to each blow and start understanding the cadence beneath them. The guard notices, and the lesson finally clicks into place.",
+              failureText:
+                "You catch part of what he means, but only part. The rest will have to wait for another road and another fire.",
+              successEffects: {
+                bonusRations: 1,
+                storyXp: 18,
+                unlockClass: "warrior",
+              },
+              failureEffects: {
+                storyXp: 8,
+              },
+            }),
           ],
         })
     );
@@ -1517,28 +1997,70 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, journeyCo
             "Half-buried stones surround a shallow spring. When you reach toward the water, the air tightens around your hand as if the world is paying attention.",
           createdAt: eventTime,
           choices: [
-            {
-              label: "Touch the spring and listen",
-              preview: "Risk the unknown and try to understand it.",
-              resultText:
-                "The sensation is strange but not hostile. You leave with the first real feel for magic this world has offered you.",
-              effects: {
+            createJourneyStatChoice({
+              label: "Trace the current through the spring",
+              preview: "Follow the strange feeling instead of recoiling from it.",
+              highlightWord: "Trace",
+              statKey: "arcana",
+              chanceBase: 0.22,
+              chancePerStat: 0.1,
+              successText:
+                "You stop fighting the sensation and let the shrine's strange logic pass through you. When you leave, magic feels less like rumor and more like grammar.",
+              failureText:
+                "You brush the edge of understanding before the current slips away. Even the incomplete lesson changes how the air feels around your hands.",
+              successEffects: {
                 hunger: -3,
                 storyXp: 22,
                 bonusTonics: 1,
                 unlockClass: "mage",
               },
-            },
-            {
-              label: "Take the blessing and leave",
-              preview: "Respect it, but do not linger where you do not belong.",
-              resultText:
-                "You keep your distance and leave with a steadier pulse and a little luck.",
-              effects: {
-                hp: 8,
-                storyXp: 10,
+              failureEffects: {
+                storyXp: 9,
+                bonusTonics: 1,
               },
-            },
+            }),
+            createJourneyStatChoice({
+              label: "Endure the pressure and keep hold",
+              preview: "Treat the shrine like something to survive, then master.",
+              highlightWord: "Endure",
+              statKey: "vitality",
+              chanceBase: 0.24,
+              chancePerStat: 0.09,
+              successText:
+                "The force of the shrine presses through you like cold iron, but you hold on until the pattern settles. What remains is the first hard shape of a mage's discipline.",
+              failureText:
+                "The pressure throws you back before the lesson finishes. You recover, shaken but changed.",
+              successEffects: {
+                hp: 6,
+                storyXp: 19,
+                unlockClass: "mage",
+              },
+              failureEffects: {
+                hp: -4,
+                storyXp: 8,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Center your breath and wait",
+              preview: "Let steadiness do what force cannot.",
+              highlightWord: "Center",
+              statKey: "resolve",
+              chanceBase: 0.27,
+              chancePerStat: 0.08,
+              successText:
+                "You quiet yourself until the shrine stops feeling distant. The answer arrives softly, but it stays, leaving you with a mage's first certainty.",
+              failureText:
+                "You find stillness for a moment, then lose it. The shrine gives you only a passing blessing before the silence breaks.",
+              successEffects: {
+                hp: 8,
+                storyXp: 18,
+                unlockClass: "mage",
+              },
+              failureEffects: {
+                hp: 5,
+                storyXp: 8,
+              },
+            }),
           ],
         })
     );
@@ -1552,26 +2074,67 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, journeyCo
             "A local forager steps out from behind a fallen tree with a basket of roots and herbs. She looks amused that you never noticed her approach.",
           createdAt: eventTime,
           choices: [
-            {
-              label: "Ask how she moves so quietly",
-              preview: "Learn the value of silence and observation.",
-              resultText:
-                "She shows you what to listen for, what not to step on, and how much noise panic makes.",
-              effects: {
+            createJourneyStatChoice({
+              label: "Shadow the way she circles you",
+              preview: "Learn by copying what you almost missed.",
+              highlightWord: "Shadow",
+              statKey: "finesse",
+              chanceBase: 0.23,
+              chancePerStat: 0.1,
+              successText:
+                "You mirror her footwork just well enough that she stops laughing and starts teaching. By the end, silence feels like something you can wear.",
+              failureText:
+                "You try to match her steps and spend half the attempt announcing yourself to the forest. She still offers advice, but not the deeper trick of it.",
+              successEffects: {
                 storyXp: 18,
                 unlockClass: "thief",
               },
-            },
-            {
-              label: "Trade for directions",
-              preview: "A safer path is enough for today.",
-              resultText:
-                "The lesson is shorter, but the route she points out saves you hours.",
-              effects: {
-                distance: 12,
-                storyXp: 8,
+              failureEffects: {
+                storyXp: 7,
               },
-            },
+            }),
+            createJourneyStatChoice({
+              label: "Notice the route hidden in her basket",
+              preview: "Read what she gathered and what that says about the land.",
+              highlightWord: "Notice",
+              statKey: "arcana",
+              chanceBase: 0.26,
+              chancePerStat: 0.08,
+              successText:
+                "You identify more from the roots and leaves than she expected. Impressed, she trades the full lesson for your sharp eye.",
+              failureText:
+                "You spot a few clues, but not enough to earn the real teaching. She sends you onward with only a safer route and a smirk.",
+              successEffects: {
+                distance: 10,
+                storyXp: 17,
+                unlockClass: "thief",
+              },
+              failureEffects: {
+                distance: 6,
+                storyXp: 6,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Wait until she decides you are worth teaching",
+              preview: "Give away nothing, then let patience do the rest.",
+              highlightWord: "Wait",
+              statKey: "resolve",
+              chanceBase: 0.3,
+              chancePerStat: 0.07,
+              successText:
+                "You do not rush the exchange, and eventually she answers stillness with trust. Her lesson is brief, precise, and exactly the one you needed.",
+              failureText:
+                "You stay guarded too long and the moment cools. She leaves you with directions, but not with her best secrets.",
+              successEffects: {
+                bonusRations: 1,
+                storyXp: 17,
+                unlockClass: "thief",
+              },
+              failureEffects: {
+                storyXp: 7,
+                distance: 4,
+              },
+            }),
           ],
         })
     );
@@ -1590,8 +2153,24 @@ export function maybeAddAmbientJourneyLog(state, atDate) {
   addJourneyLog(state, pool[randomInt(0, pool.length - 1)], atDate.toISOString());
 }
 
+export function getJourneyChoiceSuccessChance(choice, journeyStats) {
+  if (!choice?.statKey || !JOURNEY_STAT_META[choice.statKey]) {
+    return 1;
+  }
+
+  const statValue = Math.max(0, Number(journeyStats?.stats?.[choice.statKey]) || 0);
+  const rawChance = (Number(choice.chanceBase) || 0.24) + statValue * (Number(choice.chancePerStat) || 0.08);
+  const minChance = Number.isFinite(choice.minChance) ? choice.minChance : 0.14;
+  const maxChance = Number.isFinite(choice.maxChance) ? choice.maxChance : 0.9;
+
+  return clamp(rawChance, minChance, maxChance);
+}
+
 export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
-  const { effects } = choice;
+  const successChance = getJourneyChoiceSuccessChance(choice, journeyStats);
+  const successRoll = Math.random();
+  const success = successRoll <= successChance;
+  const effects = success ? choice.successEffects : choice.failureEffects;
   const notes = [];
 
   state.currentHp = clamp(
@@ -1630,7 +2209,8 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
     unlockedText = unlockJourneyClass(state, effects.unlockClass, atIso);
   }
 
-  addJourneyLog(state, choice.resultText, atIso);
+  const resultText = success ? choice.successText : choice.failureText;
+  addJourneyLog(state, resultText, atIso);
 
   if (
     state.currentHp <= journeyStats.maxHp * 0.12 ||
@@ -1651,9 +2231,21 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
     notes.push(unlockedText);
   }
 
-  return notes.length
-    ? `${choice.resultText} ${notes.join(" ")}`
-    : choice.resultText;
+  const finalText = notes.length
+    ? `${resultText} ${notes.join(" ")}`
+    : resultText;
+  const statKey = JOURNEY_STAT_META[choice.statKey] ? choice.statKey : "resolve";
+
+  return {
+    success,
+    statKey,
+    statLabel: JOURNEY_STAT_META[statKey].label,
+    statValue: Math.max(0, Number(journeyStats?.stats?.[statKey]) || 0),
+    successChance,
+    successPercent: Math.round(successChance * 100),
+    successRoll,
+    resultText: finalText,
+  };
 }
 
 export function unlockJourneyClass(state, classKey, atIso) {

@@ -1094,6 +1094,12 @@
   font-weight: 500;
 }
 
+.journey-event-choice-highlight,
+.journey-outcome-choice-text .journey-event-choice-highlight {
+  color: var(--accent-2);
+  font-weight: 700;
+}
+
 .journey-outcome-panel {
   display: grid;
   gap: 14px;
@@ -1101,6 +1107,48 @@
 
 .journey-outcome-panel p {
   margin: 0;
+}
+
+.journey-outcome-summary {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 2px;
+}
+
+.journey-outcome-result {
+  display: inline-flex;
+  align-items: center;
+  justify-self: flex-start;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 800;
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
+}
+
+.journey-outcome-result.is-success {
+  background: rgba(52, 211, 153, 0.14);
+  border-color: rgba(52, 211, 153, 0.28);
+  color: var(--success);
+}
+
+.journey-outcome-result.is-failure {
+  background: rgba(248, 113, 113, 0.14);
+  border-color: rgba(248, 113, 113, 0.28);
+  color: var(--danger);
+}
+
+.journey-outcome-meta-copy,
+.journey-outcome-choice-copy {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.journey-outcome-choice-text {
+  color: var(--text);
+  font-weight: 600;
 }
 
 .journey-outcome-pill-row {

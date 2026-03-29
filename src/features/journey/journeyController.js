@@ -491,7 +491,7 @@ export async function resolveJourneyEventChoice(eventId, choiceId) {
       pendingEvents: [],
       debugHistory: [],
     });
-    const resultMessage = applyJourneyChoiceEffects(
+    const resolution = applyJourneyChoiceEffects(
       state,
       choice,
       journeyStats,
@@ -500,12 +500,12 @@ export async function resolveJourneyEventChoice(eventId, choiceId) {
     if (eventEntry.kind === "aid") {
       state.aidUrgency = Math.max(0, state.aidUrgency - 2);
     }
-    const outcomeItems = buildJourneyOutcomeItems(beforeState, state);
+    const outcomeItems = buildJourneyOutcomeItems(beforeState, state, resolution);
 
     await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
     closeJourneyEventModal();
-    openJourneyOutcomeModal(eventEntry, choice, resultMessage, outcomeItems);
-    showJourneyFeedback(resultMessage);
+    openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeItems);
+    showJourneyFeedback(resolution.resultText);
     await appState.renderApp();
   } catch (error) {
     console.error("Failed to resolve journey event:", error);
