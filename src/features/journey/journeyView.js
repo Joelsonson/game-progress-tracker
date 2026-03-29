@@ -75,7 +75,7 @@ const JOURNEY_SPRITE_BACKGROUND_TOLERANCE = 24;
 const JOURNEY_SPRITE_ALPHA_THRESHOLD = 12;
 const journeySpriteMetricsCache = new Map();
 
-export function renderHomeJourney(state, xpSummary) {
+export function renderHomeJourney(state, xpSummary, supplies) {
   if (!homeJourneyContentEl) return;
 
   const journeyLevel = getJourneyLevel(state, xpSummary.level);
@@ -86,7 +86,8 @@ export function renderHomeJourney(state, xpSummary) {
     state,
     boss,
     progress,
-    journeyStats
+    journeyStats,
+    supplies
   );
   const hpPercent = clamp((state.currentHp / journeyStats.maxHp) * 100, 0, 100);
   const hungerPercent = clamp(
@@ -105,7 +106,7 @@ export function renderHomeJourney(state, xpSummary) {
           <p class="eyebrow">Journey at a glance</p>
           <h2>${escapeHtml(displayName)}</h2>
           <p class="muted-text">
-            ${escapeHtml(getJourneyActivityText(state, boss, progress, journeyStats))}
+            ${escapeHtml(getJourneyActivityText(state, boss, progress, journeyStats, supplies))}
           </p>
 
           ${renderJourneySpriteBanner(stretchSprite.sprite, {
@@ -830,10 +831,17 @@ function buildJourneyViewModel(state, games, sessions, xpSummary) {
     state,
     boss,
     progress,
-    journeyStats
+    journeyStats,
+    supplies
   );
   const unspentSkillPoints = getUnspentSkillPoints(state, journeyLevel);
-  const activityText = getJourneyActivityText(state, boss, progress, journeyStats);
+  const activityText = getJourneyActivityText(
+    state,
+    boss,
+    progress,
+    journeyStats,
+    supplies
+  );
   const nextBossEtaHours =
     progress.remainingDistance / Math.max(0.01, journeyStats.speedPerHour);
   const hpPercent = clamp((state.currentHp / journeyStats.maxHp) * 100, 0, 100);
@@ -915,6 +923,7 @@ function renderJourneyStatCards(viewModel) {
     const modifierText = breakdown.modifier
       ? `Modifier ${breakdown.modifier > 0 ? "+" : ""}${breakdown.modifier}`
       : "";
+    const modifierSourceMarkup = renderJourneyModifierSourceNotes(breakdown);
 
     return `
       <article class="journey-stat-card character-stat-card-item ${
@@ -943,6 +952,7 @@ function renderJourneyStatCards(viewModel) {
           }
         </div>
         <p class="stat-help">${escapeHtml(statMeta.help)}</p>
+        ${modifierSourceMarkup}
         <div class="journey-skill-actions">
           <button
             type="button"
@@ -1409,6 +1419,7 @@ function renderCharacterRadarLegendItem(entry) {
               <div class="journey-inline-row stat-source-row">
                 ${renderJourneyStatSourcePills(breakdown)}
               </div>
+              ${renderJourneyModifierSourceNotes(breakdown)}
             </div>
           `
           : ""
@@ -1436,6 +1447,36 @@ function renderJourneyStatSourcePills(breakdown) {
   return pills
     .map((pill) => `<span class="journey-chip">${escapeHtml(pill)}</span>`)
     .join("");
+}
+
+function renderJourneyModifierSourceNotes(breakdown) {
+  const modifierSources = Array.isArray(breakdown?.modifierSources)
+    ? breakdown.modifierSources
+    : [];
+  if (!modifierSources.length) {
+    return "";
+  }
+
+  return `
+    <div class="journey-character-list">
+      ${modifierSources
+        .map((source) => {
+          const statLabel = JOURNEY_STAT_META[source.statKey]?.label || "Stat";
+          const detailLine = source.detail
+            ? `<p class="muted-text">${escapeHtml(source.detail)}</p>`
+            : "";
+          return `
+            <div class="journey-log-entry">
+              <p><strong>${escapeHtml(source.title)}</strong> • ${escapeHtml(
+                `${statLabel} ${source.amount > 0 ? "+" : ""}${source.amount}`
+              )}</p>
+              ${detailLine}
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
 }
 
 function getJourneyRadarPointColor(value, maxValue) {
@@ -1738,6 +1779,13 @@ export function getJourneyKnownNotes(state) {
 
   if (state.storyFlags.slimeSapped) {
     notes.push("A bad slime meal left your body permanently worse for wear.");
+  }
+
+  for (const bonus of Array.isArray(state.permanentBonuses) ? state.permanentBonuses : []) {
+    const statLabel = JOURNEY_STAT_META[bonus.statKey]?.label || "Stat";
+    notes.push(
+      `${bonus.title} lingers on you: ${statLabel} ${bonus.amount > 0 ? "+" : ""}${bonus.amount}.`
+    );
   }
 
   if (state.unlockedClasses.length > 1) {

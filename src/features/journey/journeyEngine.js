@@ -105,6 +105,11 @@ export function normalizeJourneyState(rawState = null) {
     accumulator[key] = Math.round(Number(source.statModifiers?.[key]) || 0);
     return accumulator;
   }, {});
+  const permanentBonuses = Array.isArray(source.permanentBonuses)
+    ? source.permanentBonuses
+        .map((entry) => normalizeJourneyPermanentBonus(entry))
+        .filter(Boolean)
+    : [];
 
   const unlockedClassSet = new Set(
     Array.isArray(source.unlockedClasses) ? source.unlockedClasses : []
@@ -164,12 +169,13 @@ export function normalizeJourneyState(rawState = null) {
     inferredWeapon || keptWeaponKeys.length > 0 || pendingWeaponKeys.length > 0;
 
   return {
-    version: 5,
+    version: 6,
     classType,
     unlockedClasses,
     allocatedStats,
     storyFlags,
     statModifiers,
+    permanentBonuses,
     characterName:
       typeof source.characterName === "string" ? source.characterName.trim() : "",
     starterItem:
@@ -254,6 +260,33 @@ export function randomJourneyStarterItem() {
   return JOURNEY_STARTER_ITEMS[randomInt(0, JOURNEY_STARTER_ITEMS.length - 1)];
 }
 
+function normalizeJourneyPermanentBonus(rawBonus) {
+  if (!rawBonus || typeof rawBonus !== "object") return null;
+
+  const statKey = JOURNEY_STAT_META[rawBonus.statKey] ? rawBonus.statKey : "";
+  const amount = Math.round(Number(rawBonus.amount) || 0);
+  const title =
+    typeof rawBonus.title === "string" ? rawBonus.title.trim() : "";
+  const detail =
+    typeof rawBonus.detail === "string" ? rawBonus.detail.trim() : "";
+  const id =
+    typeof rawBonus.id === "string" && rawBonus.id.trim()
+      ? rawBonus.id.trim()
+      : crypto.randomUUID();
+
+  if (!statKey || !amount || !title) {
+    return null;
+  }
+
+  return {
+    id,
+    statKey,
+    amount,
+    title,
+    detail,
+  };
+}
+
 export function createJourneyDebugSnapshot(rawState) {
   if (!rawState || typeof rawState !== "object") return null;
 
@@ -281,6 +314,14 @@ export function buildJourneyDerived(state, journeyLevel) {
   const equippedWeaponMeta = getJourneyWeaponMeta(state.equippedWeaponKey);
   const classBonuses = classMeta.bonuses || {};
   const weaponBonuses = equippedWeaponMeta?.bonuses || {};
+  const modifierSourcesByStat = JOURNEY_STAT_KEYS.reduce((accumulator, key) => {
+    accumulator[key] = [];
+    return accumulator;
+  }, {});
+  for (const bonus of Array.isArray(state.permanentBonuses) ? state.permanentBonuses : []) {
+    if (!bonus || !modifierSourcesByStat[bonus.statKey]) continue;
+    modifierSourcesByStat[bonus.statKey].push(bonus);
+  }
   const statBreakdown = {};
   const stats = JOURNEY_STAT_KEYS.reduce((accumulator, key) => {
     const breakdown = {
@@ -288,6 +329,7 @@ export function buildJourneyDerived(state, journeyLevel) {
       classBonus: classBonuses[key] || 0,
       weaponBonus: weaponBonuses[key] || 0,
       modifier: Math.round(Number(state.statModifiers?.[key]) || 0),
+      modifierSources: modifierSourcesByStat[key],
       allocated: Math.max(0, Math.floor(Number(state.allocatedStats[key]) || 0)),
     };
     accumulator[key] =
@@ -400,8 +442,14 @@ export function buildJourneyStretchChallenge(state, journeyStats) {
   };
 }
 
-export function buildJourneyStretchPresentation(state, boss, progress, journeyStats) {
-  const goalMeta = getJourneyGoalMeta(state, boss, progress);
+export function buildJourneyStretchPresentation(
+  state,
+  boss,
+  progress,
+  journeyStats,
+  supplies = null
+) {
+  const goalMeta = getJourneyGoalMeta(state, boss, progress, journeyStats, supplies);
 
   return {
     ...goalMeta,
@@ -414,7 +462,28 @@ export function buildJourneyStretchPresentation(state, boss, progress, journeySt
   };
 }
 
-export function getJourneyGoalMeta(state, boss, progress) {
+function getJourneyConditionState(state, journeyStats, supplies = null) {
+  const hpRatio = journeyStats.maxHp
+    ? state.currentHp / journeyStats.maxHp
+    : 0;
+  const hungerRatio = journeyStats.maxHunger
+    ? state.currentHunger / journeyStats.maxHunger
+    : 0;
+  const availableRations = Math.max(0, Number(supplies?.availableRations) || 0);
+
+  return {
+    hpRatio,
+    hungerRatio,
+    availableRations,
+    needsShelter: hpRatio <= 0.38,
+    needsFood: hungerRatio <= 0.46 && availableRations === 0,
+    foodLow: hungerRatio <= 0.62,
+  };
+}
+
+export function getJourneyGoalMeta(state, boss, progress, journeyStats, supplies = null) {
+  const condition = getJourneyConditionState(state, journeyStats, supplies);
+
   if (state.status === "recovering") {
     return {
       goalTitle: "Recover and regroup",
@@ -453,11 +522,23 @@ export function getJourneyGoalMeta(state, boss, progress) {
     }
 
     if (progress.percent < 78) {
+      if (condition.needsFood || condition.foodLow) {
+        return {
+          goalTitle: "Find food and steady yourself",
+          goalAction: "finding food and steadying yourself",
+          horizonLabel: "Need",
+          horizonValue:
+            condition.availableRations > 0
+              ? "You have food left, but you still need to get your strength back."
+              : "You need enough strength for whatever comes next.",
+        };
+      }
+
       return {
-        goalTitle: "Find food and steady yourself",
-        goalAction: "finding food and steadying yourself",
-        horizonLabel: "Need",
-        horizonValue: "You need enough strength for whatever comes next.",
+        goalTitle: "Learn the boar's ground",
+        goalAction: "learning the boar's ground",
+        horizonLabel: "Trail sign",
+        horizonValue: "The forest is finally giving up enough signs to read the hunt properly.",
       };
     }
 
@@ -523,12 +604,90 @@ export function getJourneyGoalMeta(state, boss, progress) {
     };
   }
 
+  if (state.bossIndex === 4) {
+    if (progress.percent < 54) {
+      return {
+        goalTitle: "Climb without being marked",
+        goalAction: "climbing without being marked",
+        horizonLabel: "Up ahead",
+        horizonValue: "The switchback road is watched by raiders who know the high ground better than you do.",
+      };
+    }
+
+    return {
+      goalTitle: "Break the captain's hold",
+      goalAction: "breaking the captain's hold",
+      horizonLabel: "Stretch end",
+      horizonValue: boss.name,
+    };
+  }
+
+  if (state.bossIndex === 5) {
+    if (progress.percent < 52) {
+      return {
+        goalTitle: "Read the ruined mile",
+        goalAction: "reading the ruined mile",
+        horizonLabel: "Need",
+        horizonValue: "Broken stone hides bad footing, blind corners, and older things than bandits.",
+      };
+    }
+
+    return {
+      goalTitle: "Hunt the stalker through the ruins",
+      goalAction: "hunting the stalker through the ruins",
+      horizonLabel: "Stretch end",
+      horizonValue: boss.name,
+    };
+  }
+
+  if (state.bossIndex === 6) {
+    if (progress.percent < 50) {
+      return {
+        goalTitle: "Keep the grave road quiet",
+        goalAction: "keeping the grave road quiet",
+        horizonLabel: "Up ahead",
+        horizonValue: "The old markers lean too close to the track, as if they want witnesses.",
+      };
+    }
+
+    return {
+      goalTitle: "Survive the ogre's toll",
+      goalAction: "surviving the ogre's toll",
+      horizonLabel: "Stretch end",
+      horizonValue: boss.name,
+    };
+  }
+
+  if (state.bossIndex === 7) {
+    if (progress.percent < 55) {
+      return {
+        goalTitle: "Reach the ridge in one piece",
+        goalAction: "reaching the ridge in one piece",
+        horizonLabel: "Weather",
+        horizonValue: "The higher road is all wind, exposed stone, and trouble with wings.",
+      };
+    }
+
+    return {
+      goalTitle: "Face the wyrm above the storm line",
+      goalAction: "facing the wyrm above the storm line",
+      horizonLabel: "Stretch end",
+      horizonValue: boss.name,
+    };
+  }
+
   if (progress.percent < 62) {
     return {
-      goalTitle: `Push through ${getJourneyZoneName(state.bossIndex)}`,
-      goalAction: `pushing through ${getJourneyZoneName(state.bossIndex).toLowerCase()}`,
-      horizonLabel: "Up ahead",
-      horizonValue: "The road still feels hostile and half-known.",
+      goalTitle: condition.needsShelter
+        ? `Reach shelter in ${getJourneyZoneName(state.bossIndex)}`
+        : `Push through ${getJourneyZoneName(state.bossIndex)}`,
+      goalAction: condition.needsShelter
+        ? `reaching shelter in ${getJourneyZoneName(state.bossIndex).toLowerCase()}`
+        : `pushing through ${getJourneyZoneName(state.bossIndex).toLowerCase()}`,
+      horizonLabel: condition.needsShelter ? "Need" : "Up ahead",
+      horizonValue: condition.needsShelter
+        ? "You need a safer place to breathe before the road asks for more."
+        : "The road still feels hostile and half-known.",
     };
   }
 
@@ -575,8 +734,14 @@ export function buildJourneyInnerThoughts(state, goalMeta, journeyStats) {
 }
 
 export function buildJourneyRecoveryObjective(state, journeyLevel, journeyStats) {
-  const needsRest = state.currentHp <= journeyStats.maxHp * 0.22;
-  const needsFood = state.currentHunger <= journeyStats.maxHunger * 0.2;
+  const hpRatio = journeyStats.maxHp
+    ? state.currentHp / journeyStats.maxHp
+    : 0;
+  const hungerRatio = journeyStats.maxHunger
+    ? state.currentHunger / journeyStats.maxHunger
+    : 0;
+  const needsRest = hpRatio <= 0.22;
+  const needsFood = hungerRatio <= 0.2;
   const zoneText = getJourneyZoneName(state.bossIndex);
 
   if (needsFood && !needsRest) {
@@ -587,6 +752,19 @@ export function buildJourneyRecoveryObjective(state, journeyLevel, journeyStats)
       return `Hunt or trade for trail food around ${zoneText} before you make another push.`;
     }
     return `Reach a coaching stop or stocked inn near ${zoneText} and refill your supplies.`;
+  }
+
+  if (!needsRest && !needsFood) {
+    if (hpRatio >= 0.7 && hungerRatio >= 0.7) {
+      return `Stay tucked away near ${zoneText} a little longer, take stock of your gear, and head back out once your nerves settle.`;
+    }
+    if (hpRatio < 0.5) {
+      return `Keep your wounds bound and stay off the open road near ${zoneText} until your strength finishes coming back.`;
+    }
+    if (hungerRatio < 0.55) {
+      return `Eat, rest, and give your body another quiet stretch near ${zoneText} before trusting the road again.`;
+    }
+    return `Keep to shelter near ${zoneText} and finish recovering before you risk another hard march.`;
   }
 
   if (journeyLevel <= 2) {
@@ -686,6 +864,20 @@ export function buildJourneyOutcomeItems(beforeState, afterState, resolution = n
     items.push({
       label: `Class: ${JOURNEY_CLASS_META[afterState.classType].label}`,
       className: "is-neutral",
+    });
+  }
+
+  const beforeBonusIds = new Set(
+    (beforeState.permanentBonuses || []).map((entry) => entry.id)
+  );
+  const gainedBonuses = (afterState.permanentBonuses || []).filter(
+    (entry) => !beforeBonusIds.has(entry.id)
+  );
+  for (const bonus of gainedBonuses) {
+    const statLabel = JOURNEY_STAT_META[bonus.statKey]?.label || "Stat";
+    items.push({
+      label: `Boon: ${bonus.title} (${statLabel} ${formatSignedNumber(bonus.amount)})`,
+      className: bonus.amount > 0 ? "is-positive" : "is-negative",
     });
   }
 
@@ -2553,6 +2745,536 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
     );
   }
 
+  if (journeyPhase === "survival") {
+    pushCandidate("survival:charcoal-burners", 3, () => ({
+          title: "Smoke from a charcoal pit",
+          teaser: "Working folk are camped ahead, and they look like people who notice everything.",
+          detail:
+            "You find a ring of charcoal burners tending low earthen mounds and blackened stacks of wood. They are wary, practical people, the sort who have learned to measure strangers by how much trouble they bring with them.",
+          createdAt: eventTime,
+          choices: [
+            createJourneyStatChoice({
+              label: "Earn their trust before asking for anything",
+              preview: "Offer honest help and let patience do the bargaining.",
+              highlightWord: "trust",
+              statKey: "resolve",
+              chanceBase: 0.31,
+              chancePerStat: 0.07,
+              minChance: 0.22,
+              successText:
+                "You stack wood, keep your mouth shut when it would only hurt, and let the burners decide you are not another road leech. When you leave, they send you off with food, a coal-warmed flask, and the safer trail.",
+              failureText:
+                "You help well enough, but not long enough to cross the distance between caution and trust. They still give you directions, though the rest you wanted stays behind with the smoke.",
+              successEffects: {
+                bonusRations: 2,
+                bonusTonics: 1,
+                distance: 6,
+                storyXp: 12,
+              },
+              failureEffects: {
+                distance: 3,
+                storyXp: 1,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Shift the heaviest timber for them",
+              preview: "Speak in effort and let the work make your case.",
+              highlightWord: "heaviest",
+              statKey: "might",
+              chanceBase: 0.28,
+              chancePerStat: 0.08,
+              successText:
+                "You shoulder the backbreaking pieces nobody wants and win their respect the hard way. One old burner laughs, claps your shoulder, and presses supplies into your hands.",
+              failureText:
+                "You get the timber moving, but at the cost of torn breath and aching ribs. They feed you out of basic decency, not admiration.",
+              successEffects: {
+                hp: -2,
+                hunger: 10,
+                bonusRations: 2,
+                storyXp: 11,
+              },
+              failureEffects: {
+                hp: -7,
+                hunger: 5,
+                storyXp: 1,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Read the soot marks on their wagons",
+              preview: "Look for the road knowledge hidden in their routine.",
+              highlightWord: "soot",
+              statKey: "finesse",
+              chanceBase: 0.29,
+              chancePerStat: 0.08,
+              successText:
+                "You notice the coded slashes and soot circles they use to mark safe turns, bad crossings, and bandit country. The lesson buys you distance and a little welcome besides.",
+              failureText:
+                "You think you have their signs understood, but only half of them. The mistake costs time before one of the burners sighs and points you back on course.",
+              successEffects: {
+                distance: 11,
+                bonusRations: 1,
+                storyXp: 10,
+              },
+              failureEffects: {
+                distance: 4,
+                hunger: -2,
+                storyXp: 1,
+              },
+            }),
+          ],
+        }),
+        "normal",
+        true
+    );
+  }
+
+  if (journeyPhase === "frontier") {
+    pushCandidate("frontier:rope-ferry", 3, () => ({
+          title: "A rope ferry over black water",
+          teaser: "The crossing is still usable, but only just.",
+          detail:
+            "At the edge of a dark cut in the land, you find a flat ferry platform tethered to a rope thick as your wrist. The current below is mean, fast, and loud enough to make every bad outcome sound plausible.",
+          createdAt: eventTime,
+          choices: [
+            createJourneyStatChoice({
+              label: "Haul the ferry hand over hand",
+              preview: "Beat the current with stubborn muscle.",
+              highlightWord: "Haul",
+              statKey: "might",
+              chanceBase: 0.25,
+              chancePerStat: 0.08,
+              successText:
+                "You drag the ferry across inch by inch, shoulders burning, but you reach the far side with your gear and pride both intact.",
+              failureText:
+                "The rope jerks, your footing goes wild, and the crossing turns into a bruising, ugly fight for balance before you scrape through.",
+              successEffects: {
+                distance: 12,
+                storyXp: 12,
+              },
+              failureEffects: {
+                hp: -9,
+                distance: 5,
+                storyXp: 1,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Work the pulleys and knots first",
+              preview: "Let clever hands do what brute force cannot.",
+              highlightWord: "knots",
+              statKey: "finesse",
+              chanceBase: 0.29,
+              chancePerStat: 0.08,
+              successText:
+                "You re-seat the slipping knots, free the jammed guide ring, and make the whole crossing almost respectable before you trust it with your life.",
+              failureText:
+                "You fix part of the rig and miss the worst of it. The ferry still gets you across, just with one sudden lurch that nearly throws you to the water.",
+              successEffects: {
+                distance: 14,
+                bonusTonics: 1,
+                storyXp: 11,
+              },
+              failureEffects: {
+                hp: -4,
+                distance: 6,
+                storyXp: 1,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Listen to the current before committing",
+              preview: "Find the crossing rhythm hidden under the noise.",
+              highlightWord: "Listen",
+              statKey: "arcana",
+              chanceBase: 0.23,
+              chancePerStat: 0.09,
+              successText:
+                "You catch a strange pattern in the current and time the pull with it, as though the water is willing to lend you one careful favor.",
+              failureText:
+                "You think you hear a pattern, but it breaks under you halfway out. The far bank still takes you, though not gently.",
+              successEffects: {
+                distance: 13,
+                bonusRations: 1,
+                storyXp: 13,
+              },
+              failureEffects: {
+                hp: -5,
+                hunger: -3,
+                distance: 6,
+                storyXp: 1,
+              },
+            }),
+          ],
+        }),
+        "normal",
+        true
+    );
+
+    pushCandidate("frontier:pilgrim-lanterns", 2, () => ({
+          title: "Lanterns hung for the dead",
+          teaser: "Someone still tends this old roadside custom.",
+          detail:
+            "At dusk you come upon a line of small lanterns hung from iron hooks and thorn branches, each flame set before an old roadside name. The air is quiet in the reverent way a chapel is quiet after everybody has gone home.",
+          createdAt: eventTime,
+          choices: [
+            createJourneyStatChoice({
+              label: "Name your own dead and light one more lantern",
+              preview: "Meet the road's grief honestly and see what it gives back.",
+              highlightWord: "light",
+              statKey: "resolve",
+              chanceBase: 0.26,
+              chancePerStat: 0.08,
+              successText:
+                "You speak into the dusk more honestly than you meant to. When the lantern catches, some knot in you loosens, and the road afterward feels fractionally less cruel.",
+              failureText:
+                "The words refuse to come cleanly. You still leave a light behind, but the comfort of it never quite reaches your chest.",
+              successEffects: {
+                hp: 8,
+                hunger: 6,
+                storyXp: 12,
+              },
+              failureEffects: {
+                storyXp: 1,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Read the old names and symbols",
+              preview: "Treat the memorials like a text the road still remembers.",
+              highlightWord: "Read",
+              statKey: "arcana",
+              chanceBase: 0.24,
+              chancePerStat: 0.09,
+              successText:
+                "The names and sigils line up into a pattern of warnings, blessings, and distances. You leave with a clearer route and the unsettled sense that the road has begun to recognize you.",
+              failureText:
+                "You understand only fragments of the old marks. They help, but only in the crooked partial way of half-remembered prayer.",
+              successEffects: {
+                distance: 10,
+                bonusTonics: 1,
+                storyXp: 13,
+              },
+              failureEffects: {
+                distance: 4,
+                storyXp: 1,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Move among the lanterns without disturbing them",
+              preview: "Respect the place with quiet feet and quicker hands.",
+              highlightWord: "quiet",
+              statKey: "finesse",
+              chanceBase: 0.27,
+              chancePerStat: 0.08,
+              successText:
+                "You slip through the lantern line without dimming a single flame and find a votive cache of wax, dried fruit, and a folded route charm left for travelers who know how to be gentle.",
+              failureText:
+                "One lantern knocks and hisses out under your sleeve. You still find the cache, but you leave feeling watched in the disappointed way only sacred places manage.",
+              successEffects: {
+                bonusRations: 2,
+                distance: 7,
+                storyXp: 11,
+              },
+              failureEffects: {
+                bonusRations: 1,
+                storyXp: 1,
+              },
+            }),
+          ],
+        }),
+        "normal",
+        true
+    );
+  }
+
+  if (journeyPhase === "frontier" && journeyLevel >= 5) {
+    pushCandidate("legend:last-hearth", 1, () => ({
+          title: "The Last Hearth Below the Hill",
+          teaser: "A ruined shrine still keeps one ember alive beneath the rain.",
+          detail:
+            "Beyond a tumble of leaning stones, you find the shell of an old roadside shrine. Its roof is gone, its icons broken, and yet one ember still glows in the drowned hearth at its center. A half-legible carving names this place the Last Hearth, where travelers once swore what they would not let the dark take from them.",
+          createdAt: eventTime,
+          choices: [
+            createJourneyStatChoice({
+              label: "Kneel and speak a vow into the ember",
+              preview: "If the old road still listens, give it a promise worth hearing.",
+              highlightWord: "vow",
+              statKey: "resolve",
+              chanceBase: 0.15,
+              chancePerStat: 0.06,
+              minChance: 0.1,
+              maxChance: 0.42,
+              successText:
+                "The ember brightens without wind or tinder. It brands no flesh, yet something in you comes away marked all the same, steadier than it was when you knelt.",
+              failureText:
+                "The vow leaves your mouth and dies in the wet air. The hearth gives you warmth for a minute, but not the blessing hidden beneath it.",
+              successEffects: {
+                hp: 10,
+                storyXp: 24,
+                permanentStatBonus: {
+                  statKey: "resolve",
+                  amount: 1,
+                  title: "Brand of the Last Hearth",
+                  detail: "The old vow-fire remembers you whenever the road tries to thin your courage.",
+                },
+              },
+              failureEffects: {
+                hp: 4,
+                storyXp: 3,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Feed the ember a drop of your blood",
+              preview: "Make the road's old bargain in the oldest currency.",
+              highlightWord: "blood",
+              statKey: "vitality",
+              chanceBase: 0.13,
+              chancePerStat: 0.07,
+              minChance: 0.08,
+              maxChance: 0.4,
+              successText:
+                "Pain flashes bright, then folds inward. The hearth takes its due and returns something harder in its place, as if your body has been reminded how stubborn life can be.",
+              failureText:
+                "The ember drinks the offering and gives back only heat and a sharp lesson about old things that owe you nothing.",
+              successEffects: {
+                hp: -3,
+                storyXp: 24,
+                permanentStatBonus: {
+                  statKey: "vitality",
+                  amount: 1,
+                  title: "Ash-Marrow Vigor",
+                  detail: "The Last Hearth left a little of its stubborn warmth in your bones.",
+                },
+              },
+              failureEffects: {
+                hp: -8,
+                storyXp: 3,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Read the smoke-script in the broken stones",
+              preview: "Treat the ruin like a text still writing itself.",
+              highlightWord: "smoke",
+              statKey: "arcana",
+              chanceBase: 0.14,
+              chancePerStat: 0.07,
+              minChance: 0.08,
+              maxChance: 0.42,
+              successText:
+                "You follow the curling soot patterns until they resolve into an older kind of language. When the meaning lands, the ember answers with a hush of blue light and leaves part of that grammar in you.",
+              failureText:
+                "You almost catch the hidden text before it blurs back into smoke and old weathering. The shrine still yields a fragment, but not the deeper lesson.",
+              successEffects: {
+                bonusTonics: 1,
+                storyXp: 26,
+                permanentStatBonus: {
+                  statKey: "arcana",
+                  amount: 1,
+                  title: "Cinder-Script Memory",
+                  detail: "You now hear a trace of meaning in the old magic threaded through road shrines and boundary stones.",
+                },
+              },
+              failureEffects: {
+                bonusTonics: 1,
+                storyXp: 3,
+              },
+            }),
+          ],
+        })
+    );
+  }
+
+  if (journeyPhase === "frontier" && journeyLevel >= 6) {
+    pushCandidate("legend:oath-cairn", 1, () => ({
+          title: "An oath-cairn of the first wardens",
+          teaser: "The stones are too massive to have been stacked by ordinary hands.",
+          detail:
+            "On a wind-scoured rise stands a cairn built from slabs no farmer's cart could have moved. Iron rings, now red with age, are set into the stone at shoulder height. A weather-soft inscription says the first wardens came here to swear which burden they would carry for the frontier and which fear they would never carry home.",
+          createdAt: eventTime,
+          choices: [
+            createJourneyStatChoice({
+              label: "Lift the oath-ring and hold it high",
+              preview: "Take the wardens' burden into your own shoulders for a breath.",
+              highlightWord: "Lift",
+              statKey: "might",
+              chanceBase: 0.14,
+              chancePerStat: 0.07,
+              minChance: 0.08,
+              maxChance: 0.4,
+              successText:
+                "The ring rises only an inch at first, then a handspan, then enough. The cairn answers with a deep stone hum that runs up your arms and settles there as lasting strength.",
+              failureText:
+                "You strain until your vision whitens, but the oath-ring does not quite acknowledge you. It leaves you shaking, wiser, and empty-handed.",
+              successEffects: {
+                hp: -4,
+                storyXp: 25,
+                permanentStatBonus: {
+                  statKey: "might",
+                  amount: 1,
+                  title: "Warden's Burden",
+                  detail: "The old frontier stones taught your body how to carry force without yielding to it.",
+                },
+              },
+              failureEffects: {
+                hp: -9,
+                storyXp: 3,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Walk the cairn's rim in the wind",
+              preview: "Accept the height, the drop, and the need for one clean step after another.",
+              highlightWord: "wind",
+              statKey: "finesse",
+              chanceBase: 0.15,
+              chancePerStat: 0.07,
+              minChance: 0.09,
+              maxChance: 0.42,
+              successText:
+                "You let the gale take everything unnecessary and keep only balance. By the time you step down, your body remembers the lesson with unsettling clarity.",
+              failureText:
+                "A loose edge of stone nearly teaches you the lesson by force. You recover before the fall, but not before fear has had its say.",
+              successEffects: {
+                distance: 8,
+                storyXp: 24,
+                permanentStatBonus: {
+                  statKey: "finesse",
+                  amount: 1,
+                  title: "Step of the First Scout",
+                  detail: "The oath-cairn taught your balance to trust narrow ground and dangerous timing.",
+                },
+              },
+              failureEffects: {
+                hp: -7,
+                storyXp: 3,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Listen to the names the stones still keep",
+              preview: "Treat the cairn like a memory that has not decided to die.",
+              highlightWord: "names",
+              statKey: "resolve",
+              chanceBase: 0.16,
+              chancePerStat: 0.06,
+              minChance: 0.1,
+              maxChance: 0.42,
+              successText:
+                "The wind through the stones starts sounding less like weather and more like witness. You leave with the impossible conviction that the old wardens have counted you among the stubborn.",
+              failureText:
+                "You wait and hear only wind, but even that leaves you quieter than before and not entirely unchanged.",
+              successEffects: {
+                hp: 6,
+                storyXp: 23,
+                permanentStatBonus: {
+                  statKey: "resolve",
+                  amount: 1,
+                  title: "Witness of the Wardens",
+                  detail: "The cairn's old oath-song steadies you whenever fear starts speaking too loudly.",
+                },
+              },
+              failureEffects: {
+                hp: 2,
+                storyXp: 3,
+              },
+            }),
+          ],
+        })
+    );
+  }
+
+  if (journeyPhase === "frontier" && journeyLevel >= 7) {
+    pushCandidate("legend:mirror-spring", 1, () => ({
+          title: "The mirror spring under moonlight",
+          teaser: "The surface shows more than one sky.",
+          detail:
+            "Hidden in a fold of stone is a spring so still it reflects the moon twice: once above, once from some pale depth below the waterline. Old chalk marks on the surrounding rock suggest travelers came here seeking revelations and usually left with scars.",
+          createdAt: eventTime,
+          choices: [
+            createJourneyStatChoice({
+              label: "Look straight into the second reflection",
+              preview: "Accept that some knowledge only arrives by being endured.",
+              highlightWord: "reflection",
+              statKey: "arcana",
+              chanceBase: 0.13,
+              chancePerStat: 0.07,
+              minChance: 0.08,
+              maxChance: 0.4,
+              successText:
+                "The lower sky opens like a book written in cold light. You do not understand all of it, but enough remains in your head to change the way the world fits together.",
+              failureText:
+                "The second reflection looks back harder than you were ready for. You jerk away with only a headache and a splinter of meaning.",
+              successEffects: {
+                bonusTonics: 1,
+                storyXp: 28,
+                permanentStatBonus: {
+                  statKey: "arcana",
+                  amount: 1,
+                  title: "Moon-Glass Insight",
+                  detail: "You carry a lucid fragment of the hidden sky beneath the world.",
+                },
+              },
+              failureEffects: {
+                hp: -5,
+                storyXp: 4,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Cut a path around the spring without breaking the image",
+              preview: "Let grace be the price of entry to a sacred danger.",
+              highlightWord: "grace",
+              statKey: "finesse",
+              chanceBase: 0.14,
+              chancePerStat: 0.07,
+              minChance: 0.08,
+              maxChance: 0.4,
+              successText:
+                "You move around the pool so lightly that the surface never shivers. Something in the spring seems to approve, and your steps afterward carry that impossible precision.",
+              failureText:
+                "One loose pebble breaks the mirrored sky. The blessing goes thin at once, leaving you with only a sharper respect for places like this.",
+              successEffects: {
+                distance: 9,
+                storyXp: 26,
+                permanentStatBonus: {
+                  statKey: "finesse",
+                  amount: 1,
+                  title: "Stillwater Footing",
+                  detail: "The mirror spring taught your body how to move without disturbing what watches back.",
+                },
+              },
+              failureEffects: {
+                distance: 3,
+                storyXp: 4,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Drink from the edge and trust what survives",
+              preview: "Invite the spring into your body before your fear can object.",
+              highlightWord: "Drink",
+              statKey: "vitality",
+              chanceBase: 0.12,
+              chancePerStat: 0.07,
+              minChance: 0.08,
+              maxChance: 0.38,
+              successText:
+                "The water is ice and starlight together. It hurts in a way that feels almost surgical, stripping weakness down to what can regrow stronger.",
+              failureText:
+                "The spring goes through you like winter steel. You survive it, but the deeper change refuses to take hold.",
+              successEffects: {
+                hp: 12,
+                storyXp: 27,
+                permanentStatBonus: {
+                  statKey: "vitality",
+                  amount: 1,
+                  title: "Star-Cooled Blood",
+                  detail: "Some part of your body now remembers the cold clarity of the moonlit spring.",
+                },
+              },
+              failureEffects: {
+                hp: -10,
+                storyXp: 4,
+              },
+            }),
+          ],
+        })
+    );
+  }
+
   return candidates;
 }
 
@@ -2577,6 +3299,32 @@ export function getJourneyChoiceSuccessChance(choice, journeyStats) {
   const maxChance = Number.isFinite(choice.maxChance) ? choice.maxChance : 0.9;
 
   return clamp(rawChance, minChance, maxChance);
+}
+
+function applyJourneyPermanentStatBonus(state, rawBonus) {
+  const bonus = normalizeJourneyPermanentBonus(rawBonus);
+  if (!bonus) return "";
+
+  state.permanentBonuses = Array.isArray(state.permanentBonuses)
+    ? state.permanentBonuses
+    : [];
+  const alreadyGranted = state.permanentBonuses.some(
+    (entry) =>
+      entry.title === bonus.title &&
+      entry.statKey === bonus.statKey &&
+      entry.amount === bonus.amount
+  );
+  if (alreadyGranted) return "";
+
+  state.statModifiers[bonus.statKey] =
+    Math.round(Number(state.statModifiers?.[bonus.statKey]) || 0) + bonus.amount;
+  state.permanentBonuses = [...state.permanentBonuses, bonus];
+  const statLabel = JOURNEY_STAT_META[bonus.statKey]?.label || "Stat";
+  const detailText = bonus.detail ? ` ${bonus.detail}` : "";
+
+  return `${bonus.title} gained. ${statLabel} ${formatSignedNumber(
+    bonus.amount
+  )}.${detailText}`.trim();
 }
 
 export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
@@ -2620,6 +3368,15 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
       notes.push(`Bag found: ${bagRewardText}.`);
     }
   }
+  if (effects.permanentStatBonus) {
+    const permanentBonusText = applyJourneyPermanentStatBonus(
+      state,
+      effects.permanentStatBonus
+    );
+    if (permanentBonusText) {
+      notes.push(permanentBonusText);
+    }
+  }
 
   for (const flagKey of JOURNEY_FLAG_KEYS) {
     if (effects.flags?.[flagKey] !== undefined) {
@@ -2658,6 +3415,7 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
     storyXpDelta >= 0 &&
     !effects.weaponName &&
     !effects.bagKey &&
+    !effects.permanentStatBonus &&
     !effects.unlockClass
   ) {
     state.currentHunger = clamp(state.currentHunger - 3, 0, journeyStats.maxHunger);
@@ -3106,7 +3864,15 @@ export function getJourneySegmentProgress(totalDistance, bossIndex) {
   };
 }
 
-export function getJourneyActivityText(state, boss, progress, journeyStats) {
+export function getJourneyActivityText(
+  state,
+  boss,
+  progress,
+  journeyStats,
+  supplies = null
+) {
+  const condition = getJourneyConditionState(state, journeyStats, supplies);
+
   if (state.status === "recovering") {
     return state.recoveryObjective || getRecoveryText(state);
   }
@@ -3125,24 +3891,46 @@ export function getJourneyActivityText(state, boss, progress, journeyStats) {
     }
 
     if (progress.percent < 78) {
-      return "You are searching for food, learning what hurts, and figuring out how to keep moving while hungry.";
+      if (condition.needsFood || condition.foodLow) {
+        return condition.availableRations > 0
+          ? "You have finally managed to eat, but you are still trying to get real strength back under you before the hunt turns serious."
+          : "You are scavenging for food, learning what hurts, and figuring out how to keep moving while hungry.";
+      }
+
+      return "You are reading the forest more carefully now, learning where the boar feeds, rests, and chooses to circle back.";
     }
 
-    return "You have seen the boar's tracks often enough that the first real fight now feels unavoidable.";
+    return "You have followed the boar's sign long enough that the first true hunt now feels less like a possibility and more like an appointment.";
   }
 
   if (state.bossIndex === 1) {
     return `You are keeping to ${getJourneyZoneName(
       state.bossIndex
-    )}, watching for wolves and trying to travel like someone who belongs here.`;
+    )}, watching for wolves and trying to move like prey that has finally learned a few tricks.`;
   }
 
   if (state.bossIndex === 2) {
-    return `You are closing on a bridge where the road feels too narrow and too visible, the kind of place an ambusher would love.`;
+    return `You are closing on a bridge where every approach feels too narrow and too visible, exactly the sort of place an ambusher would choose.`;
   }
 
   if (state.bossIndex === 3) {
-    return `You are picking your way through wet ground and bad footing, trying to tell the difference between a quiet marsh and something waiting under it.`;
+    return `You are picking your way through wet ground and treacherous footing, trying to tell the difference between a quiet marsh and something patient beneath it.`;
+  }
+
+  if (state.bossIndex === 4) {
+    return `You are climbing raider country one switchback at a time, trying to reach the captain before his lookouts decide your story for you.`;
+  }
+
+  if (state.bossIndex === 5) {
+    return `You are threading ruined stone and broken walls where old roads remember more violence than they should.`;
+  }
+
+  if (state.bossIndex === 6) {
+    return `You are walking a grave road that keeps asking whether the living have any right to be there after dark.`;
+  }
+
+  if (state.bossIndex === 7) {
+    return `You are pushing up into the storm line, where the wind strips warmth, words, and caution down to their bones.`;
   }
 
   return `You are moving through ${getJourneyZoneName(

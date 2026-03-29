@@ -59,7 +59,7 @@ import {
 } from "./features/games/gamesController.js";
 import { renderCompletionSpotlight, renderGames, renderMainQuest, renderPlayerProgress, renderStats } from "./features/games/gamesView.js";
 import { handleHomeJourneyClick, handleJourneyClick, handleJourneyEventModalClick, handleJourneyOutcomeModalClick } from "./features/journey/journeyController.js";
-import { syncJourneyState } from "./features/journey/journeyEngine.js";
+import { buildJourneySupplies, syncJourneyState } from "./features/journey/journeyEngine.js";
 import {
   closeJourneyEventModal,
   closeJourneyOutcomeModal,
@@ -202,8 +202,9 @@ export async function renderApp() {
   const sessionStats = buildSessionStats(sessions);
   const xpSummary = buildXpSummary(sortedGames, sessions);
   const idleJourney = await syncJourneyState(idleJourneyRaw, sortedGames, sessions, xpSummary);
+  const journeySupplies = buildJourneySupplies(sortedGames, sessions, idleJourney);
 
-  renderHomeJourney(idleJourney, xpSummary);
+  renderHomeJourney(idleJourney, xpSummary, journeySupplies);
   renderPlayerProgress(xpSummary);
   renderStats(sortedGames, sessions);
   renderIdleJourney(idleJourney, sortedGames, sessions, xpSummary);

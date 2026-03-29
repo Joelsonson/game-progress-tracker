@@ -89,6 +89,9 @@ function normalizeJourneyChoiceEffects(effects) {
     }
     return accumulator;
   }, {});
+  const permanentStatBonus = normalizeJourneyPermanentStatBonus(
+    safeEffects.permanentStatBonus
+  );
 
   return {
     hp: Math.round(Number(safeEffects.hp) || 0),
@@ -104,6 +107,29 @@ function normalizeJourneyChoiceEffects(effects) {
     unlockClass: JOURNEY_CLASS_META[safeEffects.unlockClass]
       ? safeEffects.unlockClass
       : "",
+    permanentStatBonus,
     flags: normalizedFlags,
+  };
+}
+
+function normalizeJourneyPermanentStatBonus(rawBonus) {
+  if (!rawBonus || typeof rawBonus !== "object") return null;
+
+  const statKey = JOURNEY_STAT_META[rawBonus.statKey] ? rawBonus.statKey : "";
+  const amount = Math.round(Number(rawBonus.amount) || 0);
+  const title =
+    typeof rawBonus.title === "string" ? rawBonus.title.trim() : "";
+  const detail =
+    typeof rawBonus.detail === "string" ? rawBonus.detail.trim() : "";
+
+  if (!statKey || !amount || !title) {
+    return null;
+  }
+
+  return {
+    statKey,
+    amount,
+    title,
+    detail,
   };
 }
