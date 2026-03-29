@@ -1,4 +1,5 @@
 import {
+  JOURNEY_BAG_META,
   JOURNEY_CLASS_META,
   JOURNEY_FLAG_KEYS,
   JOURNEY_STAT_META,
@@ -21,6 +22,7 @@ export function normalizeJourneyEvent(eventEntry, nowIso) {
       eventEntry.eventKey || eventEntry.key || eventEntry.title || "journey-event"
     ),
     kind: eventEntry.kind === "aid" ? "aid" : "normal",
+    repeatable: Boolean(eventEntry.repeatable),
     title: String(eventEntry.title || "Journey event"),
     teaser: String(eventEntry.teaser || "A choice is waiting."),
     detail: String(eventEntry.detail || eventEntry.teaser || ""),
@@ -96,6 +98,7 @@ function normalizeJourneyChoiceEffects(effects) {
     bonusRations: Math.round(Number(safeEffects.bonusRations) || 0),
     bonusTonics: Math.round(Number(safeEffects.bonusTonics) || 0),
     bonusSkillPoints: Math.round(Number(safeEffects.bonusSkillPoints) || 0),
+    bagKey: JOURNEY_BAG_META[safeEffects.bagKey] ? safeEffects.bagKey : "",
     weaponName:
       typeof safeEffects.weaponName === "string" ? safeEffects.weaponName.trim() : "",
     unlockClass: JOURNEY_CLASS_META[safeEffects.unlockClass]

@@ -32,9 +32,11 @@ import {
   keepJourneyPendingWeapon,
   normalizeJourneyState,
   pushJourneyDebugSnapshot,
+  rememberJourneyCompletedEventKey,
   replaceJourneyWeapon,
   syncJourneyState,
 } from "./journeyEngine.js";
+import { normalizeJourneyEvent } from "./journeyEvents.js";
 import {
   closeJourneyEventModal,
   closeJourneyOutcomeModal,
@@ -336,7 +338,20 @@ export async function handleJourneyClick(event) {
       }
 
       pushJourneyDebugSnapshot(state);
-      const forcedEvent = candidates[randomInt(0, candidates.length - 1)].build();
+      const selectedCandidate = candidates[randomInt(0, candidates.length - 1)];
+      const forcedEvent = normalizeJourneyEvent(
+        {
+          ...selectedCandidate.build(),
+          eventKey: selectedCandidate.key,
+          kind: selectedCandidate.kind,
+          repeatable: selectedCandidate.repeatable,
+        },
+        new Date().toISOString()
+      );
+      if (!forcedEvent) {
+        showJourneyFeedback("Could not force that event.", true);
+        return;
+      }
       state.pendingEvents = [forcedEvent, ...state.pendingEvents].slice(
         0,
         JOURNEY_PENDING_EVENT_LIMIT
@@ -497,6 +512,12 @@ export async function resolveJourneyEventChoice(eventId, choiceId) {
       journeyStats,
       new Date().toISOString()
     );
+    if (!eventEntry.repeatable) {
+      rememberJourneyCompletedEventKey(
+        state,
+        eventEntry.eventKey || eventEntry.title
+      );
+    }
     if (eventEntry.kind === "aid") {
       state.aidUrgency = Math.max(0, state.aidUrgency - 2);
     }

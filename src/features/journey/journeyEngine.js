@@ -1,6 +1,7 @@
 import { setMeta } from "../../data/metaRepo.js";
 import {
   GAME_STATUSES,
+  JOURNEY_COMPLETED_EVENT_LIMIT,
   IDLE_JOURNEY_META_KEY,
   JOURNEY_AMBIENT_INTERACTIONS,
   JOURNEY_BAG_META,
@@ -163,7 +164,7 @@ export function normalizeJourneyState(rawState = null) {
     inferredWeapon || keptWeaponKeys.length > 0 || pendingWeaponKeys.length > 0;
 
   return {
-    version: 4,
+    version: 5,
     classType,
     unlockedClasses,
     allocatedStats,
@@ -224,6 +225,12 @@ export function normalizeJourneyState(rawState = null) {
           .map((entry) => String(entry || "").trim())
           .filter(Boolean)
           .slice(0, JOURNEY_RECENT_EVENT_LIMIT)
+      : [],
+    completedEventKeys: Array.isArray(source.completedEventKeys)
+      ? source.completedEventKeys
+          .map((entry) => String(entry || "").trim())
+          .filter(Boolean)
+          .slice(0, JOURNEY_COMPLETED_EVENT_LIMIT)
       : [],
     debugHistory: Array.isArray(source.debugHistory)
       ? source.debugHistory
@@ -480,6 +487,42 @@ export function getJourneyGoalMeta(state, boss, progress) {
     };
   }
 
+  if (state.bossIndex === 2) {
+    if (progress.percent < 52) {
+      return {
+        goalTitle: "Find a safe crossing",
+        goalAction: "finding a safe crossing",
+        horizonLabel: "Up ahead",
+        horizonValue: "The road narrows toward a bridge that somebody is probably watching.",
+      };
+    }
+
+    return {
+      goalTitle: "Break the bridge ambush",
+      goalAction: "breaking the bridge ambush",
+      horizonLabel: "Stretch end",
+      horizonValue: boss.name,
+    };
+  }
+
+  if (state.bossIndex === 3) {
+    if (progress.percent < 56) {
+      return {
+        goalTitle: "Keep to the firmer ground",
+        goalAction: "keeping to the firmer ground",
+        horizonLabel: "Need",
+        horizonValue: "The marsh punishes anyone who mistakes still water for shallow water.",
+      };
+    }
+
+    return {
+      goalTitle: "Flush out the lurker",
+      goalAction: "flushing out the lurker",
+      horizonLabel: "Stretch end",
+      horizonValue: boss.name,
+    };
+  }
+
   if (progress.percent < 62) {
     return {
       goalTitle: `Push through ${getJourneyZoneName(state.bossIndex)}`,
@@ -565,6 +608,18 @@ export function rememberJourneyEventKey(state, eventKey) {
       (entry) => entry !== safeKey
     ),
   ].slice(0, JOURNEY_RECENT_EVENT_LIMIT);
+}
+
+export function rememberJourneyCompletedEventKey(state, eventKey) {
+  const safeKey = String(eventKey || "").trim();
+  if (!safeKey) return;
+
+  state.completedEventKeys = [
+    safeKey,
+    ...(Array.isArray(state.completedEventKeys) ? state.completedEventKeys : []).filter(
+      (entry) => entry !== safeKey
+    ),
+  ].slice(0, JOURNEY_COMPLETED_EVENT_LIMIT);
 }
 
 export function buildJourneyOutcomeItems(beforeState, afterState, resolution = null) {
@@ -869,6 +924,9 @@ export function autoResolvePendingJourneyEvents(state, journeyStats, atIso) {
       atIso
     );
     applyJourneyChoiceEffects(state, randomChoice, journeyStats, atIso);
+    if (!eventEntry.repeatable) {
+      rememberJourneyCompletedEventKey(state, eventEntry.eventKey || eventEntry.title);
+    }
 
     if (eventEntry.kind === "aid") {
       state.aidUrgency = Math.max(0, state.aidUrgency - 2);
@@ -1088,19 +1146,30 @@ export function maybeQueueJourneyEvent(state, atDate, journeyLevel, journeyConte
     state.pendingEvents.map((entry) => entry.eventKey || entry.title)
   );
   const recentKeys = new Set(state.recentEventKeys || []);
+  const completedKeys = new Set(state.completedEventKeys || []);
   let candidates = allCandidates.filter(
-    (candidate) => !pendingKeys.has(candidate.key) && !recentKeys.has(candidate.key)
+    (candidate) =>
+      !pendingKeys.has(candidate.key) &&
+      !recentKeys.has(candidate.key) &&
+      (candidate.repeatable || !completedKeys.has(candidate.key))
   );
 
   if (!candidates.length) {
     const latestKey = state.recentEventKeys?.[0] || "";
     candidates = allCandidates.filter(
-      (candidate) => !pendingKeys.has(candidate.key) && candidate.key !== latestKey
+      (candidate) =>
+        !pendingKeys.has(candidate.key) &&
+        candidate.key !== latestKey &&
+        (candidate.repeatable || !completedKeys.has(candidate.key))
     );
   }
 
   if (!candidates.length) {
-    candidates = allCandidates.filter((candidate) => !pendingKeys.has(candidate.key));
+    candidates = allCandidates.filter(
+      (candidate) =>
+        !pendingKeys.has(candidate.key) &&
+        (candidate.repeatable || !completedKeys.has(candidate.key))
+    );
   }
 
   if (!candidates.length) return;
@@ -1125,6 +1194,7 @@ export function maybeQueueJourneyEvent(state, atDate, journeyLevel, journeyConte
       ...selected.build(),
       eventKey: selected.key,
       kind: selected.kind,
+      repeatable: selected.repeatable,
     },
     atDate.toISOString()
   );
@@ -1177,8 +1247,15 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   const candidates = [];
   const journeyStats = buildJourneyDerived(state, journeyLevel);
   const journeyPhase = getJourneyPhase(state);
-  const pushCandidate = (key, weight, build, kind = "normal") => {
-    candidates.push({ key, weight, build, kind });
+  const currentBagRank = getJourneyBagMeta(state.bagKey).rank;
+  const pushCandidate = (
+    key,
+    weight,
+    build,
+    kind = "normal",
+    repeatable = false
+  ) => {
+    candidates.push({ key, weight, build, kind, repeatable });
   };
 
   if (
@@ -1216,9 +1293,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               storyXp: 10,
             },
             failureEffects: {
-              hp: 11,
-              hunger: 4,
-              storyXp: 5,
+              hp: 5,
+              hunger: 0,
+              storyXp: 0,
             },
           }),
           createJourneyStatChoice({
@@ -1239,8 +1316,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               storyXp: 8,
             },
             failureEffects: {
-              hp: 7,
-              storyXp: 4,
+              hp: 3,
+              hunger: -2,
+              storyXp: 0,
             },
           }),
           createJourneyStatChoice({
@@ -1260,13 +1338,14 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               storyXp: 9,
             },
             failureEffects: {
-              hp: 8,
-              storyXp: 3,
+              hp: 2,
+              storyXp: 0,
             },
           }),
         ],
       }),
-      "aid"
+      "aid",
+      true
     );
 
     pushCandidate(
@@ -1296,8 +1375,8 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               storyXp: 10,
             },
             failureEffects: {
-              hp: 9,
-              storyXp: 4,
+              hp: 4,
+              storyXp: 0,
             },
           }),
           createJourneyStatChoice({
@@ -1318,9 +1397,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               storyXp: 8,
             },
             failureEffects: {
-              hunger: 8,
-              hp: -3,
-              storyXp: 3,
+              hunger: 5,
+              hp: -5,
+              storyXp: 0,
             },
           }),
           createJourneyStatChoice({
@@ -1341,13 +1420,14 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               storyXp: 9,
             },
             failureEffects: {
-              hunger: 9,
-              storyXp: 4,
+              hunger: 5,
+              storyXp: 0,
             },
           }),
         ],
       }),
-      "aid"
+      "aid",
+      true
     );
 
     pushCandidate(
@@ -1377,9 +1457,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               storyXp: 12,
             },
             failureEffects: {
-              hp: 7,
-              hunger: 5,
-              storyXp: 5,
+              hp: 2,
+              hunger: 1,
+              storyXp: 0,
             },
           }),
           createJourneyStatChoice({
@@ -1400,8 +1480,8 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               storyXp: 10,
             },
             failureEffects: {
-              hp: 4,
-              storyXp: 4,
+              hp: -1,
+              storyXp: 0,
             },
           }),
           createJourneyStatChoice({
@@ -1422,13 +1502,13 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               storyXp: 10,
             },
             failureEffects: {
-              bonusTonics: 1,
-              storyXp: 4,
+              storyXp: 0,
             },
           }),
         ],
       }),
-      "aid"
+      "aid",
+      true
     );
 
     pushCandidate(
@@ -1461,7 +1541,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
             failureEffects: {
               hp: -8,
               bonusRations: 1,
-              storyXp: 5,
+              storyXp: 0,
             },
           }),
           createJourneyStatChoice({
@@ -1484,7 +1564,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
             failureEffects: {
               hp: -11,
               bonusRations: 1,
-              storyXp: 6,
+              storyXp: 0,
             },
           }),
           createJourneyStatChoice({
@@ -1508,12 +1588,13 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
             failureEffects: {
               hp: -6,
               distance: 3,
-              storyXp: 4,
+              storyXp: 0,
             },
           }),
         ],
       }),
-      "aid"
+      "aid",
+      true
     );
   }
 
@@ -1546,7 +1627,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               failureEffects: {
                 hp: -6,
                 distance: 2,
-                storyXp: 8,
+                storyXp: 0,
                 weaponName: "Rust-worn belt knife",
                 flags: { foundWeapon: true },
               },
@@ -1571,7 +1652,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
               failureEffects: {
                 hp: -4,
-                storyXp: 7,
+                storyXp: 0,
                 weaponName: "Crude spear-club",
                 flags: { foundWeapon: true },
               },
@@ -1597,7 +1678,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               failureEffects: {
                 hunger: -5,
                 distance: 3,
-                storyXp: 2,
+                storyXp: 0,
               },
             }),
           ],
@@ -1632,7 +1713,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               failureEffects: {
                 hunger: 4,
                 hp: -3,
-                storyXp: 3,
+                storyXp: 0,
               },
             }),
             createJourneyStatChoice({
@@ -1653,7 +1734,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               failureEffects: {
                 hunger: 8,
                 hp: -7,
-                storyXp: 4,
+                storyXp: 0,
               },
             }),
             createJourneyStatChoice({
@@ -1674,11 +1755,13 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
               failureEffects: {
                 hunger: 5,
-                storyXp: 2,
+                storyXp: 0,
               },
             }),
           ],
-        })
+        }),
+        "normal",
+        true
     );
 
     pushCandidate("arrival:tracks", 3, () => ({
@@ -1707,7 +1790,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               failureEffects: {
                 hp: -8,
                 distance: 2,
-                storyXp: 5,
+                storyXp: 0,
               },
             }),
             createJourneyStatChoice({
@@ -1728,7 +1811,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
               failureEffects: {
                 hp: -10,
-                storyXp: 6,
+                storyXp: 0,
               },
             }),
             createJourneyStatChoice({
@@ -1751,11 +1834,13 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 distance: 4,
                 hunger: -9,
                 hp: -3,
-                storyXp: 2,
+                storyXp: 0,
               },
             }),
           ],
-        })
+        }),
+        "normal",
+        true
     );
 
     pushCandidate("arrival:watchtower", 2, () => ({
@@ -1783,7 +1868,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               failureEffects: {
                 hp: -7,
                 distance: 4,
-                storyXp: 4,
+                storyXp: 0,
               },
             }),
             createJourneyStatChoice({
@@ -1805,7 +1890,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               failureEffects: {
                 hp: -3,
                 bonusRations: 1,
-                storyXp: 3,
+                storyXp: 0,
               },
             }),
             createJourneyStatChoice({
@@ -1826,12 +1911,93 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
               failureEffects: {
                 distance: 3,
-                storyXp: 5,
+                storyXp: 0,
               },
             }),
           ],
-        })
+        }),
+        "normal",
+        true
     );
+
+    if (currentBagRank < 1) {
+      pushCandidate("arrival:forager-satchel", 4, () => ({
+            title: "A torn satchel caught in the briars",
+            teaser: "The strap is snagged high in the brush, but the bag itself still looks sound.",
+            detail:
+              "You spot a leather satchel hanging where a traveler must have torn free of the thicket in a hurry. The pouch is within reach if you are willing to make the attempt count.",
+            createdAt: eventTime,
+            choices: [
+              createJourneyStatChoice({
+                label: "Ease the strap loose without ripping it",
+                preview: "Careful hands might save the bag intact.",
+                highlightWord: "Ease",
+                statKey: "finesse",
+                chanceBase: 0.3,
+                chancePerStat: 0.08,
+                successText:
+                  "You work the strap free thread by thread until the satchel drops cleanly into your hands, still sturdy enough to use.",
+                failureText:
+                  "The briars bite back and the strap tears in the worst possible place. You salvage a little food, but not the bag.",
+                successEffects: {
+                  bagKey: "satchel",
+                  bonusRations: 1,
+                  storyXp: 10,
+                },
+                failureEffects: {
+                  hp: -4,
+                  bonusRations: 1,
+                  storyXp: 0,
+                },
+              }),
+              createJourneyStatChoice({
+                label: "Yank it free before the thorns take more skin",
+                preview: "Rough force might still win the bag.",
+                highlightWord: "Yank",
+                statKey: "might",
+                chanceBase: 0.27,
+                chancePerStat: 0.08,
+                successText:
+                  "One hard pull tears the satchel loose along with half the thorn branch holding it. The leather complains, but it will serve.",
+                failureText:
+                  "You wrench too hard, split the seam, and end up with only the spilled contents and bleeding knuckles.",
+                successEffects: {
+                  bagKey: "satchel",
+                  bonusRations: 1,
+                  storyXp: 9,
+                },
+                failureEffects: {
+                  hp: -5,
+                  hunger: -2,
+                  storyXp: 0,
+                },
+              }),
+              createJourneyStatChoice({
+                label: "Judge whether it is worth the trouble first",
+                preview: "Take a breath and only commit if the prize is real.",
+                highlightWord: "Judge",
+                statKey: "resolve",
+                chanceBase: 0.35,
+                chancePerStat: 0.06,
+                minChance: 0.28,
+                successText:
+                  "You slow yourself down, spot the weak points in the thorn snare, and recover the satchel without ruining it.",
+                failureText:
+                  "You hesitate just long enough for the leather to give under its own weight. By the time you reach it, only scraps remain useful.",
+                successEffects: {
+                  bagKey: "satchel",
+                  bonusRations: 1,
+                  storyXp: 8,
+                },
+                failureEffects: {
+                  bonusRations: 1,
+                  storyXp: 0,
+                },
+              }),
+            ],
+          })
+      );
+    }
   }
 
   if (journeyPhase !== "frontier") {
@@ -1862,7 +2028,8 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               failureEffects: {
                 distance: -2,
                 hp: -2,
-                storyXp: 3,
+                hunger: -2,
+                storyXp: 0,
               },
             }),
             createJourneyStatChoice({
@@ -1886,32 +2053,275 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 distance: 5,
                 hp: -8,
                 hunger: -6,
-                storyXp: 3,
+                storyXp: 0,
               },
             }),
             createJourneyStatChoice({
-              label: "Catch what the storm is trying to give",
-              preview: "Use the rain instead of simply suffering it.",
-              highlightWord: "Catch",
-              statKey: "arcana",
-              chanceBase: 0.27,
+              label: "Rig the runoff before the light dies",
+              preview: "Use quick hands to turn the rain into something useful.",
+              highlightWord: "Rig",
+              statKey: "finesse",
+              chanceBase: 0.29,
               chancePerStat: 0.08,
               successText:
-                "You turn the downpour into something useful, saving clean water and a strange calm that leaves you better than before.",
+                "You angle cloth, bark, and broken branches just right, saving clean runoff and a little dignity before the storm can strip both away.",
               failureText:
-                "You try to make use of the weather, but end up only damp and delayed, with less to show for it than you wanted.",
+                "The runoff spills where you do not need it and the setup collapses twice before you give up cold and irritated.",
               successEffects: {
                 hunger: 8,
-                bonusTonics: 1,
+                bonusRations: 1,
                 storyXp: 9,
               },
               failureEffects: {
-                hunger: 3,
-                storyXp: 3,
+                hunger: -3,
+                storyXp: 0,
+              },
+            }),
+          ],
+        }),
+        "normal",
+        true
+    );
+  }
+
+  if (journeyPhase === "frontier" && currentBagRank < 2 && journeyLevel >= 3) {
+    pushCandidate("frontier:abandoned-pack-mule", 4, () => ({
+          title: "An abandoned pack frame by the road",
+          teaser: "The mule is gone, but the frame and bedroll are still wedged under the brush.",
+          detail:
+            "Off the side of the road, you find the remains of a trader's pack rig: split straps, scattered buckles, and a traveler's backpack pinned beneath a warped frame.",
+          createdAt: eventTime,
+          choices: [
+            createJourneyStatChoice({
+              label: "Slip the backpack free from the frame",
+              preview: "Careful hands might save the best part intact.",
+              highlightWord: "Slip",
+              statKey: "finesse",
+              chanceBase: 0.27,
+              chancePerStat: 0.08,
+              successText:
+                "You work the straps loose in the right order and recover the backpack with only surface damage.",
+              failureText:
+                "One bad tug snaps a key buckle and the whole frame collapses on your hand. You salvage trail food, but not a usable pack.",
+              successEffects: {
+                bagKey: "backpack",
+                bonusRations: 1,
+                storyXp: 11,
+              },
+              failureEffects: {
+                hp: -5,
+                bonusRations: 1,
+                storyXp: 0,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Heave the whole rig over and strip it fast",
+              preview: "If subtlety is gone already, win with force.",
+              highlightWord: "Heave",
+              statKey: "might",
+              chanceBase: 0.24,
+              chancePerStat: 0.09,
+              successText:
+                "You flip the crushed frame aside and wrestle the backpack out before the rotten wood can tear it open.",
+              failureText:
+                "The frame shifts the wrong way and crushes the pack flat. You pull out a few intact supplies and little else.",
+              successEffects: {
+                bagKey: "backpack",
+                bonusRations: 2,
+                storyXp: 10,
+              },
+              failureEffects: {
+                hp: -6,
+                bonusRations: 1,
+                storyXp: 0,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Check the stitching before you commit",
+              preview: "A steady eye might tell you where the pack can still hold.",
+              highlightWord: "Check",
+              statKey: "resolve",
+              chanceBase: 0.33,
+              chancePerStat: 0.07,
+              minChance: 0.26,
+              successText:
+                "You find the surviving seams, cut only where you need to, and come away with a backpack still fit for the road.",
+              failureText:
+                "You read the damage too generously. The leather gives as soon as the weight shifts, leaving you with frustration and a handful of dried food.",
+              successEffects: {
+                bagKey: "backpack",
+                bonusRations: 1,
+                storyXp: 9,
+              },
+              failureEffects: {
+                hunger: -2,
+                bonusRations: 1,
+                storyXp: 0,
               },
             }),
           ],
         })
+    );
+  }
+
+  if (journeyPhase === "frontier" && currentBagRank < 3 && journeyLevel >= 6) {
+    pushCandidate("frontier:field-kit-cache", 2, () => ({
+          title: "A sealed supply niche in a ruined gate",
+          teaser: "Someone hid real expedition gear here and hoped to come back for it.",
+          detail:
+            "Inside a broken gatehouse, you find a fitted wall niche behind a loose stone. The cache holds a field kit wrapped in oilcloth, but the lock and stonework both look ready to fight you for it.",
+          createdAt: eventTime,
+          choices: [
+            createJourneyStatChoice({
+              label: "Pick the clasp before the rust gives you away",
+              preview: "One patient touch could save the whole kit.",
+              highlightWord: "Pick",
+              statKey: "finesse",
+              chanceBase: 0.22,
+              chancePerStat: 0.09,
+              successText:
+                "The clasp yields just enough for you to work the cache open quietly. Inside is a field kit built for roads far harsher than this one.",
+              failureText:
+                "The clasp snaps loud enough to echo through the stone. You grab what loose supplies you can and abandon the rest before company arrives.",
+              successEffects: {
+                bagKey: "field_kit",
+                bonusRations: 1,
+                bonusTonics: 1,
+                storyXp: 12,
+              },
+              failureEffects: {
+                bonusRations: 1,
+                bonusTonics: 1,
+                storyXp: 0,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Break the niche open and trust the stone to lose first",
+              preview: "Brute force will settle the argument quickly.",
+              highlightWord: "Break",
+              statKey: "might",
+              chanceBase: 0.2,
+              chancePerStat: 0.1,
+              successText:
+                "You batter the loosened stone aside and haul the field kit free before the wall can bury it again.",
+              failureText:
+                "The wall gives, but so does the ledge under your footing. You wrench free only the smaller supplies while the real prize disappears into rubble.",
+              successEffects: {
+                bagKey: "field_kit",
+                bonusRations: 1,
+                bonusTonics: 1,
+                storyXp: 11,
+              },
+              failureEffects: {
+                hp: -8,
+                bonusTonics: 1,
+                storyXp: 0,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Wait out the echoes and open it cleanly",
+              preview: "Let caution buy you the better prize.",
+              highlightWord: "Wait",
+              statKey: "resolve",
+              chanceBase: 0.28,
+              chancePerStat: 0.08,
+              successText:
+                "You pace the ruin, listen for movement, and choose the one quiet minute that lets you take the field kit without ruining it.",
+              failureText:
+                "You wait too long and the niche shifts under its own weight. The field kit is lost, though a tonic and some food survive the collapse.",
+              successEffects: {
+                bagKey: "field_kit",
+                bonusRations: 1,
+                bonusTonics: 1,
+                storyXp: 10,
+              },
+              failureEffects: {
+                bonusRations: 1,
+                bonusTonics: 1,
+                storyXp: 0,
+              },
+            }),
+          ],
+        })
+    );
+  }
+
+  if (journeyPhase === "frontier") {
+    pushCandidate("frontier:waystone-cache", 3, () => ({
+          title: "A waystone with a hidden compartment",
+          teaser: "The stone still marks the road, but someone carved more into it than directions.",
+          detail:
+            "At a fork in the road stands an old waystone etched with faded route marks and a seam near the base where a compartment might once have been hidden.",
+          createdAt: eventTime,
+          choices: [
+            createJourneyStatChoice({
+              label: "Trace the old marks until they mean something",
+              preview: "Let the stone tell you more than distance.",
+              highlightWord: "Trace",
+              statKey: "arcana",
+              chanceBase: 0.25,
+              chancePerStat: 0.09,
+              successText:
+                "The marks resolve into more than directions: a warning line, a safer turn, and a clue to where travelers once hid supplies.",
+              failureText:
+                "You follow the patterns too far into your own guesses and only come away with a partial read and lost time.",
+              successEffects: {
+                distance: 8,
+                bonusTonics: 1,
+                storyXp: 11,
+              },
+              failureEffects: {
+                distance: 2,
+                storyXp: 0,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Pry the base open before the road notices you",
+              preview: "If there is a cache, force will find it faster than patience.",
+              highlightWord: "Pry",
+              statKey: "might",
+              chanceBase: 0.24,
+              chancePerStat: 0.09,
+              successText:
+                "You crack the hidden panel wide enough to pull out a small cache of trail food and a wrapped blade.",
+              failureText:
+                "The stone shifts against you and nearly traps your hand. You wrench it free with only bruises and a few crumbs to show for it.",
+              successEffects: {
+                bonusRations: 2,
+                weaponName: "Traveler's hatchet",
+                storyXp: 10,
+              },
+              failureEffects: {
+                hp: -5,
+                bonusRations: 1,
+                storyXp: 0,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Circle behind the hedgerow and search the blind side",
+              preview: "Use the road's habits against it.",
+              highlightWord: "Circle",
+              statKey: "finesse",
+              chanceBase: 0.29,
+              chancePerStat: 0.08,
+              successText:
+                "You find the stash where most eyes would never look: tucked into the blind side with dry food and a route note worth following.",
+              failureText:
+                "You misjudge the footing on the far side and announce yourself with loose stone. Whatever was hidden there, someone gets to it before you do.",
+              successEffects: {
+                bonusRations: 1,
+                distance: 7,
+                storyXp: 9,
+              },
+              failureEffects: {
+                hunger: -3,
+                storyXp: 0,
+              },
+            }),
+          ],
+        }),
+        "normal",
+        true
     );
   }
 
@@ -1941,7 +2351,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
               failureEffects: {
                 hp: -6,
-                storyXp: 8,
+                storyXp: 0,
               },
             }),
             createJourneyStatChoice({
@@ -1962,7 +2372,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
               failureEffects: {
                 hp: -5,
-                storyXp: 7,
+                storyXp: 0,
               },
             }),
             createJourneyStatChoice({
@@ -1982,7 +2392,8 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 unlockClass: "warrior",
               },
               failureEffects: {
-                storyXp: 8,
+                hunger: -2,
+                storyXp: 0,
               },
             }),
           ],
@@ -2016,7 +2427,8 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 unlockClass: "mage",
               },
               failureEffects: {
-                storyXp: 9,
+                hp: -2,
+                storyXp: 0,
                 bonusTonics: 1,
               },
             }),
@@ -2038,7 +2450,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
               failureEffects: {
                 hp: -4,
-                storyXp: 8,
+                storyXp: 0,
               },
             }),
             createJourneyStatChoice({
@@ -2058,8 +2470,8 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 unlockClass: "mage",
               },
               failureEffects: {
-                hp: 5,
-                storyXp: 8,
+                hp: 2,
+                storyXp: 0,
               },
             }),
           ],
@@ -2091,7 +2503,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 unlockClass: "thief",
               },
               failureEffects: {
-                storyXp: 7,
+                storyXp: 0,
               },
             }),
             createJourneyStatChoice({
@@ -2112,7 +2524,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
               failureEffects: {
                 distance: 6,
-                storyXp: 6,
+                storyXp: 0,
               },
             }),
             createJourneyStatChoice({
@@ -2132,8 +2544,8 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 unlockClass: "thief",
               },
               failureEffects: {
-                storyXp: 7,
-                distance: 4,
+                storyXp: 0,
+                distance: 2,
               },
             }),
           ],
@@ -2173,6 +2585,9 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
   const success = successRoll <= successChance;
   const effects = success ? choice.successEffects : choice.failureEffects;
   const notes = [];
+  const storyXpDelta = success
+    ? effects.storyXp
+    : Math.min(1, Math.round(Number(effects.storyXp) || 0));
 
   state.currentHp = clamp(
     state.currentHp + effects.hp,
@@ -2185,7 +2600,7 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
     journeyStats.maxHunger
   );
   state.totalDistance = Math.max(0, state.totalDistance + effects.distance);
-  state.storyXp = Math.max(0, state.storyXp + effects.storyXp);
+  state.storyXp = Math.max(0, state.storyXp + storyXpDelta);
   state.bonusSkillPoints = Math.max(
     0,
     state.bonusSkillPoints + effects.bonusSkillPoints
@@ -2196,6 +2611,13 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
     const weaponRewardText = awardJourneyWeapon(state, effects.weaponName);
     if (weaponRewardText) {
       notes.push(`Weapon found: ${weaponRewardText}.`);
+    }
+  }
+
+  if (effects.bagKey) {
+    const bagRewardText = awardJourneyBag(state, effects.bagKey);
+    if (bagRewardText) {
+      notes.push(`Bag found: ${bagRewardText}.`);
     }
   }
 
@@ -2226,6 +2648,20 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
       journeyStats.level,
       journeyStats
     );
+  }
+
+  if (
+    !success &&
+    effects.hp >= 0 &&
+    effects.hunger >= 0 &&
+    effects.distance >= 0 &&
+    storyXpDelta >= 0 &&
+    !effects.weaponName &&
+    !effects.bagKey &&
+    !effects.unlockClass
+  ) {
+    state.currentHunger = clamp(state.currentHunger - 3, 0, journeyStats.maxHunger);
+    notes.push("The failed attempt still drained more out of you than you expected.");
   }
 
   if (unlockedText) {
@@ -2699,6 +3135,14 @@ export function getJourneyActivityText(state, boss, progress, journeyStats) {
     return `You are keeping to ${getJourneyZoneName(
       state.bossIndex
     )}, watching for wolves and trying to travel like someone who belongs here.`;
+  }
+
+  if (state.bossIndex === 2) {
+    return `You are closing on a bridge where the road feels too narrow and too visible, the kind of place an ambusher would love.`;
+  }
+
+  if (state.bossIndex === 3) {
+    return `You are picking your way through wet ground and bad footing, trying to tell the difference between a quiet marsh and something waiting under it.`;
   }
 
   return `You are moving through ${getJourneyZoneName(

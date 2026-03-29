@@ -163,6 +163,7 @@ export const JOURNEY_LOG_LIMIT = 7;
 export const JOURNEY_PENDING_EVENT_LIMIT = 2;
 export const JOURNEY_DEBUG_HISTORY_LIMIT = 6;
 export const JOURNEY_RECENT_EVENT_LIMIT = 4;
+export const JOURNEY_COMPLETED_EVENT_LIMIT = 40;
 export const JOURNEY_STORY_XP_PER_LEVEL = 100;
 export const JOURNEY_BASE_CLASS = "stranded";
 export const JOURNEY_STAT_KEYS = ["might", "finesse", "arcana", "vitality", "resolve"];
@@ -348,6 +349,12 @@ export const JOURNEY_ZONE_NAMES = [
   "Fog Marsh Crossing",
   "Stonepass Trail",
   "Old Frontier Road",
+  "Split Pine Ravine",
+  "Sunken Causeway",
+  "Briar Tollway",
+  "Lantern Mile",
+  "Ashen Switchback",
+  "Ruined Gate Approach",
 ];
 
 export const JOURNEY_BOSS_NAMES = [
@@ -360,6 +367,11 @@ export const JOURNEY_BOSS_NAMES = [
   "Gravepath Ogre",
   "Storm Ridge Wyrm",
   "The Border Tyrant",
+  "Tollroad Reaver",
+  "Mireglass Serpent",
+  "Blackbriar Stag",
+  "Gatehouse Revenant",
+  "Ashfall Chimera",
 ];
 
 export const JOURNEY_AMBIENT_INTERACTIONS = {
@@ -368,18 +380,25 @@ export const JOURNEY_AMBIENT_INTERACTIONS = {
     "You followed a game trail, lost it, and had to start over from scratch.",
     "Every snapping twig sounded like a monster until you realized some were only rabbits.",
     "You tested bark, roots, and berries with the caution of someone who badly wants to stay alive.",
+    "You stopped twice just to make sure the distant bells were real and not your imagination.",
+    "A patch of flattened grass became a landmark simply because you were desperate for anything familiar.",
   ],
   survival: [
     "You found a flatter patch of ground and counted that as shelter.",
     "A stream saved the day, even if the water tasted like leaves and mud.",
     "You practised gripping your makeshift weapon until your hands stopped shaking.",
     "You learned the hard way that panic wastes more energy than walking does.",
+    "You spotted old cut marks on a tree and followed them longer than you care to admit.",
+    "A stretch of quiet road felt more threatening than the things that usually announce themselves.",
   ],
   frontier: [
     "A distant chimney reminded you civilization exists somewhere beyond the trees.",
     "You moved slower today, but you chose the safer trail and kept your footing.",
     "You caught yourself scanning every hedgerow before committing to the road.",
     "You are not comfortable out here yet, but you are no longer completely helpless.",
+    "An old milestone told you someone once believed this road could be civilized.",
+    "You crossed a stretch of road that had been cleared recently enough to make you suspicious.",
+    "You found wagon ruts deep enough to promise trade, trouble, or both.",
   ],
 };
 
