@@ -8,6 +8,7 @@ import {
   getSessionXpBreakdown,
   sortSessionTargets,
 } from "../../core/formatters.js";
+import { t } from "../../core/i18n.js";
 
 export function renderSessionGameOptions(games) {
   const previousValue = sessionGameSelect.value;
@@ -15,7 +16,7 @@ export function renderSessionGameOptions(games) {
 
   if (availableGames.length === 0) {
     sessionGameSelect.innerHTML =
-      '<option value="">Move a game to In Progress first</option>';
+      `<option value="">${escapeHtml(t("sessions.gameEmpty"))}</option>`;
     sessionGameSelect.disabled = true;
     return;
   }
@@ -26,7 +27,9 @@ export function renderSessionGameOptions(games) {
     .map((game) => {
       const prefix = game.isMain ? "🎯 " : "";
       const suffix =
-        game.status === GAME_STATUSES.COMPLETED ? " (completed replay)" : "";
+        game.status === GAME_STATUSES.COMPLETED
+          ? ` ${t("status.completionReplaySuffix")}`
+          : "";
       return `<option value="${game.id}">${prefix}${escapeHtml(
         game.title
       )}${suffix}</option>`;
@@ -45,10 +48,10 @@ export function renderSessionGameOptions(games) {
 
 export function renderRecentSessions(games, sessions) {
   if (sessions.length === 0) {
-    recentSessionsSummaryEl.textContent = "No sessions logged yet.";
+    recentSessionsSummaryEl.textContent = t("sessions.recentEmptySummary");
     recentSessionsListEl.innerHTML = `
       <div class="empty-state">
-        Log your first session to start building momentum.
+        ${escapeHtml(t("sessions.recentEmptyState"))}
       </div>
     `;
     return;
@@ -63,8 +66,11 @@ export function renderRecentSessions(games, sessions) {
 
   recentSessionsSummaryEl.textContent =
     sortedSessions.length === 1
-      ? "Showing your 1 logged session."
-      : `Showing your latest ${visibleSessions.length} of ${sortedSessions.length} sessions.`;
+      ? t("sessions.recentSingle")
+      : t("sessions.recentMany", {
+          visible: visibleSessions.length,
+          total: sortedSessions.length,
+        });
 
   recentSessionsListEl.innerHTML = `
     ${renderSessionCards(visibleSessions, gameMap)}
@@ -72,9 +78,14 @@ export function renderRecentSessions(games, sessions) {
       hiddenSessions.length
         ? `
             <details class="sessions-expand-panel">
-              <summary>Show ${hiddenSessions.length} older session${
-                hiddenSessions.length === 1 ? "" : "s"
-              }</summary>
+              <summary>${escapeHtml(
+                t("sessions.showOlder", {
+                  count: hiddenSessions.length,
+                  sessionWord: t("common.sessionWord", {
+                    count: hiddenSessions.length,
+                  }),
+                })
+              )}</summary>
               <div class="sessions-expand-list">
                 ${renderSessionCards(hiddenSessions, gameMap)}
               </div>
@@ -92,8 +103,12 @@ function renderSessionCards(sessions, gameMap) {
       const gameTitle = escapeHtml(relatedGame?.title || "Unknown game");
       const safeNote = escapeHtml(session.note || "");
       const progressBadge = session.meaningfulProgress
-        ? '<span class="badge badge-progress">Meaningful progress</span>'
-        : '<span class="badge badge-neutral">Light session</span>';
+        ? `<span class="badge badge-progress">${escapeHtml(
+            t("sessions.card.meaningful")
+          )}</span>`
+        : `<span class="badge badge-neutral">${escapeHtml(
+            t("sessions.card.light")
+          )}</span>`;
       const xpBreakdown = getSessionXpBreakdown(session);
       const xpBadgeClass =
         xpBreakdown.total >= 0
@@ -122,8 +137,12 @@ function renderSessionCards(sessions, gameMap) {
 
           ${
             safeNote
-              ? `<div class="note-block"><p class="note-label">Session note</p><p class="session-note">${safeNote}</p></div>`
-              : '<p class="session-meta">No note for this session.</p>'
+              ? `<div class="note-block"><p class="note-label">${escapeHtml(
+                  t("sessions.card.sessionNote")
+                )}</p><p class="session-note">${safeNote}</p></div>`
+              : `<p class="session-meta">${escapeHtml(
+                  t("sessions.card.noNote")
+                )}</p>`
           }
           ${focusTaxNote}
         </article>

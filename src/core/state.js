@@ -8,5 +8,6 @@ export const appState = {
   editingCharacterName: false,
   isJourneyEventResolving: false,
   themePreference: "system",
+  locale: "en",
   renderApp: async () => {},
 };

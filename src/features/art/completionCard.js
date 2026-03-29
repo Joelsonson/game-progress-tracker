@@ -1,11 +1,12 @@
 import { getAllSessions } from "../../data/sessionsRepo.js";
-import { CARD_TIER_META, GAME_STATUSES, XP_RULES } from "../../core/constants.js";
+import { CARD_TIER_META, GAME_STATUSES } from "../../core/constants.js";
 import {
   buildSessionStats,
   emptySessionStats,
   formatDate,
   formatMinutes,
   getCompletionTier,
+  getGameCompletionXp,
   getGameObjectiveText,
   getInitials,
 } from "../../core/formatters.js";
@@ -62,7 +63,7 @@ export async function buildCompletionCardCanvas(game, stats) {
   const tierMeta = CARD_TIER_META[tier];
   const totalQuestXp =
     stats.totalXp +
-    (game.status === GAME_STATUSES.COMPLETED ? XP_RULES.completionBonus : 0);
+    (game.status === GAME_STATUSES.COMPLETED ? getGameCompletionXp(game) : 0);
 
   const backgroundGradient = ctx.createLinearGradient(0, 0, width, height);
   backgroundGradient.addColorStop(0, "#071121");

@@ -362,6 +362,15 @@
   grid-template-columns: 1fr;
 }
 
+.app-footer {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.app-footer-button {
+  width: 100%;
+}
+
 .journey-event-header {
   flex-direction: column;
 }

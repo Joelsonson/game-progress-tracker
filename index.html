@@ -15,31 +15,31 @@
   <body>
     <main class="app-shell">
       <header class="hero">
-        <p class="eyebrow">Journey Log</p>
-        <h1><span class="brand-title-main">Tabi no Kiroku</span><span class="brand-title-divider"> — </span><span class="brand-title-sub">Journey Log</span></h1>
+        <p class="eyebrow" data-i18n="brand.eyebrow">Journey Log</p>
+        <h1><span class="brand-title-main">Tabi no Kiroku</span><span class="brand-title-divider"> — </span><span class="brand-title-sub" data-i18n="brand.titleSub">Journey Log</span></h1>
       </header>
 
       <section class="panel mobile-quick-switch" aria-label="Quick navigation">
         <div class="quick-switch-grid">
           <button type="button" class="nav-chip-button is-active" data-screen-target="home">
             <span class="nav-chip-icon">🏠</span>
-            <span>Home</span>
+            <span data-i18n="nav.home">Home</span>
           </button>
           <button type="button" class="nav-chip-button" data-screen-target="journey">
             <span class="nav-chip-icon">🧭</span>
-            <span>Journey</span>
+            <span data-i18n="nav.journey">Journey</span>
           </button>
           <button type="button" class="nav-chip-button" data-screen-target="character">
             <span class="nav-chip-icon">🧍</span>
-            <span>Character</span>
+            <span data-i18n="nav.character">Character</span>
           </button>
           <button type="button" class="nav-chip-button" data-screen-target="tracker">
             <span class="nav-chip-icon">🎮</span>
-            <span>Tracker</span>
+            <span data-i18n="nav.tracker">Tracker</span>
           </button>
           <button type="button" class="nav-chip-button" data-screen-target="sessions">
             <span class="nav-chip-icon">⏱️</span>
-            <span>Sessions</span>
+            <span data-i18n="nav.sessions">Sessions</span>
           </button>
         </div>
       </section>
@@ -53,7 +53,7 @@
           <section class="panel player-panel">
             <div class="player-panel-header">
               <div>
-                <p class="eyebrow">Player progression</p>
+                <p class="eyebrow" data-i18n="home.playerProgressEyebrow">Player progression</p>
                 <h2 id="playerRank">Side Quest Starter</h2>
                 <p id="xpProgressText" class="muted-text">
                   0 / 100 XP to next level
@@ -78,8 +78,8 @@
           <section class="panel quick-actions-panel">
             <div class="section-header">
               <div>
-                <h2>Quick actions</h2>
-                <p class="muted-text">
+                <h2 data-i18n="home.quickActionsTitle">Quick actions</h2>
+                <p class="muted-text" data-i18n="home.quickActionsBody">
                   Jump straight to the part of the tracker you want instead of scrolling through everything.
                 </p>
               </div>
@@ -87,7 +87,7 @@
 
             <div class="quick-action-grid">
               <button type="button" class="secondary-button quick-action-button" data-screen-target="sessions">
-                Log session
+                <span data-i18n="home.quickLogSession">Log session</span>
               </button>
               <button
                 type="button"
@@ -95,48 +95,48 @@
                 data-screen-target="sessions"
                 data-open-panel="add-game"
               >
-                Add game
+                <span data-i18n="home.quickAddGame">Add game</span>
               </button>
               <button type="button" class="secondary-button quick-action-button" data-screen-target="tracker">
-                View tracker
+                <span data-i18n="home.quickViewTracker">View tracker</span>
               </button>
               <button type="button" class="secondary-button quick-action-button" data-screen-target="journey">
-                Open journey
+                <span data-i18n="home.quickOpenJourney">Open journey</span>
               </button>
               <button type="button" class="primary-button quick-action-button" data-screen-target="character">
-                Character
+                <span data-i18n="home.quickCharacter">Character</span>
               </button>
             </div>
           </section>
 
           <section class="stats-grid">
             <article class="stat-card">
-              <p class="stat-label">Total games</p>
+              <p class="stat-label" data-i18n="home.totalGames">Total games</p>
               <p id="totalGames" class="stat-value">0</p>
             </article>
 
             <article class="stat-card">
-              <p class="stat-label">In progress</p>
+              <p class="stat-label" data-i18n="home.inProgress">In progress</p>
               <p id="inProgressCount" class="stat-value">0</p>
             </article>
 
             <article class="stat-card">
-              <p class="stat-label">Completed</p>
+              <p class="stat-label" data-i18n="home.completed">Completed</p>
               <p id="completedCount" class="stat-value">0</p>
             </article>
 
             <article class="stat-card">
-              <p class="stat-label">Total sessions</p>
+              <p class="stat-label" data-i18n="home.totalSessions">Total sessions</p>
               <p id="totalSessions" class="stat-value">0</p>
             </article>
 
             <article class="stat-card">
-              <p class="stat-label">Main game</p>
+              <p class="stat-label" data-i18n="home.mainGame">Main game</p>
               <p id="mainGameName" class="stat-value">None yet</p>
             </article>
 
             <article class="stat-card">
-              <p class="stat-label">Current streak</p>
+              <p class="stat-label" data-i18n="home.currentStreak">Current streak</p>
               <p id="currentStreak" class="stat-value">0 days</p>
             </article>
           </section>
@@ -160,9 +160,9 @@
           <section id="journeyPanel" class="panel journey-panel">
             <div class="section-header">
               <div>
-                <p class="eyebrow">Idle journey</p>
-                <h2>Another world, day by day</h2>
-                <p class="muted-text">
+                <p class="eyebrow" data-i18n="journey.eyebrow">Idle journey</p>
+                <h2 data-i18n="journey.title">Another world, day by day</h2>
+                <p class="muted-text" data-i18n="journey.description">
                   Your character journeys on ahead. The more progress you make in games, the more he will push forward in his own journey.
                 </p>
               </div>
@@ -183,7 +183,7 @@
           <section class="panel">
             <div class="section-header">
               <div>
-                <h2>Your tracker</h2>
+                <h2 data-i18n="tracker.title">Your tracker</h2>
                 <p id="listSummary" class="muted-text">No games saved yet.</p>
               </div>
             </div>
@@ -194,20 +194,20 @@
 
         <section id="screenSessions" class="mobile-screen" data-screen="sessions">
           <section class="panel">
-            <h2>Log a play session</h2>
-            <p class="muted-text compact-note">
+            <h2 data-i18n="sessions.logTitle">Log a play session</h2>
+            <p class="muted-text compact-note" data-i18n="sessions.logBody">
               Session logging is for in-progress games and completed replays.
               Backlog, paused, and dropped games should be moved first.
             </p>
 
             <form id="sessionForm" class="stack-form">
               <div class="field">
-                <label for="sessionGame">Game</label>
+                <label for="sessionGame" data-i18n="sessions.gameLabel">Game</label>
                 <select id="sessionGame" name="sessionGame"></select>
               </div>
 
               <div class="field">
-                <label for="sessionMinutes">Minutes played</label>
+                <label for="sessionMinutes" data-i18n="sessions.minutesLabel">Minutes played</label>
                 <input
                   id="sessionMinutes"
                   name="sessionMinutes"
@@ -215,27 +215,30 @@
                   min="1"
                   step="1"
                   placeholder="60"
+                  data-i18n-placeholder="sessions.minutesPlaceholder"
                   required
                 />
               </div>
 
               <div class="field">
-                <label for="sessionNote">Session note</label>
+                <label for="sessionNote" data-i18n="sessions.noteLabel">Session note</label>
                 <textarea
                   id="sessionNote"
                   name="sessionNote"
                   rows="3"
                   placeholder="What did you get done? Where did you stop?"
+                  data-i18n-placeholder="sessions.notePlaceholder"
                 ></textarea>
               </div>
 
               <div class="field">
-                <label for="sessionObjective">Update current objective</label>
+                <label for="sessionObjective" data-i18n="sessions.objectiveLabel">Update current objective</label>
                 <textarea
                   id="sessionObjective"
                   name="sessionObjective"
                   rows="2"
                   placeholder="Optional: update what you want to do next in this game"
+                  data-i18n-placeholder="sessions.objectivePlaceholder"
                 ></textarea>
               </div>
 
@@ -245,91 +248,139 @@
                   name="meaningfulProgress"
                   type="checkbox"
                 />
-                <span>This session felt like meaningful progress</span>
+                <span data-i18n="sessions.meaningfulLabel">This session felt like meaningful progress</span>
               </label>
 
-              <button type="submit" class="primary-button">Log session</button>
+              <button type="submit" class="primary-button" data-i18n="sessions.submit">Log session</button>
               <p id="sessionMessage" class="form-message"></p>
             </form>
           </section>
 
           <details id="addGamePanel" class="panel add-game-panel">
-            <summary>Add a game</summary>
+            <summary data-i18n="sessions.addGameSummary">Add a game</summary>
 
             <form id="gameForm" class="stack-form">
               <div class="field">
-                <label for="title">Game title</label>
+                <label for="title" data-i18n="games.add.titleLabel">Game title</label>
                 <input
                   id="title"
                   name="title"
                   type="text"
                   placeholder="Elden Ring"
+                  data-i18n-placeholder="games.add.titlePlaceholder"
                   required
                 />
               </div>
 
               <div class="field">
-                <label for="platform">Platform</label>
+                <label for="platform" data-i18n="games.add.platformLabel">Platform</label>
                 <input
                   id="platform"
                   name="platform"
                   type="text"
                   placeholder="PC, PS5, Switch..."
+                  data-i18n-placeholder="games.add.platformPlaceholder"
                 />
               </div>
 
               <div class="field">
-                <label for="gameStatus">Starting status</label>
+                <label for="gameStatus" data-i18n="games.add.statusLabel">Starting status</label>
                 <select id="gameStatus" name="gameStatus">
-                  <option value="backlog" selected>Backlog</option>
-                  <option value="in-progress">In Progress</option>
-                  <option value="paused">Paused</option>
-                  <option value="completed">Completed</option>
-                  <option value="dropped">Dropped</option>
+                  <option value="backlog" selected data-i18n="status.backlog.label">Backlog</option>
+                  <option value="in-progress" data-i18n="status.inProgress.label">In Progress</option>
+                  <option value="paused" data-i18n="status.paused.label">Paused</option>
+                  <option value="completed" data-i18n="status.completed.label">Completed</option>
+                  <option value="dropped" data-i18n="status.dropped.label">Dropped</option>
                 </select>
               </div>
 
+              <fieldset class="field difficulty-fieldset">
+                <legend data-i18n="games.add.difficultyLabel">Completion difficulty</legend>
+                <p class="field-hint" data-i18n="games.add.difficultyHint">
+                  Pick how demanding the full clear feels. Harder clears pay out more when completed.
+                </p>
+                <div id="gameDifficultySelector" class="difficulty-selector" role="radiogroup">
+                  <input id="gameDifficultyVeryEasy" type="radio" name="gameDifficulty" value="very-easy" />
+                  <label class="difficulty-option" for="gameDifficultyVeryEasy">
+                    <span data-i18n="difficulty.veryEasy">Very Easy</span>
+                    <strong>+60 XP</strong>
+                  </label>
+
+                  <input id="gameDifficultyEasy" type="radio" name="gameDifficulty" value="easy" />
+                  <label class="difficulty-option" for="gameDifficultyEasy">
+                    <span data-i18n="difficulty.easy">Easy</span>
+                    <strong>+80 XP</strong>
+                  </label>
+
+                  <input
+                    id="gameDifficultyStandard"
+                    type="radio"
+                    name="gameDifficulty"
+                    value="standard"
+                    checked
+                  />
+                  <label class="difficulty-option" for="gameDifficultyStandard">
+                    <span data-i18n="difficulty.standard">Standard</span>
+                    <strong>+100 XP</strong>
+                  </label>
+
+                  <input id="gameDifficultyHard" type="radio" name="gameDifficulty" value="hard" />
+                  <label class="difficulty-option" for="gameDifficultyHard">
+                    <span data-i18n="difficulty.hard">Hard</span>
+                    <strong>+125 XP</strong>
+                  </label>
+
+                  <input id="gameDifficultyVeryHard" type="radio" name="gameDifficulty" value="very-hard" />
+                  <label class="difficulty-option" for="gameDifficultyVeryHard">
+                    <span data-i18n="difficulty.veryHard">Very Hard</span>
+                    <strong>+150 XP</strong>
+                  </label>
+                </div>
+                <p id="difficultyRewardPreview" class="difficulty-preview"></p>
+              </fieldset>
+
               <div class="field">
-                <label for="notes">Current objective</label>
+                <label for="notes" data-i18n="games.add.objectiveLabel">Current objective</label>
                 <textarea
                   id="notes"
                   name="notes"
                   rows="3"
                   placeholder="Where you left off, your current goal, next objective..."
+                  data-i18n-placeholder="games.add.objectivePlaceholder"
                 ></textarea>
               </div>
 
               <div class="art-upload-grid">
                 <div class="field">
-                  <label for="coverImage">Cover art</label>
+                  <label for="coverImage" data-i18n="games.add.coverLabel">Cover art</label>
                   <input
                     id="coverImage"
                     name="coverImage"
                     type="file"
                     accept="image/*"
                   />
-                  <p class="field-hint">
+                  <p class="field-hint" data-i18n="games.add.coverHint">
                     Portrait art looks best. Recommended upload: 900×1200 or larger.
                     The app crops it to a 3:4 card frame after upload.
                   </p>
                 </div>
 
                 <div class="field">
-                  <label for="bannerImage">Banner art</label>
+                  <label for="bannerImage" data-i18n="games.add.bannerLabel">Banner art</label>
                   <input
                     id="bannerImage"
                     name="bannerImage"
                     type="file"
                     accept="image/*"
                   />
-                  <p class="field-hint">
+                  <p class="field-hint" data-i18n="games.add.bannerHint">
                     Wide artwork works best. Recommended upload: 1600×900 or larger.
                     The app crops it to a 16:9 hero frame after upload.
                   </p>
                 </div>
               </div>
 
-              <button type="submit" class="primary-button">Add game</button>
+              <button type="submit" class="primary-button" data-i18n="games.add.submit">Add game</button>
               <p id="formMessage" class="form-message"></p>
             </form>
           </details>
@@ -337,7 +388,7 @@
           <section class="panel">
             <div class="section-header">
               <div>
-                <h2>Recent sessions</h2>
+                <h2 data-i18n="sessions.recentTitle">Recent sessions</h2>
                 <p id="recentSessionsSummary" class="muted-text">
                   No sessions logged yet.
                 </p>
@@ -348,60 +399,76 @@
           </section>
 
           <details id="settingsPanel" class="panel settings-panel">
-            <summary>Settings &amp; data</summary>
+            <summary data-i18n="settings.summary">Settings &amp; data</summary>
 
             <div class="settings-grid">
               <article class="settings-card">
-                <p class="eyebrow">Appearance</p>
-                <h3>Choose your reading mode</h3>
-                <p class="muted-text">
+                <p class="eyebrow" data-i18n="settings.appearanceEyebrow">Appearance</p>
+                <h3 data-i18n="settings.appearanceTitle">Choose your reading mode</h3>
+                <p class="muted-text" data-i18n="settings.appearanceBody">
                   Switch between light, dark, or follow your device setting.
                 </p>
                 <div class="field">
-                  <label for="themePreference">Theme</label>
+                  <label for="themePreference" data-i18n="settings.themeLabel">Theme</label>
                   <select id="themePreference" name="themePreference">
-                    <option value="system">Match device</option>
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
+                    <option value="system" data-i18n="settings.themeSystem">Match device</option>
+                    <option value="light" data-i18n="settings.themeLight">Light</option>
+                    <option value="dark" data-i18n="settings.themeDark">Dark</option>
                   </select>
                 </div>
               </article>
 
               <article class="settings-card">
-                <p class="eyebrow">Artwork guide</p>
-                <h3>Better-looking cards start with the right framing</h3>
-                <p class="muted-text">
+                <p class="eyebrow" data-i18n="settings.languageEyebrow">Language</p>
+                <h3 data-i18n="settings.languageTitle">Choose your interface language</h3>
+                <p class="muted-text" data-i18n="settings.languageBody">
+                  Switch the app between English and Japanese. Dates and interface labels will update right away.
+                </p>
+                <div class="field">
+                  <label for="languagePreference" data-i18n="settings.languageLabel">Language</label>
+                  <select id="languagePreference" name="languagePreference">
+                    <option value="en" data-i18n="settings.languageEn">English</option>
+                    <option value="ja" data-i18n="settings.languageJa">Japanese</option>
+                  </select>
+                </div>
+              </article>
+
+              <article class="settings-card">
+                <p class="eyebrow" data-i18n="settings.artEyebrow">Artwork guide</p>
+                <h3 data-i18n="settings.artTitle">Better-looking cards start with the right framing</h3>
+                <p class="muted-text" data-i18n="settings.artBody">
                   Covers should be portrait and readable even when small. Banners
                   should keep the subject near the center so the hero panels and
                   deck cards still look clean on smaller screens.
                 </p>
                 <div class="summary-row">
-                  <span class="summary-pill">Cover: 3:4 portrait</span>
-                  <span class="summary-pill">Banner: 16:9 wide</span>
-                  <span class="summary-pill">Crop editor included</span>
+                  <span class="summary-pill" data-i18n="settings.artCover">Cover: 3:4 portrait</span>
+                  <span class="summary-pill" data-i18n="settings.artBanner">Banner: 16:9 wide</span>
+                  <span class="summary-pill" data-i18n="settings.artCrop">Crop editor included</span>
                 </div>
               </article>
 
               <article class="settings-card">
-                <p class="eyebrow">Local backup</p>
-                <h3>Move your tracker to another device</h3>
-                <p class="muted-text">
+                <p class="eyebrow" data-i18n="settings.backupEyebrow">Local backup</p>
+                <h3 data-i18n="settings.backupTitle">Move your tracker to another device</h3>
+                <p class="muted-text" data-i18n="settings.backupBody">
                   Export saves your games, sessions, XP progress, artwork, and idle journey into
                   one JSON backup. Import replaces the current local tracker with the
                   backup you choose.
                 </p>
 
                 <div class="settings-actions">
-                  <button id="exportDataButton" type="button" class="secondary-button">
+                  <button id="exportDataButton" type="button" class="secondary-button" data-i18n="settings.export">
                     Export progress
                   </button>
-                  <button id="importDataButton" type="button" class="secondary-button">
+                  <button id="importDataButton" type="button" class="secondary-button" data-i18n="settings.import">
                     Import progress
                   </button>
                   <button
                     id="clearJourneyButton"
                     type="button"
                     class="secondary-button action-warning"
+                    data-i18n="settings.resetJourney"
                   >
                     Reset journey only
                   </button>
@@ -409,6 +476,7 @@
                     id="clearDataButton"
                     type="button"
                     class="secondary-button action-danger"
+                    data-i18n="settings.clearData"
                   >
                     Clear all data
                   </button>
@@ -420,6 +488,22 @@
           </details>
         </section>
       </div>
+
+      <footer class="app-footer">
+        <div>
+          <p class="eyebrow" data-i18n="footer.title">Settings</p>
+          <p class="muted-text" data-i18n="footer.body">Theme, language, backup</p>
+        </div>
+        <button
+          type="button"
+          class="secondary-button app-footer-button"
+          data-screen-target="sessions"
+          data-open-panel="settings"
+          data-i18n="footer.button"
+        >
+          Open settings
+        </button>
+      </footer>
     </main>
 
     <input id="coverArtPicker" class="visually-hidden-file-input" type="file" accept="image/*" aria-hidden="true" tabindex="-1" />
@@ -437,9 +521,9 @@
       >
         <div class="crop-modal-header">
           <div>
-            <p class="eyebrow">Adjust artwork</p>
-            <h2 id="cropModalTitle">Crop image</h2>
-            <p id="cropGuidance" class="muted-text">
+            <p class="eyebrow" data-i18n="crop.eyebrow">Adjust artwork</p>
+            <h2 id="cropModalTitle" data-i18n="crop.title">Crop image</h2>
+            <p id="cropGuidance" class="muted-text" data-i18n="crop.guidance">
               Position the image so the important area stays visible.
             </p>
           </div>
@@ -452,7 +536,7 @@
 
           <div class="crop-controls">
             <div class="field">
-              <label for="cropZoomRange">Zoom</label>
+              <label for="cropZoomRange" data-i18n="crop.zoom">Zoom</label>
               <input
                 id="cropZoomRange"
                 type="range"
@@ -464,7 +548,7 @@
             </div>
 
             <div class="field">
-              <label for="cropFocusXRange">Horizontal crop</label>
+              <label for="cropFocusXRange" data-i18n="crop.horizontal">Horizontal crop</label>
               <input
                 id="cropFocusXRange"
                 type="range"
@@ -476,7 +560,7 @@
             </div>
 
             <div class="field">
-              <label for="cropFocusYRange">Vertical crop</label>
+              <label for="cropFocusYRange" data-i18n="crop.vertical">Vertical crop</label>
               <input
                 id="cropFocusYRange"
                 type="range"
@@ -488,7 +572,7 @@
             </div>
 
             <div class="summary-row">
-              <span id="cropPresetPill" class="summary-pill">Preset</span>
+              <span id="cropPresetPill" class="summary-pill" data-i18n="crop.preset">Preset</span>
               <span id="cropZoomValue" class="summary-pill">100%</span>
             </div>
           </div>
@@ -499,6 +583,7 @@
             id="cropResetButton"
             type="button"
             class="secondary-button"
+            data-i18n="crop.reset"
           >
             Reset
           </button>
@@ -506,6 +591,7 @@
             id="cropCancelButton"
             type="button"
             class="secondary-button"
+            data-i18n="crop.cancel"
           >
             Cancel
           </button>
@@ -513,6 +599,7 @@
             id="cropConfirmButton"
             type="button"
             class="primary-button"
+            data-i18n="crop.confirm"
           >
             Use crop
           </button>

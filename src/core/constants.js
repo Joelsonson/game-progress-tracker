@@ -1,6 +1,16 @@
-import { DEFAULT_GAME_STATUS, GAME_STATUSES } from "../data/db.js";
+import {
+  DEFAULT_GAME_DIFFICULTY,
+  DEFAULT_GAME_STATUS,
+  GAME_DIFFICULTIES,
+  GAME_STATUSES,
+} from "../data/db.js";
 
-export { DEFAULT_GAME_STATUS, GAME_STATUSES };
+export {
+  DEFAULT_GAME_DIFFICULTY,
+  DEFAULT_GAME_STATUS,
+  GAME_DIFFICULTIES,
+  GAME_STATUSES,
+};
 
 export const SESSION_ALLOWED_STATUSES = new Set([
   GAME_STATUSES.IN_PROGRESS,
@@ -15,6 +25,34 @@ export const XP_RULES = {
   meaningfulBonus: 15,
   completionBonus: 100,
   xpPerLevel: 100,
+};
+
+export const GAME_DIFFICULTY_META = {
+  [GAME_DIFFICULTIES.VERY_EASY]: {
+    rewardXp: 60,
+    badgeClass: "difficulty-very-easy",
+    labelKey: "difficulty.veryEasy",
+  },
+  [GAME_DIFFICULTIES.EASY]: {
+    rewardXp: 80,
+    badgeClass: "difficulty-easy",
+    labelKey: "difficulty.easy",
+  },
+  [GAME_DIFFICULTIES.STANDARD]: {
+    rewardXp: XP_RULES.completionBonus,
+    badgeClass: "difficulty-standard",
+    labelKey: "difficulty.standard",
+  },
+  [GAME_DIFFICULTIES.HARD]: {
+    rewardXp: 125,
+    badgeClass: "difficulty-hard",
+    labelKey: "difficulty.hard",
+  },
+  [GAME_DIFFICULTIES.VERY_HARD]: {
+    rewardXp: 150,
+    badgeClass: "difficulty-very-hard",
+    labelKey: "difficulty.veryHard",
+  },
 };
 
 export const IMAGE_PRESET = {

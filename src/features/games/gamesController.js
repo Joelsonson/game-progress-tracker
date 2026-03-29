@@ -7,29 +7,39 @@ import {
   bannerImageInput,
   coverArtPickerInput,
   coverImageInput,
+  difficultyRewardPreview,
   formMessage,
   gameActionsBodyEl,
   gameActionsMetaEl,
   gameActionsModal,
   gameActionsTitleEl,
   gameForm,
+  gameDifficultyInputs,
   gameStatusInput,
   notesInput,
   platformInput,
   titleInput,
 } from "../../core/dom.js";
-import { DEFAULT_GAME_STATUS, GAME_STATUSES, IMAGE_PRESET, XP_RULES } from "../../core/constants.js";
+import {
+  DEFAULT_GAME_DIFFICULTY,
+  DEFAULT_GAME_STATUS,
+  GAME_DIFFICULTIES,
+  GAME_STATUSES,
+} from "../../core/constants.js";
 import {
   buildCompletionMessage,
   buildGameForStatus,
   buildSessionStats,
   enforceMainGameRules,
   getErrorMessage,
+  getGameCompletionXp,
+  getGameDifficultyLabel,
   getStatusLabel,
   hasGameChanged,
   isCropCancelError,
   isValidStatus,
 } from "../../core/formatters.js";
+import { t } from "../../core/i18n.js";
 import { appState } from "../../core/state.js";
 import { openFilePicker, scrollDeck, showMessage } from "../../core/ui.js";
 import { downloadCompletionCard } from "../art/completionCard.js";
@@ -41,9 +51,16 @@ export function openGameActionsSheet(game) {
     return;
   }
 
-  const statusLabel = getStatusLabel(game.status);
+  const platformLabel =
+    game.platform && game.platform !== "Unspecified"
+      ? game.platform
+      : t("common.unspecified");
   gameActionsTitleEl.textContent = game.title;
-  gameActionsMetaEl.textContent = `${game.platform || "Unspecified"} • ${statusLabel}`;
+  gameActionsMetaEl.textContent = t("tracker.actionSheetMeta", {
+    platform: platformLabel,
+    difficulty: getGameDifficultyLabel(game.difficulty),
+    rewardXp: getGameCompletionXp(game),
+  });
   gameActionsBodyEl.innerHTML = renderGameActionSheet(game);
   gameActionsModal.hidden = false;
   document.body.classList.add("has-overlay");
@@ -85,12 +102,13 @@ export async function handleAddGame(event) {
   const title = titleInput.value.trim();
   const platform = platformInput.value.trim();
   const currentObjective = notesInput.value.trim();
+  const difficulty = getSelectedGameDifficulty();
   const status = isValidStatus(gameStatusInput.value)
     ? gameStatusInput.value
     : DEFAULT_GAME_STATUS;
 
   if (!title) {
-    showMessage(formMessage, "Please enter a game title.", true);
+    showMessage(formMessage, t("games.add.titleMissing"), true);
     return;
   }
 
@@ -115,6 +133,7 @@ export async function handleAddGame(event) {
       id: crypto.randomUUID(),
       title,
       platform: platform || "Unspecified",
+      difficulty,
       currentObjective,
       notes: "",
       coverImage,
@@ -132,32 +151,71 @@ export async function handleAddGame(event) {
     await addGame(appState.db, newGame);
     gameForm.reset();
     gameStatusInput.value = DEFAULT_GAME_STATUS;
+    resetGameDifficultySelection();
+    syncGameDifficultyPresentation();
     if (addGamePanel) addGamePanel.open = false;
 
     if (newGame.status === GAME_STATUSES.COMPLETED) {
       showMessage(
         formMessage,
-        `Added and finished "${title}". Nice. +${XP_RULES.completionBonus} XP.`
+        t("games.add.addedCompleted", {
+          title,
+          rewardXp: getGameCompletionXp(newGame),
+        })
       );
     } else if (newGame.isMain) {
-      showMessage(formMessage, `Added "${title}" as your Main Game.`);
+      showMessage(formMessage, t("games.add.addedMain", { title }));
     } else {
       showMessage(
         formMessage,
-        `Added "${title}" to ${getStatusLabel(newGame.status)}.`
+        t("games.add.addedToStatus", {
+          title,
+          statusLabel: getStatusLabel(newGame.status),
+        })
       );
     }
 
     await appState.renderApp();
   } catch (error) {
     if (isCropCancelError(error)) {
-      showMessage(formMessage, "Image crop cancelled.", true);
+      showMessage(formMessage, t("games.add.cropCancelled"), true);
       return;
     }
 
     console.error("Failed to save game:", error);
-    showMessage(formMessage, getErrorMessage(error, "Could not save game."), true);
+    showMessage(
+      formMessage,
+      getErrorMessage(error, t("games.add.saveFailed")),
+      true
+    );
   }
+}
+
+export function syncGameDifficultyPresentation() {
+  if (!difficultyRewardPreview) return;
+
+  const difficulty = getSelectedGameDifficulty();
+  difficultyRewardPreview.textContent = t("difficulty.preview", {
+    difficulty: getGameDifficultyLabel(difficulty),
+    rewardXp: getGameCompletionXp({ difficulty }),
+  });
+}
+
+function getSelectedGameDifficulty() {
+  const selectedInput = gameForm?.querySelector('input[name="gameDifficulty"]:checked');
+  return isValidGameDifficulty(selectedInput?.value)
+    ? selectedInput.value
+    : DEFAULT_GAME_DIFFICULTY;
+}
+
+function resetGameDifficultySelection() {
+  for (const input of gameDifficultyInputs) {
+    input.checked = input.value === DEFAULT_GAME_DIFFICULTY;
+  }
+}
+
+function isValidGameDifficulty(value) {
+  return Object.values(GAME_DIFFICULTIES).includes(value);
 }
 
 export async function handleListClick(event) {
@@ -179,7 +237,7 @@ export async function handleListClick(event) {
     const game = games.find((entry) => entry.id === id);
 
     if (!game) {
-      showMessage(formMessage, "That game could not be found.", true);
+      showMessage(formMessage, t("games.messages.notFound"), true);
       return;
     }
 
@@ -196,14 +254,14 @@ export async function handleListClick(event) {
       if (!isMainEligibleStatus(game.status)) {
         showMessage(
           formMessage,
-          "Only in-progress games can be your Main Game.",
+          t("games.messages.makeMainRestricted"),
           true
         );
         return;
       }
 
       await setMainGame(appState.db, id);
-      showMessage(formMessage, `"${game.title}" is now your Main Game.`);
+      showMessage(formMessage, t("games.messages.nowMain", { title: game.title }));
       await appState.renderApp();
       return;
     }
@@ -229,20 +287,20 @@ export async function handleListClick(event) {
         artUpdatedAt: now,
         updatedAt: now,
       });
-      showMessage(formMessage, `Cleared artwork for "${game.title}".`);
+      showMessage(formMessage, t("games.messages.clearedArt", { title: game.title }));
       await appState.renderApp();
       return;
     }
 
     if (action === "download-card") {
       await downloadCompletionCard(game);
-      showMessage(formMessage, `Saved a completion card for "${game.title}".`);
+      showMessage(formMessage, t("games.messages.savedCard", { title: game.title }));
       return;
     }
 
     if (action === "set-status") {
       if (!isValidStatus(status)) {
-        showMessage(formMessage, "That status change is not supported.", true);
+        showMessage(formMessage, t("games.messages.statusNotSupported"), true);
         return;
       }
 
@@ -259,7 +317,10 @@ export async function handleListClick(event) {
       } else {
         showMessage(
           formMessage,
-          `Moved "${game.title}" to ${getStatusLabel(updatedGame.status)}.`
+          t("games.messages.movedStatus", {
+            title: game.title,
+            statusLabel: getStatusLabel(updatedGame.status),
+          })
         );
       }
 
@@ -267,12 +328,16 @@ export async function handleListClick(event) {
     }
   } catch (error) {
     if (isCropCancelError(error)) {
-      showMessage(formMessage, "Image crop cancelled.", true);
+      showMessage(formMessage, t("games.add.cropCancelled"), true);
       return;
     }
 
     console.error("Failed to update game:", error);
-    showMessage(formMessage, getErrorMessage(error, "Could not update game."), true);
+    showMessage(
+      formMessage,
+      getErrorMessage(error, t("games.messages.updateFailed")),
+      true
+    );
   }
 }
 
@@ -293,7 +358,7 @@ export async function handleArtPickerChange(kind) {
     const game = games.find((entry) => entry.id === activeTarget.gameId);
 
     if (!game) {
-      showMessage(formMessage, "That game could not be found.", true);
+      showMessage(formMessage, t("games.messages.notFound"), true);
       return;
     }
 
@@ -310,19 +375,25 @@ export async function handleArtPickerChange(kind) {
 
     showMessage(
       formMessage,
-      `Updated ${IMAGE_PRESET[kind].label} for "${game.title}".`
+      t("games.messages.artUpdated", {
+        kindLabel:
+          kind === "cover"
+            ? t("games.add.coverLabel")
+            : t("games.add.bannerLabel"),
+        title: game.title,
+      })
     );
     await appState.renderApp();
   } catch (error) {
     if (isCropCancelError(error)) {
-      showMessage(formMessage, "Image crop cancelled.", true);
+      showMessage(formMessage, t("games.add.cropCancelled"), true);
       return;
     }
 
     console.error("Failed to update art:", error);
     showMessage(
       formMessage,
-      getErrorMessage(error, "Could not update game art."),
+      getErrorMessage(error, t("games.messages.artUpdateFailed")),
       true
     );
   }

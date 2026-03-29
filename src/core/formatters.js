@@ -1,11 +1,14 @@
 import { isMainEligibleStatus, normalizeGameRecord } from "../data/db.js";
 import {
   FOCUS_TAX_META,
+  GAME_DIFFICULTIES,
+  GAME_DIFFICULTY_META,
   GAME_STATUSES,
   SESSION_ALLOWED_STATUSES,
   STATUS_META,
   XP_RULES,
 } from "./constants.js";
+import { getCurrentLocale, t } from "./i18n.js";
 
 export function buildSessionStats(sessions) {
   const stats = new Map();
@@ -55,9 +58,12 @@ export function buildXpSummary(games, sessions) {
     return total + calculateSessionXp(session);
   }, 0);
 
-  const completionXp =
-    games.filter((game) => game.status === GAME_STATUSES.COMPLETED).length *
-    XP_RULES.completionBonus;
+  const completionXp = games.reduce((total, game) => {
+    if (game.status !== GAME_STATUSES.COMPLETED) {
+      return total;
+    }
+    return total + getGameCompletionXp(game);
+  }, 0);
 
   const streakBonus = Math.max(0, currentStreak - 1) * 5;
   const totalXp = Math.max(0, sessionXp + completionXp + streakBonus);
@@ -94,11 +100,11 @@ export function calculateSessionXp(session) {
 }
 
 export function getRankTitle(level) {
-  if (level >= 12) return "Legendary Finisher";
-  if (level >= 8) return "Boss Hunter";
-  if (level >= 5) return "Focused Finisher";
-  if (level >= 3) return "Momentum Builder";
-  return "Side Quest Starter";
+  if (level >= 12) return t("player.rank.legendaryFinisher");
+  if (level >= 8) return t("player.rank.bossHunter");
+  if (level >= 5) return t("player.rank.focusedFinisher");
+  if (level >= 3) return t("player.rank.momentumBuilder");
+  return t("player.rank.sideQuestStarter");
 }
 
 export function buildGameForStatus(game, nextStatus) {
@@ -130,11 +136,13 @@ export function buildGameForStatus(game, nextStatus) {
 
 export function buildCompletionMessage(game, sessionStats) {
   const stats = sessionStats.get(game.id) || emptySessionStats();
-  return `🏆 Finished "${game.title}" — ${formatMinutes(
-    stats.totalMinutes
-  )} across ${stats.sessionCount} ${
-    stats.sessionCount === 1 ? "session" : "sessions"
-  } • +${XP_RULES.completionBonus} XP.`;
+  return t("games.completionMessage", {
+    title: game.title,
+    playTime: formatMinutes(stats.totalMinutes),
+    sessions: stats.sessionCount,
+    sessionWord: t("common.sessionWord", { count: stats.sessionCount }),
+    rewardXp: getGameCompletionXp(game),
+  });
 }
 
 export function enforceMainGameRules(games) {
@@ -193,7 +201,20 @@ export function getStatusSortOrder(status) {
 }
 
 export function getStatusLabel(status) {
-  return STATUS_META[status]?.label || "Backlog";
+  return getStatusMeta(status).label;
+}
+
+export function getStatusMeta(status) {
+  const normalizedStatus = STATUS_META[status] ? status : GAME_STATUSES.BACKLOG;
+  const statusKey = statusToTranslationKey(normalizedStatus);
+  const fallbackMeta = STATUS_META[normalizedStatus] || STATUS_META[GAME_STATUSES.BACKLOG];
+
+  return {
+    ...fallbackMeta,
+    label: t(`status.${statusKey}.label`),
+    description: t(`status.${statusKey}.description`),
+    empty: t(`status.${statusKey}.empty`),
+  };
 }
 
 export function isValidStatus(status) {
@@ -303,14 +324,14 @@ export function formatMinutes(totalMinutes) {
 }
 
 export function formatDateTime(value) {
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(getIntlLocale(), {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
 }
 
 export function formatDate(value) {
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(getIntlLocale(), {
     dateStyle: "medium",
   }).format(new Date(value));
 }
@@ -330,6 +351,7 @@ export function hasGameChanged(originalGame, updatedGame) {
     "id",
     "title",
     "platform",
+    "difficulty",
     "currentObjective",
     "notes",
     "coverImage",
@@ -393,6 +415,21 @@ export function getSessionXpBreakdown(session) {
     totalText: `${total >= 0 ? "+" : ""}${total} XP`,
     focusPenalty: focusPenalty ? `${focusPenalty} XP` : "",
   };
+}
+
+export function getGameDifficultyMeta(difficulty) {
+  return (
+    GAME_DIFFICULTY_META[difficulty] ||
+    GAME_DIFFICULTY_META[GAME_DIFFICULTIES.STANDARD]
+  );
+}
+
+export function getGameDifficultyLabel(difficulty) {
+  return t(getGameDifficultyMeta(difficulty).labelKey);
+}
+
+export function getGameCompletionXp(game) {
+  return getGameDifficultyMeta(game?.difficulty).rewardXp;
 }
 
 export function rollFocusPenalty({ selectedGame, allGames, meaningfulProgress, minutes }) {
@@ -497,4 +534,24 @@ export function romanize(value) {
   }
 
   return output;
+}
+
+function getIntlLocale() {
+  return getCurrentLocale() === "ja" ? "ja-JP" : "en";
+}
+
+function statusToTranslationKey(status) {
+  switch (status) {
+    case GAME_STATUSES.IN_PROGRESS:
+      return "inProgress";
+    case GAME_STATUSES.PAUSED:
+      return "paused";
+    case GAME_STATUSES.COMPLETED:
+      return "completed";
+    case GAME_STATUSES.DROPPED:
+      return "dropped";
+    case GAME_STATUSES.BACKLOG:
+    default:
+      return "backlog";
+  }
 }

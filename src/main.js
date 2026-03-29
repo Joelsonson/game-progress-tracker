@@ -28,6 +28,7 @@ import {
   journeyContentEl,
   journeyEventCloseButton,
   journeyEventModal,
+  languagePreferenceInput,
   journeyOutcomeCloseButton,
   journeyOutcomeModal,
   screenNavButtons,
@@ -37,11 +38,20 @@ import {
 } from "./core/dom.js";
 import { IDLE_JOURNEY_META_KEY } from "./core/constants.js";
 import { buildSessionStats, buildXpSummary, enforceMainGameRules, sortGames } from "./core/formatters.js";
+import { applyStaticTranslations, normalizeLocale, setActiveLocale, t } from "./core/i18n.js";
 import { appState } from "./core/state.js";
 import { showMessage } from "./core/ui.js";
 import { handleClearData, handleExportData, handleImportData, handleResetJourneyData } from "./features/backup/backupController.js";
 import { cancelCropSelection, confirmCropSelection, handleCropControlInput, handleCropModalClick, resetCropControls } from "./features/art/imageCropper.js";
-import { closeGameActionsSheet, handleAddGame, handleArtPickerChange, handleGameActionsModalClick, handleListClick, repairGamesIfNeeded } from "./features/games/gamesController.js";
+import {
+  closeGameActionsSheet,
+  handleAddGame,
+  handleArtPickerChange,
+  handleGameActionsModalClick,
+  handleListClick,
+  repairGamesIfNeeded,
+  syncGameDifficultyPresentation,
+} from "./features/games/gamesController.js";
 import { renderCompletionSpotlight, renderGames, renderMainQuest, renderPlayerProgress, renderStats } from "./features/games/gamesView.js";
 import { handleHomeJourneyClick, handleJourneyClick, handleJourneyEventModalClick, handleJourneyOutcomeModalClick } from "./features/journey/journeyController.js";
 import { syncJourneyState } from "./features/journey/journeyEngine.js";
@@ -64,6 +74,8 @@ async function init() {
     appState.db = await openDB();
     appState.renderApp = renderApp;
     appState.themePreference = getStoredThemePreference();
+    appState.locale = getStoredLocalePreference();
+    applyLanguagePreference(appState.locale);
     applyThemePreference(appState.themePreference);
     await repairGamesIfNeeded();
     bindEvents();
@@ -71,7 +83,7 @@ async function init() {
     await renderApp();
   } catch (error) {
     console.error("Failed to initialize app:", error);
-    showMessage(formMessage, "Could not initialize the app.", true);
+    showMessage(formMessage, t("messages.initError"), true);
   }
 }
 
@@ -93,6 +105,10 @@ function bindEvents() {
   clearDataButton?.addEventListener("click", handleClearData);
   importDataInput?.addEventListener("change", handleImportData);
   themePreferenceInput?.addEventListener("change", handleThemePreferenceChange);
+  languagePreferenceInput?.addEventListener("change", handleLanguagePreferenceChange);
+  document
+    .querySelector("#gameDifficultySelector")
+    ?.addEventListener("change", syncGameDifficultyPresentation);
 
   cropZoomRange?.addEventListener("input", handleCropControlInput);
   cropFocusXRange?.addEventListener("input", handleCropControlInput);
@@ -163,6 +179,8 @@ export async function renderApp() {
   renderGames(sortedGames, sessionStats);
   renderRecentSessions(sortedGames, sessions);
   syncThemePreferenceInput();
+  syncLanguagePreferenceInput();
+  syncGameDifficultyPresentation();
 }
 
 function handleThemePreferenceChange(event) {
@@ -180,6 +198,23 @@ function handleThemePreferenceChange(event) {
   }
 }
 
+async function handleLanguagePreferenceChange(event) {
+  const nextLocale = event.target instanceof HTMLSelectElement
+    ? event.target.value
+    : "en";
+  appState.locale = normalizeLocale(nextLocale);
+  applyLanguagePreference(appState.locale);
+  syncLanguagePreferenceInput();
+
+  try {
+    window.localStorage.setItem("gameTracker.localePreference", appState.locale);
+  } catch (error) {
+    // Ignore localStorage write failures.
+  }
+
+  await renderApp();
+}
+
 function getStoredThemePreference() {
   try {
     return normalizeThemePreference(
@@ -187,6 +222,16 @@ function getStoredThemePreference() {
     );
   } catch (error) {
     return "system";
+  }
+}
+
+function getStoredLocalePreference() {
+  try {
+    return normalizeLocale(
+      window.localStorage.getItem("gameTracker.localePreference")
+    );
+  } catch (error) {
+    return "en";
   }
 }
 
@@ -213,7 +258,18 @@ function applyThemePreference(preference) {
     ?.setAttribute("content", isDark ? "#242424" : "#f8f4f1");
 }
 
+function applyLanguagePreference(locale) {
+  appState.locale = normalizeLocale(locale);
+  setActiveLocale(appState.locale);
+  applyStaticTranslations();
+}
+
 function syncThemePreferenceInput() {
   if (!themePreferenceInput) return;
   themePreferenceInput.value = appState.themePreference;
+}
+
+function syncLanguagePreferenceInput() {
+  if (!languagePreferenceInput) return;
+  languagePreferenceInput.value = appState.locale;
 }

@@ -1,4 +1,4 @@
-import { addGamePanel, appScreens, screenNavButtons } from "../../core/dom.js";
+import { addGamePanel, appScreens, screenNavButtons, settingsPanel } from "../../core/dom.js";
 import { DEFAULT_SCREEN_ID, SCREEN_STORAGE_KEY } from "../../core/constants.js";
 import { appState } from "../../core/state.js";
 
@@ -7,8 +7,9 @@ export function handleScreenNavClick(event) {
   const openPanel = event.currentTarget?.dataset.openPanel;
   if (!targetScreenId) return;
 
-  if (openPanel === "add-game" && addGamePanel) {
-    addGamePanel.open = true;
+  const panel = getPanelForShortcut(openPanel);
+  if (panel) {
+    panel.open = true;
   }
 
   setActiveScreen(targetScreenId, {
@@ -16,9 +17,9 @@ export function handleScreenNavClick(event) {
     scrollToTop: true,
   });
 
-  if (openPanel === "add-game" && addGamePanel) {
+  if (panel) {
     window.requestAnimationFrame(() => {
-      addGamePanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      panel.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
 }
@@ -80,4 +81,10 @@ export function applyScreenHash(screenId) {
   } catch (error) {
     // Ignore history update failures.
   }
+}
+
+function getPanelForShortcut(openPanel) {
+  if (openPanel === "add-game") return addGamePanel;
+  if (openPanel === "settings") return settingsPanel;
+  return null;
 }

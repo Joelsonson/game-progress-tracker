@@ -3,10 +3,14 @@ export const addGamePanel = document.querySelector("#addGamePanel");
 export const titleInput = document.querySelector("#title");
 export const platformInput = document.querySelector("#platform");
 export const gameStatusInput = document.querySelector("#gameStatus");
+export const gameDifficultyInputs = Array.from(
+  document.querySelectorAll('input[name="gameDifficulty"]')
+);
 export const notesInput = document.querySelector("#notes");
 export const coverImageInput = document.querySelector("#coverImage");
 export const bannerImageInput = document.querySelector("#bannerImage");
 export const formMessage = document.querySelector("#formMessage");
+export const difficultyRewardPreview = document.querySelector("#difficultyRewardPreview");
 
 export const sessionForm = document.querySelector("#sessionForm");
 export const sessionGameSelect = document.querySelector("#sessionGame");
@@ -55,6 +59,8 @@ export const clearDataButton = document.querySelector("#clearDataButton");
 export const importDataInput = document.querySelector("#importDataInput");
 export const settingsMessage = document.querySelector("#settingsMessage");
 export const themePreferenceInput = document.querySelector("#themePreference");
+export const languagePreferenceInput = document.querySelector("#languagePreference");
+export const settingsPanel = document.querySelector("#settingsPanel");
 
 export const artCropModal = document.querySelector("#artCropModal");
 export const cropPreviewCanvas = document.querySelector("#cropPreviewCanvas");

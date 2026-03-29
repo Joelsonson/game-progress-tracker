@@ -1,5 +1,5 @@
 const DB_NAME = "gameTrackerDB";
-const DB_VERSION = 7;
+const DB_VERSION = 8;
 const GAMES_STORE = "games";
 const SESSIONS_STORE = "sessions";
 const META_STORE = "meta";
@@ -13,8 +13,17 @@ export const GAME_STATUSES = {
 };
 
 export const DEFAULT_GAME_STATUS = GAME_STATUSES.BACKLOG;
+export const GAME_DIFFICULTIES = {
+  VERY_EASY: "very-easy",
+  EASY: "easy",
+  STANDARD: "standard",
+  HARD: "hard",
+  VERY_HARD: "very-hard",
+};
+export const DEFAULT_GAME_DIFFICULTY = GAME_DIFFICULTIES.STANDARD;
 
 const VALID_GAME_STATUSES = new Set(Object.values(GAME_STATUSES));
+const VALID_GAME_DIFFICULTIES = new Set(Object.values(GAME_DIFFICULTIES));
 
 export function isMainEligibleStatus(status) {
   return status === GAME_STATUSES.IN_PROGRESS;
@@ -39,6 +48,9 @@ export function normalizeGameRecord(game = {}) {
     id: typeof game.id === "string" && game.id ? game.id : crypto.randomUUID(),
     title: typeof game.title === "string" ? game.title.trim() : "Untitled Game",
     platform: game.platform?.trim() || "Unspecified",
+    difficulty: VALID_GAME_DIFFICULTIES.has(game.difficulty)
+      ? game.difficulty
+      : DEFAULT_GAME_DIFFICULTY,
     currentObjective:
       typeof game.currentObjective === "string"
         ? game.currentObjective.trim()
@@ -135,7 +147,7 @@ export function openDB() {
       }
 
       if (
-        event.oldVersion < 7 &&
+        event.oldVersion < 8 &&
         transaction &&
         db.objectStoreNames.contains(GAMES_STORE)
       ) {
@@ -191,6 +203,7 @@ function isSameGameRecord(a, b) {
     "id",
     "title",
     "platform",
+    "difficulty",
     "currentObjective",
     "notes",
     "coverImage",

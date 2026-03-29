@@ -5,6 +5,7 @@ import { getAllSessions } from "../../data/sessionsRepo.js";
 import { gameForm, meaningfulProgressInput, sessionForm, settingsMessage } from "../../core/dom.js";
 import { IDLE_JOURNEY_META_KEY, IMPORT_FILE_ACCEPT, IMPORT_SCHEMA_VERSION } from "../../core/constants.js";
 import { enforceMainGameRules, getErrorMessage } from "../../core/formatters.js";
+import { t } from "../../core/i18n.js";
 import { appState } from "../../core/state.js";
 import { showMessage } from "../../core/ui.js";
 import { createSafeFilename, downloadBlob } from "../art/completionCard.js";
@@ -37,13 +38,16 @@ export async function handleExportData() {
     downloadBlob(blob, createBackupFilename(payload.exportedAt));
     showMessage(
       settingsMessage,
-      `Exported ${payload.games.length} games, ${payload.sessions.length} sessions, and your idle journey.`
+      t("settings.exportSuccess", {
+        games: payload.games.length,
+        sessions: payload.sessions.length,
+      })
     );
   } catch (error) {
     console.error("Failed to export data:", error);
     showMessage(
       settingsMessage,
-      getErrorMessage(error, "Could not export your progress."),
+      getErrorMessage(error, t("settings.exportFailed")),
       true
     );
   }
@@ -66,7 +70,7 @@ export async function handleImportData(event) {
   if (!IMPORT_FILE_ACCEPT.includes(file.type)) {
     showMessage(
       settingsMessage,
-      "Please choose a valid exported JSON backup.",
+      t("settings.invalidImport"),
       true
     );
     return;
@@ -84,23 +88,24 @@ export async function handleImportData(event) {
 
     showMessage(
       settingsMessage,
-      `Imported ${games.length} games, ${sessions.length} sessions, and your idle journey.`
+      t("settings.importSuccess", {
+        games: games.length,
+        sessions: sessions.length,
+      })
     );
     await appState.renderApp();
   } catch (error) {
     console.error("Failed to import data:", error);
     showMessage(
       settingsMessage,
-      getErrorMessage(error, "Could not import that backup file."),
+      getErrorMessage(error, t("settings.importFailed")),
       true
     );
   }
 }
 
 export async function handleClearData() {
-  const confirmed = window.confirm(
-    "Clear all games, sessions, art, XP progress, and idle journey data from this device?"
-  );
+  const confirmed = window.confirm(t("settings.clearConfirm"));
 
   if (!confirmed) return;
 
@@ -109,34 +114,32 @@ export async function handleClearData() {
     gameForm.reset();
     sessionForm.reset();
     meaningfulProgressInput.checked = false;
-    showMessage(settingsMessage, "Cleared all local tracker data.");
+    showMessage(settingsMessage, t("settings.clearSuccess"));
     await appState.renderApp();
   } catch (error) {
     console.error("Failed to clear data:", error);
     showMessage(
       settingsMessage,
-      getErrorMessage(error, "Could not clear your local data."),
+      getErrorMessage(error, t("settings.clearFailed")),
       true
     );
   }
 }
 
 export async function handleResetJourneyData() {
-  const confirmed = window.confirm(
-    "Reset only the idle journey and keep your games, sessions, and records?"
-  );
+  const confirmed = window.confirm(t("settings.resetJourneyConfirm"));
 
   if (!confirmed) return;
 
   try {
     await setMeta(appState.db, IDLE_JOURNEY_META_KEY, null);
-    showMessage(settingsMessage, "Idle journey reset. Tracker history kept.");
+    showMessage(settingsMessage, t("settings.resetJourneySuccess"));
     await appState.renderApp();
   } catch (error) {
     console.error("Failed to reset journey data:", error);
     showMessage(
       settingsMessage,
-      getErrorMessage(error, "Could not reset the idle journey."),
+      getErrorMessage(error, t("settings.resetJourneyFailed")),
       true
     );
   }

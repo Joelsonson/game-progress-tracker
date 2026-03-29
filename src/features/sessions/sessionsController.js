@@ -18,6 +18,7 @@ import {
   getSessionXpBreakdown,
   rollFocusPenalty,
 } from "../../core/formatters.js";
+import { t } from "../../core/i18n.js";
 import { appState } from "../../core/state.js";
 import { showMessage } from "../../core/ui.js";
 
@@ -33,7 +34,7 @@ export async function handleAddSession(event) {
   if (!gameId) {
     showMessage(
       sessionMessage,
-      "Move a game into progress before logging sessions.",
+      t("sessions.messages.noGameSelected"),
       true
     );
     return;
@@ -42,7 +43,7 @@ export async function handleAddSession(event) {
   if (!Number.isFinite(minutes) || minutes <= 0) {
     showMessage(
       sessionMessage,
-      "Please enter a valid number of minutes.",
+      t("sessions.messages.invalidMinutes"),
       true
     );
     return;
@@ -55,14 +56,14 @@ export async function handleAddSession(event) {
     const selectedGame = games.find((game) => game.id === gameId);
 
     if (!selectedGame) {
-      showMessage(sessionMessage, "That game could not be found.", true);
+      showMessage(sessionMessage, t("sessions.messages.gameNotFound"), true);
       return;
     }
 
     if (!canLogSessionForGame(selectedGame)) {
       showMessage(
         sessionMessage,
-        `${selectedGame.title} needs to be In Progress before you log another session.`,
+        t("sessions.messages.needsInProgress", { title: selectedGame.title }),
         true
       );
       return;
@@ -101,25 +102,39 @@ export async function handleAddSession(event) {
     meaningfulProgressInput.checked = false;
 
     const replayText =
-      selectedGame.status === GAME_STATUSES.COMPLETED ? " replay" : "";
+      selectedGame.status === GAME_STATUSES.COMPLETED
+        ? t("sessions.messages.replaySuffix")
+        : "";
     const xpBreakdown = getSessionXpBreakdown(newSession);
     const focusText = xpBreakdown.focusPenalty
-      ? ` • Focus tax ${xpBreakdown.focusPenalty}`
+      ? t("sessions.messages.focusTaxSuffix", {
+          value: xpBreakdown.focusPenalty,
+        })
+      : "";
+    const objectiveText = updatedObjective
+      ? t("sessions.messages.objectiveUpdatedSuffix")
       : "";
 
     showMessage(
       sessionMessage,
-      `Logged ${formatMinutes(minutes)}${replayText} for "${
-        selectedGame.title
-      }" • ${xpBreakdown.totalText}${focusText}${
-        updatedObjective ? " • Objective updated." : ""
-      }.`
+      t("sessions.messages.logged", {
+        duration: formatMinutes(minutes),
+        replayText,
+        title: selectedGame.title,
+        totalText: xpBreakdown.totalText,
+        focusText,
+        objectiveText,
+      })
     );
 
     await appState.renderApp();
     sessionGameSelect.value = gameId;
   } catch (error) {
     console.error("Failed to save session:", error);
-    showMessage(sessionMessage, "Could not save session.", true);
+    showMessage(
+      sessionMessage,
+      getErrorMessage(error, t("sessions.messages.saveFailed")),
+      true
+    );
   }
 }
