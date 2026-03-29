@@ -5,7 +5,7 @@ import {
   listSummaryEl,
   mainQuestPanelEl,
 } from "../../core/dom.js";
-import { CARD_TIER_META, GAME_DIFFICULTY_META, GAME_STATUSES, XP_RULES } from "../../core/constants.js";
+import { CARD_TIER_META, GAME_DIFFICULTY_META, GAME_STATUSES } from "../../core/constants.js";
 import {
   buildArtBackgroundStyle,
   computeStreak,
@@ -48,7 +48,7 @@ export function renderPlayerProgress(summary) {
   });
   xpProgressTextEl.textContent = t("player.xpProgressText", {
     current: summary.xpIntoLevel,
-    total: XP_RULES.xpPerLevel,
+    total: summary.currentLevelRequirement,
     nextLevel: summary.level + 1,
   });
   xpProgressFillEl.style.width = `${summary.progressPercent}%`;

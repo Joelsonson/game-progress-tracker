@@ -24,7 +24,8 @@ export const XP_RULES = {
   maxChunkXp: 20,
   meaningfulBonus: 15,
   completionBonus: 100,
-  xpPerLevel: 100,
+  baseLevelXp: 100,
+  levelXpGrowth: 20,
 };
 
 export const GAME_DIFFICULTY_META = {

@@ -67,11 +67,8 @@ export function buildXpSummary(games, sessions) {
 
   const streakBonus = Math.max(0, currentStreak - 1) * 5;
   const totalXp = Math.max(0, sessionXp + completionXp + streakBonus);
-
-  const level = Math.floor(totalXp / XP_RULES.xpPerLevel) + 1;
-  const xpIntoLevel = totalXp % XP_RULES.xpPerLevel;
-  const xpToNextLevel =
-    xpIntoLevel === 0 ? XP_RULES.xpPerLevel : XP_RULES.xpPerLevel - xpIntoLevel;
+  const { level, xpIntoLevel, xpToNextLevel, currentLevelRequirement } =
+    getXpLevelState(totalXp);
 
   return {
     totalXp,
@@ -83,8 +80,38 @@ export function buildXpSummary(games, sessions) {
     level,
     xpIntoLevel,
     xpToNextLevel,
-    progressPercent: (xpIntoLevel / XP_RULES.xpPerLevel) * 100,
+    currentLevelRequirement,
+    progressPercent: currentLevelRequirement
+      ? (xpIntoLevel / currentLevelRequirement) * 100
+      : 0,
     rankTitle: getRankTitle(level),
+  };
+}
+
+export function getXpRequiredForLevel(level) {
+  return Math.max(
+    1,
+    XP_RULES.baseLevelXp +
+      Math.max(0, Math.floor(Number(level) || 1) - 1) * XP_RULES.levelXpGrowth
+  );
+}
+
+export function getXpLevelState(totalXp) {
+  let level = 1;
+  let remainingXp = Math.max(0, Math.floor(Number(totalXp) || 0));
+  let currentLevelRequirement = getXpRequiredForLevel(level);
+
+  while (remainingXp >= currentLevelRequirement) {
+    remainingXp -= currentLevelRequirement;
+    level += 1;
+    currentLevelRequirement = getXpRequiredForLevel(level);
+  }
+
+  return {
+    level,
+    xpIntoLevel: remainingXp,
+    xpToNextLevel: currentLevelRequirement - remainingXp,
+    currentLevelRequirement,
   };
 }
 

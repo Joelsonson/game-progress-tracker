@@ -30,6 +30,9 @@ import { normalizeJourneyChoice, normalizeJourneyEvent } from "./journeyEvents.j
 const JOURNEY_HISTORY_LIMIT = 24;
 const JOURNEY_AMBIENT_LOG_COOLDOWN_MS = 1000 * 60 * 60 * 4;
 const JOURNEY_AMBIENT_REPEAT_MEMORY = 3;
+const JOURNEY_EVENT_HP_GAIN_MULTIPLIER = 2;
+const JOURNEY_EVENT_HP_LOSS_MULTIPLIER = 3;
+const JOURNEY_STRETCH_FAILURE_HP_RATIO = 0.05;
 const JOURNEY_TRAVELER_AID_LOG =
   "A passing traveler shared dried meat and better directions after seeing the state you were in.";
 const JOURNEY_ZONE_NAMES_JA = [
@@ -597,7 +600,13 @@ export function buildJourneySupplies(games, sessions, state) {
 
 export function buildJourneyStretchChallenge(state, journeyStats) {
   const boss = getJourneyBoss(state.bossIndex);
-  const conditionPower = state.currentHp * 0.12 + state.currentHunger * 0.08;
+  const hpRatio = journeyStats.maxHp
+    ? clamp(state.currentHp / journeyStats.maxHp, 0, 1)
+    : 0;
+  const hungerRatio = journeyStats.maxHunger
+    ? clamp(state.currentHunger / journeyStats.maxHunger, 0, 1)
+    : 0;
+  const conditionPower = state.currentHp * 0.08 + state.currentHunger * 0.06;
   const weaponBonus = journeyStats.equippedWeaponMeta
     ? 4 +
       JOURNEY_STAT_KEYS.reduce(
@@ -608,10 +617,21 @@ export function buildJourneyStretchChallenge(state, journeyStats) {
     : -6;
   const powerRatio =
     (journeyStats.power + conditionPower + weaponBonus) / Math.max(1, boss.power);
+  const earlyStretchGrace =
+    state.bossIndex === 0 ? 0.07 : state.bossIndex === 1 ? 0.03 : 0;
+  const laterStretchPressure = Math.min(0.18, state.bossIndex * 0.015);
+  const healthPenalty = (1 - hpRatio) * 0.24;
+  const hungerPenalty = (1 - hungerRatio) * 0.09;
   const successChance = clamp(
-    0.14 + powerRatio * 0.56 + Math.max(0, journeyStats.level - state.bossIndex) * 0.02,
-    0.12,
-    0.9
+    0.1 +
+      powerRatio * 0.5 +
+      Math.max(0, journeyStats.level - state.bossIndex) * 0.016 +
+      earlyStretchGrace -
+      laterStretchPressure -
+      healthPenalty -
+      hungerPenalty,
+    0.08,
+    0.84
   );
 
   return {
@@ -1485,9 +1505,14 @@ export function simulateJourneyState(state, elapsedMs, journeyStats, journeyCont
 
       if (Math.random() < Math.min(0.24, 0.09 * hours + state.bossIndex * 0.015)) {
         const encounterDamage = Math.max(
-          1,
-          randomInt(2, 6 + Math.max(0, state.bossIndex)) -
-            Math.floor(journeyStats.stats.finesse / 3)
+          2,
+          Math.round(
+            Math.max(
+              1,
+              randomInt(2, 6 + Math.max(0, state.bossIndex)) -
+                Math.floor(journeyStats.stats.finesse / 3)
+            ) * 2
+          )
         );
         state.currentHp = clamp(
           state.currentHp - encounterDamage,
@@ -1644,18 +1669,18 @@ export function resolveJourneyBoss(state, journeyStats, atDate) {
     state.bossIndex * JOURNEY_BOSS_DISTANCE + 22,
     state.totalDistance - randomInt(18, 34)
   );
-  state.currentHp = Math.min(
-    clamp(state.currentHp - randomInt(14, 24), 0, journeyStats.maxHp),
-    Math.round(journeyStats.maxHp * 0.42)
+  state.currentHp = Math.max(
+    1,
+    Math.round(journeyStats.maxHp * JOURNEY_STRETCH_FAILURE_HP_RATIO)
   );
   state.currentHunger = Math.min(
-    clamp(state.currentHunger - randomInt(9, 16), 0, journeyStats.maxHunger),
-    Math.round(journeyStats.maxHunger * 0.46)
+    clamp(state.currentHunger - randomInt(14, 24), 0, journeyStats.maxHunger),
+    Math.round(journeyStats.maxHunger * 0.28)
   );
   state.storyXp += 4;
   addJourneyLog(
     state,
-    `${boss.name} drove you back. The stretch only gave you about a ${stretchChallenge.successPercent}% shot and it went bad fast.`,
+    `${boss.name} drove you back and left you barely standing. The stretch only gave you about a ${stretchChallenge.successPercent}% shot and it went bad fast.`,
     atDate.toISOString()
   );
   sendJourneyToTown(
@@ -1718,7 +1743,11 @@ export function maybeApplyJourneyIncident(state, atDate, journeyStats, journeyCo
   ) {
     state.storyFlags.slimeSapped = true;
     state.statModifiers.vitality -= 1;
-    state.currentHp = clamp(state.currentHp - 12, 0, journeyStats.maxHp);
+    state.currentHp = clamp(
+      state.currentHp + scaleJourneyEventHpDelta(-12),
+      0,
+      journeyStats.maxHp
+    );
     addJourneyLog(
       state,
       "You mistook a pale slime for something edible. It sapped the life out of you and left you permanently weaker.",
@@ -1728,7 +1757,11 @@ export function maybeApplyJourneyIncident(state, atDate, journeyStats, journeyCo
   }
 
   if (journeyContext?.neglectScore >= 3 && incidentRoll < 0.14) {
-    state.currentHp = clamp(state.currentHp - 8, 0, journeyStats.maxHp);
+    state.currentHp = clamp(
+      state.currentHp + scaleJourneyEventHpDelta(-8),
+      0,
+      journeyStats.maxHp
+    );
     state.currentHunger = clamp(
       state.currentHunger - 4,
       0,
@@ -3818,12 +3851,13 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
   const success = successRoll <= successChance;
   const effects = success ? choice.successEffects : choice.failureEffects;
   const notes = [];
+  const hpDelta = scaleJourneyEventHpDelta(effects.hp);
   const storyXpDelta = success
     ? effects.storyXp
     : Math.min(1, Math.round(Number(effects.storyXp) || 0));
 
   state.currentHp = clamp(
-    state.currentHp + effects.hp,
+    state.currentHp + hpDelta,
     0,
     journeyStats.maxHp
   );
@@ -3926,6 +3960,17 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
     successRoll,
     resultText: finalText,
   };
+}
+
+function scaleJourneyEventHpDelta(delta) {
+  const amount = Math.round(Number(delta) || 0);
+  if (amount > 0) {
+    return Math.round(amount * JOURNEY_EVENT_HP_GAIN_MULTIPLIER);
+  }
+  if (amount < 0) {
+    return -Math.round(Math.abs(amount) * JOURNEY_EVENT_HP_LOSS_MULTIPLIER);
+  }
+  return 0;
 }
 
 export function unlockJourneyClass(state, classKey, atIso) {

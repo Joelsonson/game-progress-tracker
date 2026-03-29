@@ -928,11 +928,7 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
             <span>${escapeHtml(t("journeyUi.page.roadsCleared"))}</span>
             <strong>${viewModel.clearedRoadCount}</strong>
             <span class="journey-story-stat-hint">${escapeHtml(
-              viewModel.latestClearedRoad
-                ? t("journeyUi.page.latestEntry", {
-                    title: getJourneyEventTitle(viewModel.latestClearedRoad.title),
-                  })
-                : t("journeyUi.page.openRoadLog")
+              t("journeyUi.page.openLog")
             )}</span>
           </button>
           <button
@@ -943,11 +939,7 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
             <span>${escapeHtml(t("journeyUi.page.retreats"))}</span>
             <strong>${viewModel.retreatCount}</strong>
             <span class="journey-story-stat-hint">${escapeHtml(
-              viewModel.latestRetreat
-                ? t("journeyUi.page.latestEntry", {
-                    title: getJourneyEventTitle(viewModel.latestRetreat.title),
-                  })
-                : t("journeyUi.page.openRetreatLog")
+              t("journeyUi.page.openLog")
             )}</span>
           </button>
         </div>
