@@ -444,11 +444,17 @@ export function renderGameCard(game, sessionStats) {
     cardClasses.push("game-card-completed");
   }
 
-  const bannerStyle = buildArtBackgroundStyle(game.bannerImage || game.coverImage);
+  const bannerImage = game.bannerImage || game.coverImage;
+  const bannerArt = bannerImage
+    ? `<img class="game-card-banner-image" src="${escapeAttribute(
+        bannerImage
+      )}" alt="" aria-hidden="true" />`
+    : "";
 
   return `
     <article class="${cardClasses.join(" ")}">
-      <div class="game-card-banner"${bannerStyle}>
+      <div class="game-card-banner">
+        ${bannerArt}
         <div class="game-card-banner-content">
           <div class="game-card-banner-hero">
             ${renderCoverVisual(game, "game-cover-thumb")}
