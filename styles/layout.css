@@ -206,7 +206,7 @@
 }
 
 .game-card-banner {
-  aspect-ratio: 16 / 8.8;
+  aspect-ratio: 16 / 9;
 }
 
 .quest-hero-banner {
@@ -218,7 +218,7 @@
 
 .completion-card-banner {
   min-height: 124px;
-  aspect-ratio: 16 / 8.8;
+  aspect-ratio: 16 / 9;
 }
 
 .game-card-banner::after,

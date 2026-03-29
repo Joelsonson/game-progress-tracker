@@ -804,6 +804,62 @@
   font-size: 0.88rem;
 }
 
+.character-level-breakdown {
+  display: grid;
+  gap: 0;
+}
+
+.character-level-breakdown-summary,
+.character-radar-legend-summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.character-level-breakdown-summary::-webkit-details-marker,
+.character-radar-legend-summary::-webkit-details-marker {
+  display: none;
+}
+
+.character-level-breakdown-summary {
+  padding-top: 2px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.character-chevron {
+  color: var(--accent-blue-strong);
+  transition: transform 180ms ease;
+}
+
+.character-level-breakdown[open] .character-chevron,
+.character-radar-legend-item[open] .character-chevron {
+  transform: rotate(180deg);
+}
+
+.character-level-breakdown-panel {
+  display: grid;
+  gap: 10px;
+  max-height: 0;
+  overflow: hidden;
+  padding-top: 0;
+  opacity: 0;
+  transition:
+    max-height 220ms ease,
+    padding-top 220ms ease,
+    opacity 180ms ease;
+}
+
+.character-level-breakdown[open] .character-level-breakdown-panel {
+  max-height: 320px;
+  padding-top: 10px;
+  opacity: 1;
+}
+
 .character-level-up-button {
   width: 42px;
   height: 42px;
@@ -999,7 +1055,7 @@
 }
 
 .character-radar-points circle {
-  fill: #34d399;
+  fill: currentColor;
   stroke: rgba(2, 6, 23, 0.9);
   stroke-width: 1.5;
 }
@@ -1055,8 +1111,7 @@
 }
 
 .character-radar-legend-item {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
   gap: 10px;
   padding: 10px 12px;
   border-radius: 14px;
@@ -1064,12 +1119,48 @@
   background: rgba(15, 23, 42, 0.78);
 }
 
-.character-radar-legend-item span {
+.character-radar-legend-summary span {
   color: var(--muted);
 }
 
-.character-radar-legend-item strong {
+.character-radar-legend-summary strong {
   color: var(--text);
+}
+
+.character-radar-legend-summary strong.is-boosted {
+  color: var(--accent-blue-strong);
+}
+
+.character-radar-legend-summary-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.character-radar-legend-item.is-boosted {
+  border-color: rgba(var(--accent-blue-strong), 0.22);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.82), rgba(var(--surface-rgb), 0.72)),
+    rgba(var(--panel-rgb), 0.68);
+}
+
+.character-radar-legend-detail {
+  display: grid;
+  gap: 8px;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition:
+    max-height 220ms ease,
+    opacity 180ms ease,
+    padding-top 220ms ease;
+  padding-top: 0;
+}
+
+.character-radar-legend-item[open] .character-radar-legend-detail {
+  max-height: 140px;
+  opacity: 1;
+  padding-top: 4px;
 }
 
 .journey-story-stats-compact strong {
@@ -1450,7 +1541,7 @@
 }
 
 .character-radar-points circle {
-  fill: var(--accent);
+  fill: currentColor;
   stroke: rgba(var(--panel-rgb), 0.94);
 }
 
@@ -1506,13 +1597,17 @@
 
 .journey-story-stat span,
 .journey-log-entry time,
-.character-radar-legend-item span {
+.character-radar-legend-summary span {
   color: var(--muted);
 }
 
 .journey-story-stat strong,
-.character-radar-legend-item strong {
+.character-radar-legend-summary strong {
   color: var(--text);
+}
+
+.character-radar-legend-summary strong.is-boosted {
+  color: var(--accent-blue-strong);
 }
 
 .journey-chip.is-weapon {

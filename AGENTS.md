@@ -89,10 +89,12 @@ Read this file first before making changes. Use it as the routing map for what t
   - modal actions
   - user-triggered journey updates
   - character equipment actions like equip, replace, and discard
+  - character level-up modal open/close and stat spending
 - `src/features/journey/journeyEngine.js`
   - idle journey state sync
   - progression rules
   - event generation
+  - event repeatability and completed-event memory
   - simulation
   - inventory rules
   - bag carry limits
@@ -101,6 +103,7 @@ Read this file first before making changes. Use it as the routing map for what t
   - home journey UI
   - journey screen UI
   - character sheet UI
+  - character level card and level-up modal
   - journey modals
 - `src/features/journey/journeyEvents.js`
   - event and choice normalization
@@ -188,6 +191,11 @@ Read this file first before making changes. Use it as the routing map for what t
 - Read `src/core/constants.js` for weapon and bag metadata
 - Check `styles/components.css`
 - Check `styles/screens.css`
+- The Character screen now uses:
+  - a level/xp card near HP and Hunger
+  - a `+` trigger for the level-up modal when skill points are available
+  - a modal for stat spending instead of always-visible stat cards on the page
+- The radar legend can now hold expandable stat-source details, so keep stat-source copy and layout aligned between the chart legend and the stat-spend modal
 
 ### If the request is about journey sprites or animation previews
 
@@ -206,6 +214,7 @@ Read this file first before making changes. Use it as the routing map for what t
 - Read `src/features/art/imageCropper.js`
 - Read `src/features/art/completionCard.js`
 - If the art belongs to a game flow, also read `src/features/games/gamesController.js`
+- Banner art is cropped to a `16:9` frame and tracker banner display should preserve that ratio
 
 ### If the request is about import, export, backup, or reset behavior
 
@@ -238,6 +247,7 @@ Read this file first before making changes. Use it as the routing map for what t
 - For journey sprite changes, update the asset in `assets/journey/sprites/` first, then verify any frame count or timing constants in `src/features/journey/journeyView.js`.
 - Keep the journey screen focused on travel-state UI and the character screen focused on character-sheet UI unless the request explicitly merges them again.
 - Keep equipment rules, bag sizes, weapon bonuses, and carry limits inside `src/features/journey/journeyEngine.js` and `src/core/constants.js`, not inside the view.
+- Keep one-off journey events from repeating unless the request explicitly asks to loosen that rule again; repeatable generic events should be marked deliberately.
 - Do not add separate desktop layouts unless the user explicitly asks for desktop support again.
 - Preserve the current parchment-and-glass visual direction unless the user asks to restyle it again.
 - The current UI direction mixes a cleaner system-sans shell with Georgia for story-facing journey typography; keep journey events and story cards lighter and less heavy-handed than the older dark card treatment.

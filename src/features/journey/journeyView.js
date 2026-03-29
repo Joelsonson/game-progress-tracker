@@ -645,7 +645,7 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
           </div>
           ${renderCharacterLevelPanel(viewModel)}
 
-          ${renderJourneyRadarChart(viewModel.journeyStats.stats)}
+          ${renderJourneyRadarChart(viewModel.journeyStats)}
         </div>
       </div>
     </section>
@@ -1003,10 +1003,45 @@ function renderCharacterLevelPanel(viewModel) {
         ></div>
       </div>
       <div class="journey-progress-meta character-level-meta">
-        <span>${escapeHtml(viewModel.levelProgress.sourceLabel)} ${viewModel.levelProgress.current} / ${viewModel.levelProgress.goal}</span>
+        <span>XP ${viewModel.levelProgress.current} / ${viewModel.levelProgress.goal}</span>
         <span>${viewModel.levelProgress.remaining} XP to next level</span>
       </div>
+      ${renderCharacterLevelBreakdown(viewModel)}
     </section>
+  `;
+}
+
+function renderCharacterLevelBreakdown(viewModel) {
+  return `
+    <details class="character-level-breakdown">
+      <summary class="character-level-breakdown-summary">
+        <span>See XP sources</span>
+        <span class="character-chevron" aria-hidden="true">⌄</span>
+      </summary>
+      <div class="character-level-breakdown-panel">
+        <div class="journey-character-list">
+          <div class="journey-log-entry">
+            <p><strong>Total character level:</strong> ${viewModel.journeyLevel}</p>
+            <p class="muted-text">Tracker level ${viewModel.xpSummary.level} + story bonus ${viewModel.storyLevelBonus >= 0 ? `+${viewModel.storyLevelBonus}` : viewModel.storyLevelBonus}.</p>
+          </div>
+          <div class="journey-log-entry">
+            <p><strong>Tracker XP:</strong> ${viewModel.xpSummary.totalXp}</p>
+            <div class="journey-inline-row stat-source-row">
+              <span class="journey-chip">Sessions ${viewModel.xpSummary.sessionXp}</span>
+              <span class="journey-chip">Completions ${viewModel.xpSummary.completionXp}</span>
+              <span class="journey-chip">Streak ${viewModel.xpSummary.streakBonus}</span>
+            </div>
+          </div>
+          <div class="journey-log-entry">
+            <p><strong>Story XP:</strong> ${viewModel.state.storyXp}</p>
+            <div class="journey-inline-row stat-source-row">
+              <span class="journey-chip">Current story bar ${viewModel.storyXpIntoLevel} / ${JOURNEY_STORY_XP_PER_LEVEL}</span>
+              <span class="journey-chip is-active">Story bonus +${viewModel.storyLevelBonus}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
   `;
 }
 
@@ -1252,12 +1287,18 @@ function renderJourneySpriteImage(spriteConfig, options = {}) {
   `;
 }
 
-function renderJourneyRadarChart(stats) {
-  const entries = JOURNEY_STAT_KEYS.map((statKey) => ({
-    key: statKey,
-    label: JOURNEY_STAT_META[statKey].label,
-    value: Number(stats[statKey] || 0),
-  }));
+function renderJourneyRadarChart(journeyStats) {
+  const entries = JOURNEY_STAT_KEYS.map((statKey) => {
+    const total = Number(journeyStats?.stats?.[statKey] || 0);
+    const breakdown = journeyStats?.statBreakdown?.[statKey] || null;
+
+    return {
+      key: statKey,
+      label: JOURNEY_STAT_META[statKey].label,
+      value: total,
+      breakdown,
+    };
+  });
   const maxValue = Math.max(10, ...entries.map((entry) => entry.value), 1);
   const center = 130;
   const radius = 76;
@@ -1299,7 +1340,9 @@ function renderJourneyRadarChart(stats) {
                 center,
                 radius * (entry.value / maxValue)
               );
-              return `<circle cx="${point.x}" cy="${point.y}" r="4" />`;
+              return `<circle cx="${point.x}" cy="${point.y}" r="4" style="color: ${escapeAttribute(
+                getJourneyRadarPointColor(entry.value, maxValue)
+              )};" />`;
             })
             .join("")}
         </g>
@@ -1314,19 +1357,70 @@ function renderJourneyRadarChart(stats) {
       </svg>
 
       <div class="character-radar-legend">
-        ${entries
-          .map(
-            (entry) => `
-              <div class="character-radar-legend-item">
-                <span>${escapeHtml(entry.label)}</span>
-                <strong>${entry.value}</strong>
-              </div>
-            `
-          )
-          .join("")}
+        ${entries.map((entry) => renderCharacterRadarLegendItem(entry)).join("")}
       </div>
     </div>
   `;
+}
+
+function renderCharacterRadarLegendItem(entry) {
+  const breakdown = entry.breakdown;
+  const hasBonus =
+    Boolean(breakdown?.classBonus) ||
+    Boolean(breakdown?.weaponBonus) ||
+    Boolean(breakdown?.modifier);
+
+  return `
+    <details class="character-radar-legend-item ${hasBonus ? "is-boosted" : ""}">
+      <summary class="character-radar-legend-summary">
+        <span>${escapeHtml(entry.label)}</span>
+        <div class="character-radar-legend-summary-value">
+          <strong class="${hasBonus ? "is-boosted" : ""}">${entry.value}</strong>
+          <span class="character-chevron" aria-hidden="true">⌄</span>
+        </div>
+      </summary>
+      ${
+        breakdown
+          ? `
+            <div class="character-radar-legend-detail">
+              <div class="journey-inline-row stat-source-row">
+                ${renderJourneyStatSourcePills(breakdown)}
+              </div>
+            </div>
+          `
+          : ""
+      }
+    </details>
+  `;
+}
+
+function renderJourneyStatSourcePills(breakdown) {
+  const pills = [
+    `Base ${breakdown.base}`,
+    `Spent ${breakdown.allocated}`,
+  ];
+
+  if (breakdown.classBonus > 0) {
+    pills.push(`Class +${breakdown.classBonus}`);
+  }
+  if (breakdown.weaponBonus > 0) {
+    pills.push(`Weapon +${breakdown.weaponBonus}`);
+  }
+  if (breakdown.modifier) {
+    pills.push(`Modifier ${breakdown.modifier > 0 ? "+" : ""}${breakdown.modifier}`);
+  }
+
+  return pills
+    .map((pill) => `<span class="journey-chip">${escapeHtml(pill)}</span>`)
+    .join("");
+}
+
+function getJourneyRadarPointColor(value, maxValue) {
+  const ratio = clamp(value / Math.max(1, maxValue), 0, 1);
+  const hue = 205 + ratio * 14;
+  const saturation = 82;
+  const lightness = 74 - ratio * 22;
+  return `hsl(${hue} ${saturation}% ${lightness}%)`;
 }
 
 function buildRadarPolygon(entries, center, radius, maxValue) {
