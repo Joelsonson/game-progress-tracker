@@ -36,6 +36,7 @@ export const xpProgressFillEl = document.querySelector("#xpProgressFill");
 
 export const completionSpotlightEl = document.querySelector("#completionSpotlight");
 export const mainQuestPanelEl = document.querySelector("#mainQuestPanel");
+export const homeOverviewEl = document.querySelector("#homeOverviewPanel");
 export const listSummaryEl = document.querySelector("#listSummary");
 export const gamesListEl = document.querySelector("#gamesList");
 export const recentSessionsSummaryEl = document.querySelector(

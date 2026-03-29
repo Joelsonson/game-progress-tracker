@@ -56,6 +56,24 @@ const translations = {
     },
     home: {
       playerProgressEyebrow: "Player progression",
+      focusEyebrow: "Current focus",
+      focusTitle: "The game that should pull you back in",
+      focusBody:
+        "Your active quest should feel immediate, readable, and ready for the next session.",
+      focusEmptyTitle: "Home works best when one game leads the page",
+      focusEmptyBody:
+        "Move something into In Progress and make it your Main Game to turn Home into a proper command deck.",
+      snapshotEyebrow: "Snapshot",
+      snapshotTitle: "The numbers worth checking",
+      snapshotBody: "A compact look at momentum, volume, and what is currently anchored.",
+      progressBody:
+        "Every logged session pushes your tracker level forward and keeps the whole run moving.",
+      actionsEyebrow: "Jump back in",
+      actionsTitle: "Shortcuts for your next move",
+      actionsBody: "Use the actions you are most likely to want on mobile without digging around.",
+      recentWinEyebrow: "Recent finish",
+      recentWinTitle: "Your latest completion",
+      recentWinBody: "Keep your newest clear close so it still feels earned.",
       quickActionsTitle: "Quick actions",
       quickActionsBody:
         "Jump straight to the part of the tracker you want instead of scrolling through everything.",
@@ -416,6 +434,24 @@ const translations = {
     },
     home: {
       playerProgressEyebrow: "プレイヤー進行度",
+      focusEyebrow: "現在の焦点",
+      focusTitle: "いま最優先で戻りたいゲーム",
+      focusBody:
+        "ホームでは、次に遊ぶべき一本がすぐ見えて、そのまま続きを始められる状態が理想です。",
+      focusEmptyTitle: "ホームは一本の主軸があると使いやすくなります",
+      focusEmptyBody:
+        "ゲームを「進行中」にしてメインゲームへ設定すると、ホームがきちんとした司令塔になります。",
+      snapshotEyebrow: "スナップショット",
+      snapshotTitle: "確認したい数字だけ",
+      snapshotBody: "勢い、進捗量、今どこに集中しているかを短くまとめて確認できます。",
+      progressBody:
+        "セッションを記録するたびに、トラッカーのレベルも全体の流れも少しずつ前へ進みます。",
+      actionsEyebrow: "すぐ再開",
+      actionsTitle: "次の一手への近道",
+      actionsBody: "モバイルで欲しい操作をすぐ押せるようにまとめました。",
+      recentWinEyebrow: "最近の完了",
+      recentWinTitle: "最新のクリア",
+      recentWinBody: "直近の完了をすぐ見返せるようにして、達成感を残します。",
       quickActionsTitle: "クイック操作",
       quickActionsBody:
         "スクロールせずに、使いたい画面へすぐ移動できます。",

@@ -8,7 +8,6 @@ import {
   characterContentEl,
   clearDataButton,
   clearJourneyButton,
-  completionSpotlightEl,
   coverArtPickerInput,
   cropCancelButton,
   cropConfirmButton,
@@ -24,6 +23,7 @@ import {
   gameActionsModal,
   gamesListEl,
   homeJourneyContentEl,
+  homeOverviewEl,
   importDataButton,
   importDataInput,
   journeyContentEl,
@@ -60,7 +60,7 @@ import {
   repairGamesIfNeeded,
   syncGameDifficultyPresentation,
 } from "./features/games/gamesController.js";
-import { renderCompletionSpotlight, renderGames, renderMainQuest, renderPlayerProgress, renderStats } from "./features/games/gamesView.js";
+import { renderGames, renderHomeOverview, renderPlayerProgress, renderStats } from "./features/games/gamesView.js";
 import { handleHomeJourneyClick, handleJourneyClick, handleJourneyEventModalClick, handleJourneyOutcomeModalClick } from "./features/journey/journeyController.js";
 import { buildJourneySupplies, syncJourneyState } from "./features/journey/journeyEngine.js";
 import {
@@ -77,6 +77,7 @@ import {
   handleSessionsTabClick,
   renderRecentSessions,
   renderSessionGameOptions,
+  setActiveSessionsTab,
   syncSessionsTabUi,
 } from "./features/sessions/sessionsView.js";
 
@@ -107,7 +108,8 @@ function bindEvents() {
   gameForm.addEventListener("submit", handleAddGame);
   sessionForm.addEventListener("submit", handleAddSession);
   gamesListEl.addEventListener("click", handleListClick);
-  completionSpotlightEl.addEventListener("click", handleListClick);
+  homeOverviewEl?.addEventListener("click", handleListClick);
+  homeOverviewEl?.addEventListener("click", handleHomeOverviewClick);
   gameActionsBodyEl?.addEventListener("click", handleListClick);
   journeyContentEl?.addEventListener("click", handleJourneyClick);
   characterContentEl?.addEventListener("click", handleJourneyClick);
@@ -270,14 +272,13 @@ export async function renderApp() {
   const idleJourney = await syncJourneyState(idleJourneyRaw, sortedGames, sessions, xpSummary);
   const journeySupplies = buildJourneySupplies(sortedGames, sessions, idleJourney);
 
+  renderHomeOverview(sortedGames, sessions, sessionStats, xpSummary);
   renderHomeJourney(idleJourney, xpSummary, journeySupplies);
   renderPlayerProgress(xpSummary);
   renderStats(sortedGames, sessions);
   renderIdleJourney(idleJourney, sortedGames, sessions, xpSummary);
   renderCharacterSheet(idleJourney, sortedGames, sessions, xpSummary);
   initializeJourneySpritePreviews();
-  renderCompletionSpotlight(sortedGames, sessionStats);
-  renderMainQuest(sortedGames, sessionStats);
   renderSessionGameOptions(sortedGames);
   renderGames(sortedGames, sessionStats);
   renderRecentSessions(sortedGames, sessions);
@@ -285,6 +286,41 @@ export async function renderApp() {
   syncThemePreferenceInput();
   syncLanguagePreferenceInput();
   syncGameDifficultyPresentation();
+}
+
+function handleHomeOverviewClick(event) {
+  const button = event.target instanceof HTMLElement
+    ? event.target.closest("button[data-home-shortcut]")
+    : null;
+  if (!button) return;
+
+  const shortcut = button.dataset.homeShortcut;
+
+  if (shortcut === "log-session") {
+    setActiveSessionsTab("log-session");
+    setActiveScreen("sessions", { store: true, scrollToTop: true });
+    return;
+  }
+
+  if (shortcut === "add-game") {
+    setActiveSessionsTab("new-game");
+    setActiveScreen("sessions", { store: true, scrollToTop: true });
+    return;
+  }
+
+  if (shortcut === "tracker") {
+    setActiveScreen("tracker", { store: true, scrollToTop: true });
+    return;
+  }
+
+  if (shortcut === "journey") {
+    setActiveScreen("journey", { store: true, scrollToTop: true });
+    return;
+  }
+
+  if (shortcut === "character") {
+    setActiveScreen("character", { store: true, scrollToTop: true });
+  }
 }
 
 function handleThemePreferenceChange(event) {

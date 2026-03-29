@@ -826,6 +826,114 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.home-dashboard,
+.home-focus-card,
+.home-focus-body,
+.home-win-card {
+  display: grid;
+  gap: 14px;
+}
+
+.home-dashboard-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.home-section-header {
+  margin-bottom: 0;
+}
+
+.home-focus-panel,
+.home-progress-panel,
+.home-snapshot-panel,
+.home-actions-panel,
+.home-win-panel {
+  overflow: hidden;
+}
+
+.home-focus-banner,
+.home-win-banner {
+  border-radius: 22px;
+  border: 1px solid rgba(var(--accent-rgb), 0.16);
+}
+
+.home-focus-banner {
+  min-height: 160px;
+}
+
+.home-focus-body .summary-row,
+.home-progress-panel .summary-row {
+  margin-top: 0;
+}
+
+.home-focus-empty {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px dashed rgba(var(--accent-rgb), 0.24);
+  background:
+    radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.1), transparent 42%),
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.96), rgba(var(--surface-rgb), 0.88)),
+    rgba(var(--panel-rgb), 0.78);
+}
+
+.home-focus-empty h3 {
+  margin: 0;
+}
+
+.home-panel-note {
+  margin-top: 2px;
+}
+
+.home-stat-grid,
+.home-action-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.home-stat-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.home-stat-card {
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.96), rgba(var(--surface-rgb), 0.88)),
+    rgba(var(--panel-rgb), 0.8);
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
+  border-radius: 18px;
+  padding: 14px;
+}
+
+.home-stat-card-wide {
+  grid-column: span 2;
+}
+
+.home-stat-card .stat-label {
+  margin-bottom: 6px;
+}
+
+.home-stat-card .stat-value {
+  font-size: 1.12rem;
+  line-height: 1.35;
+}
+
+.home-action-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.home-action-button,
+.home-action-grid > button {
+  min-height: 52px;
+  justify-content: center;
+  text-align: center;
+}
+
+.home-action-button-wide {
+  grid-column: span 2;
+}
+
 .summary-stat {
   background:
     linear-gradient(180deg, rgba(var(--panel-rgb), 0.94), rgba(var(--surface-rgb), 0.84)),

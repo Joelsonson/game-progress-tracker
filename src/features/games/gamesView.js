@@ -1,21 +1,9 @@
 import {
   completionSpotlightEl,
-  completedCountEl,
-  currentStreakEl,
   gamesListEl,
-  inProgressCountEl,
+  homeOverviewEl,
   listSummaryEl,
-  mainGameNameEl,
   mainQuestPanelEl,
-  playerLevelEl,
-  playerRankEl,
-  totalGamesEl,
-  totalSessionsEl,
-  totalXpEl,
-  todayXpEl,
-  xpProgressFillEl,
-  xpProgressTextEl,
-  xpToNextLevelEl,
 } from "../../core/dom.js";
 import { CARD_TIER_META, GAME_DIFFICULTY_META, GAME_STATUSES, XP_RULES } from "../../core/constants.js";
 import {
@@ -41,6 +29,14 @@ import {
 import { t } from "../../core/i18n.js";
 
 export function renderPlayerProgress(summary) {
+  const playerLevelEl = document.querySelector("#playerLevel");
+  const playerRankEl = document.querySelector("#playerRank");
+  const totalXpEl = document.querySelector("#totalXp");
+  const todayXpEl = document.querySelector("#todayXp");
+  const xpToNextLevelEl = document.querySelector("#xpToNextLevel");
+  const xpProgressTextEl = document.querySelector("#xpProgressText");
+  const xpProgressFillEl = document.querySelector("#xpProgressFill");
+
   if (!playerLevelEl) return;
 
   playerRankEl.textContent = summary.rankTitle;
@@ -59,6 +55,24 @@ export function renderPlayerProgress(summary) {
 }
 
 export function renderStats(games, sessions) {
+  const totalGamesEl = document.querySelector("#totalGames");
+  const inProgressCountEl = document.querySelector("#inProgressCount");
+  const completedCountEl = document.querySelector("#completedCount");
+  const totalSessionsEl = document.querySelector("#totalSessions");
+  const mainGameNameEl = document.querySelector("#mainGameName");
+  const currentStreakEl = document.querySelector("#currentStreak");
+
+  if (
+    !totalGamesEl ||
+    !inProgressCountEl ||
+    !completedCountEl ||
+    !totalSessionsEl ||
+    !mainGameNameEl ||
+    !currentStreakEl
+  ) {
+    return;
+  }
+
   totalGamesEl.textContent = String(games.length);
   inProgressCountEl.textContent = String(
     games.filter((game) => game.status === GAME_STATUSES.IN_PROGRESS).length
@@ -73,6 +87,174 @@ export function renderStats(games, sessions) {
 
   const streak = computeStreak(sessions);
   currentStreakEl.textContent = `${streak} ${t("common.dayWord", { count: streak })}`;
+}
+
+export function renderHomeOverview(games, sessions, sessionStats, xpSummary) {
+  if (!homeOverviewEl) return;
+
+  const mainGame =
+    games.find((game) => game.isMain) ||
+    games.find((game) => game.status === GAME_STATUSES.IN_PROGRESS) ||
+    null;
+  const mainStats = mainGame
+    ? sessionStats.get(mainGame.id) || emptySessionStats()
+    : emptySessionStats();
+  const latestCompletedGame = [...games]
+    .filter((game) => game.status === GAME_STATUSES.COMPLETED && game.completedAt)
+    .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))[0] || null;
+  const latestCompletedStats = latestCompletedGame
+    ? sessionStats.get(latestCompletedGame.id) || emptySessionStats()
+    : emptySessionStats();
+
+  homeOverviewEl.innerHTML = `
+    <section class="panel home-focus-panel">
+      <div class="section-header home-section-header">
+        <div>
+          <p class="eyebrow">${escapeHtml(t("home.focusEyebrow"))}</p>
+          <h2>${escapeHtml(t("home.focusTitle"))}</h2>
+          <p class="muted-text">${escapeHtml(t("home.focusBody"))}</p>
+        </div>
+      </div>
+
+      ${
+        mainGame
+          ? renderHomeFocusCard(mainGame, mainStats)
+          : `
+            <div class="home-focus-empty">
+              <h3>${escapeHtml(t("home.focusEmptyTitle"))}</h3>
+              <p class="muted-text">${escapeHtml(t("home.focusEmptyBody"))}</p>
+              <div class="home-action-grid">
+                <button type="button" class="primary-button" data-home-shortcut="add-game">
+                  ${escapeHtml(t("home.quickAddGame"))}
+                </button>
+                <button type="button" class="secondary-button" data-home-shortcut="tracker">
+                  ${escapeHtml(t("home.quickViewTracker"))}
+                </button>
+              </div>
+            </div>
+          `
+      }
+    </section>
+
+    <div class="home-dashboard-grid">
+      <section class="panel player-panel home-progress-panel">
+        <div class="player-panel-header">
+          <div>
+            <p class="eyebrow">${escapeHtml(t("home.playerProgressEyebrow"))}</p>
+            <h2 id="playerRank">Side Quest Starter</h2>
+            <p id="xpProgressText" class="muted-text">
+              0 / 100 XP to next level
+            </p>
+          </div>
+          <div class="level-chip">Lvl <span id="playerLevel">1</span></div>
+        </div>
+
+        <div class="xp-bar">
+          <div id="xpProgressFill" class="xp-bar-fill" style="width: 0%"></div>
+        </div>
+
+        <div class="summary-row">
+          <span class="summary-pill">Total XP: <strong id="totalXp">0</strong></span>
+          <span class="summary-pill">Today: <strong id="todayXp">0</strong></span>
+          <span class="summary-pill">
+            Next level: <strong id="xpToNextLevel">100 XP</strong>
+          </span>
+        </div>
+
+        <p class="muted-text home-panel-note">${escapeHtml(t("home.progressBody"))}</p>
+      </section>
+
+      <section class="panel home-snapshot-panel">
+        <div class="section-header home-section-header">
+          <div>
+            <p class="eyebrow">${escapeHtml(t("home.snapshotEyebrow"))}</p>
+            <h2>${escapeHtml(t("home.snapshotTitle"))}</h2>
+            <p class="muted-text">${escapeHtml(t("home.snapshotBody"))}</p>
+          </div>
+        </div>
+
+        <div class="home-stat-grid">
+          <article class="home-stat-card">
+            <p class="stat-label">${escapeHtml(t("home.totalGames"))}</p>
+            <p id="totalGames" class="stat-value">0</p>
+          </article>
+          <article class="home-stat-card">
+            <p class="stat-label">${escapeHtml(t("home.inProgress"))}</p>
+            <p id="inProgressCount" class="stat-value">0</p>
+          </article>
+          <article class="home-stat-card">
+            <p class="stat-label">${escapeHtml(t("home.completed"))}</p>
+            <p id="completedCount" class="stat-value">0</p>
+          </article>
+          <article class="home-stat-card">
+            <p class="stat-label">${escapeHtml(t("home.totalSessions"))}</p>
+            <p id="totalSessions" class="stat-value">0</p>
+          </article>
+          <article class="home-stat-card home-stat-card-wide">
+            <p class="stat-label">${escapeHtml(t("home.mainGame"))}</p>
+            <p id="mainGameName" class="stat-value">None yet</p>
+          </article>
+          <article class="home-stat-card home-stat-card-wide">
+            <p class="stat-label">${escapeHtml(t("home.currentStreak"))}</p>
+            <p id="currentStreak" class="stat-value">0 days</p>
+          </article>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel home-actions-panel">
+      <div class="section-header home-section-header">
+        <div>
+          <p class="eyebrow">${escapeHtml(t("home.actionsEyebrow"))}</p>
+          <h2>${escapeHtml(t("home.actionsTitle"))}</h2>
+          <p class="muted-text">${escapeHtml(t("home.actionsBody"))}</p>
+        </div>
+      </div>
+
+      <div class="home-action-grid">
+        <button type="button" class="secondary-button home-action-button" data-home-shortcut="log-session">
+          ${escapeHtml(t("home.quickLogSession"))}
+        </button>
+        <button type="button" class="secondary-button home-action-button" data-home-shortcut="add-game">
+          ${escapeHtml(t("home.quickAddGame"))}
+        </button>
+        <button type="button" class="secondary-button home-action-button" data-home-shortcut="tracker">
+          ${escapeHtml(t("home.quickViewTracker"))}
+        </button>
+        <button type="button" class="secondary-button home-action-button" data-home-shortcut="journey">
+          ${escapeHtml(t("home.quickOpenJourney"))}
+        </button>
+        <button type="button" class="primary-button home-action-button home-action-button-wide" data-home-shortcut="character">
+          ${escapeHtml(t("home.quickCharacter"))}
+        </button>
+      </div>
+    </section>
+
+    ${
+      latestCompletedGame
+        ? `
+          <section class="panel home-win-panel">
+            <div class="section-header home-section-header">
+              <div>
+                <p class="eyebrow">${escapeHtml(t("home.recentWinEyebrow"))}</p>
+                <h2>${escapeHtml(t("home.recentWinTitle"))}</h2>
+                <p class="muted-text">${escapeHtml(t("home.recentWinBody"))}</p>
+              </div>
+              <button
+                type="button"
+                class="secondary-button action-success"
+                data-action="download-card"
+                data-id="${latestCompletedGame.id}"
+              >
+                ${escapeHtml(t("tracker.actionsMenu.downloadCard"))}
+              </button>
+            </div>
+            ${renderHomeRecentWin(latestCompletedGame, latestCompletedStats)}
+          </section>
+        `
+        : ""
+    }
+  `;
 }
 
 export function renderCompletionSpotlight(games, sessionStats) {
@@ -224,6 +406,163 @@ export function renderMainQuest(games, sessionStats) {
               t("tracker.mainQuest.noSessionNote")
             )}</p>`
       }
+    </div>
+  `;
+}
+
+function renderHomeFocusCard(game, stats) {
+  const bannerImage = game.bannerImage || game.coverImage;
+  const bannerArt = bannerImage
+    ? `<img class="game-card-banner-image" src="${escapeAttribute(
+        bannerImage
+      )}" alt="" aria-hidden="true" />`
+    : "";
+  const latestSessionNote = escapeHtml(stats.latestSession?.note || "");
+  const objective = escapeHtml(getGameObjectiveText(game));
+  const difficultyMeta = GAME_DIFFICULTY_META[game.difficulty];
+  const statusMeta = getStatusMeta(game.status);
+
+  return `
+    <div class="home-focus-card">
+      <div class="game-card-banner home-focus-banner">
+        ${bannerArt}
+        <div class="game-card-banner-content">
+          <div class="game-card-banner-hero">
+            ${renderCoverVisual(game, "game-cover-thumb")}
+            <div class="game-card-banner-copy">
+              <div class="game-card-banner-heading">
+                <h3 class="game-title">${escapeHtml(game.title)}</h3>
+                <p class="game-meta">${escapeHtml(
+                  t("tracker.summaryPills.platform", {
+                    value: getPlatformText(game),
+                  })
+                )}</p>
+              </div>
+              <div class="game-card-banner-badges">
+                <span class="badge badge-main">${escapeHtml(
+                  t("tracker.mainQuest.badge")
+                )}</span>
+                <span class="badge badge-status ${statusMeta.badgeClass}">${escapeHtml(
+                  statusMeta.label
+                )}</span>
+                <span class="badge badge-difficulty ${difficultyMeta?.badgeClass || ""}">${escapeHtml(
+                  getGameDifficultyLabel(game.difficulty)
+                )}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-focus-body">
+        <div class="summary-row">
+          <span class="summary-pill">${escapeHtml(
+            t("tracker.summaryPills.questXp", { xp: stats.totalXp })
+          )}</span>
+          <span class="summary-pill">${escapeHtml(
+            t("tracker.summaryPills.sessions", { count: stats.sessionCount })
+          )}</span>
+          <span class="summary-pill">${escapeHtml(
+            t("tracker.summaryPills.playTime", {
+              value: formatMinutes(stats.totalMinutes),
+            })
+          )}</span>
+          <span class="summary-pill">${escapeHtml(
+            t("tracker.summaryPills.lastPlayed", {
+              value: stats.lastPlayedAt
+                ? formatDateTime(stats.lastPlayedAt)
+                : t("common.never"),
+            })
+          )}</span>
+        </div>
+
+        ${
+          objective
+            ? `<div class="note-block"><p class="note-label">${escapeHtml(
+                t("tracker.notes.currentObjective")
+              )}</p><p class="game-notes">${objective}</p></div>`
+            : `<p class="muted-text">${escapeHtml(t("tracker.mainQuest.noObjective"))}</p>`
+        }
+
+        ${
+          latestSessionNote
+            ? `<div class="note-block"><p class="note-label">${escapeHtml(
+                t("tracker.notes.latestSession")
+              )}</p><p class="session-note">${latestSessionNote}</p></div>`
+            : ""
+        }
+
+        <div class="home-action-grid">
+          <button type="button" class="primary-button" data-home-shortcut="log-session">
+            ${escapeHtml(t("home.quickLogSession"))}
+          </button>
+          <button type="button" class="secondary-button" data-home-shortcut="tracker">
+            ${escapeHtml(t("home.quickViewTracker"))}
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderHomeRecentWin(game, stats) {
+  const bannerImage = game.bannerImage || game.coverImage;
+  const bannerArt = bannerImage
+    ? `<img class="game-card-banner-image" src="${escapeAttribute(
+        bannerImage
+      )}" alt="" aria-hidden="true" />`
+    : "";
+  const totalQuestXp = stats.totalXp + getGameCompletionXp(game);
+
+  return `
+    <div class="home-win-card">
+      <div class="completion-card-banner home-win-banner">
+        ${bannerArt}
+        <div class="completion-card-content">
+          <div class="completion-card-heading">
+            <div>
+              <h3>${escapeHtml(game.title)}</h3>
+              <p class="completion-meta">${escapeHtml(
+                t("tracker.completionSpotlight.meta", {
+                  date: formatDate(game.completedAt),
+                  sessions: stats.sessionCount,
+                  sessionWord: t("common.sessionWord", { count: stats.sessionCount }),
+                  playTime: formatMinutes(stats.totalMinutes),
+                })
+              )}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-stat">
+          <span class="summary-stat-label">${escapeHtml(
+            t("tracker.completionCard.totalPlayTime")
+          )}</span>
+          <span class="summary-stat-value">${escapeHtml(
+            formatMinutes(stats.totalMinutes)
+          )}</span>
+        </div>
+        <div class="summary-stat">
+          <span class="summary-stat-label">${escapeHtml(
+            t("tracker.completionCard.sessions")
+          )}</span>
+          <span class="summary-stat-value">${stats.sessionCount}</span>
+        </div>
+        <div class="summary-stat">
+          <span class="summary-stat-label">${escapeHtml(
+            t("tracker.completionCard.meaningful")
+          )}</span>
+          <span class="summary-stat-value">${stats.meaningfulCount}</span>
+        </div>
+        <div class="summary-stat">
+          <span class="summary-stat-label">${escapeHtml(
+            t("tracker.completionCard.totalXp")
+          )}</span>
+          <span class="summary-stat-value">${totalQuestXp}</span>
+        </div>
+      </div>
     </div>
   `;
 }

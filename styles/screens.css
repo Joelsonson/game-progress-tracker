@@ -15,6 +15,10 @@
   grid-template-columns: 1fr;
 }
 
+.home-dashboard-grid {
+  grid-template-columns: 1fr;
+}
+
 .top-layout,
 .crop-modal-layout,
 .journey-hero-top,
@@ -214,6 +218,10 @@
 
 .quick-action-button {
   justify-content: center;
+}
+
+.home-focus-banner {
+  min-height: 144px;
 }
 
 .mobile-tabbar {
