@@ -59,14 +59,11 @@ export function renderSessionGameOptions(games) {
 
   sessionGameSelect.innerHTML = availableGames
     .map((game) => {
-      const prefix = game.isMain ? "🎯 " : "";
       const suffix =
         game.status === GAME_STATUSES.COMPLETED
           ? ` ${t("status.completionReplaySuffix")}`
           : "";
-      return `<option value="${game.id}">${prefix}${escapeHtml(
-        game.title
-      )}${suffix}</option>`;
+      return `<option value="${game.id}">${escapeHtml(game.title)}${suffix}</option>`;
     })
     .join("");
 

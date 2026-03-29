@@ -69,6 +69,7 @@ export const settingsModal = document.querySelector("#settingsModal");
 export const settingsModalCloseButton = document.querySelector(
   "#settingsModalCloseButton"
 );
+export const mobileQuickSwitchEl = document.querySelector(".mobile-quick-switch");
 
 export const artCropModal = document.querySelector("#artCropModal");
 export const cropPreviewCanvas = document.querySelector("#cropPreviewCanvas");
@@ -93,6 +94,14 @@ export const journeyOutcomeMetaEl = document.querySelector("#journeyOutcomeMeta"
 export const journeyOutcomeBodyEl = document.querySelector("#journeyOutcomeBody");
 export const journeyOutcomeCloseButton = document.querySelector(
   "#journeyOutcomeCloseButton"
+);
+export const journeyHistoryModal = document.querySelector("#journeyHistoryModal");
+export const journeyHistoryEyebrowEl = document.querySelector("#journeyHistoryEyebrow");
+export const journeyHistoryTitleEl = document.querySelector("#journeyHistoryTitle");
+export const journeyHistoryMetaEl = document.querySelector("#journeyHistoryMeta");
+export const journeyHistoryBodyEl = document.querySelector("#journeyHistoryBody");
+export const journeyHistoryCloseButton = document.querySelector(
+  "#journeyHistoryCloseButton"
 );
 export const characterSkillModalRoot = document.querySelector(
   "#characterSkillModalRoot"

@@ -7,6 +7,11 @@ import {
   journeyEventMetaEl,
   journeyEventModal,
   journeyEventTitleEl,
+  journeyHistoryBodyEl,
+  journeyHistoryEyebrowEl,
+  journeyHistoryMetaEl,
+  journeyHistoryModal,
+  journeyHistoryTitleEl,
   journeyOutcomeBodyEl,
   journeyOutcomeMetaEl,
   journeyOutcomeModal,
@@ -376,6 +381,81 @@ export function closeJourneyOutcomeModal() {
   syncBodyScrollLock();
 }
 
+export function openJourneyHistoryModal({
+  eyebrow = "Journey history",
+  title = "Journey history",
+  meta = "A record of the road behind you.",
+  entries = [],
+  emptyTitle = "Nothing recorded yet",
+  emptyBody = "The road has not given you anything to file here yet.",
+} = {}) {
+  if (
+    !journeyHistoryModal ||
+    !journeyHistoryBodyEl ||
+    !journeyHistoryTitleEl ||
+    !journeyHistoryMetaEl ||
+    !journeyHistoryEyebrowEl
+  ) {
+    return;
+  }
+
+  journeyHistoryEyebrowEl.textContent = eyebrow;
+  journeyHistoryTitleEl.textContent = title;
+  journeyHistoryMetaEl.textContent = meta;
+  journeyHistoryBodyEl.innerHTML = entries.length
+    ? `
+        <div class="journey-history-list">
+          ${entries
+            .map(
+              (entry) => `
+                <article class="journey-history-entry">
+                  <div class="journey-history-entry-head">
+                    <div>
+                      <p class="journey-history-entry-kicker">${escapeHtml(
+                        entry.kicker || eyebrow
+                      )}</p>
+                      <h4>${escapeHtml(entry.title || "Untitled entry")}</h4>
+                    </div>
+                    <time class="journey-history-entry-time">${formatDateTime(
+                      entry.at
+                    )}</time>
+                  </div>
+                  ${
+                    entry.detail
+                      ? `<p class="journey-history-entry-copy">${escapeHtml(entry.detail)}</p>`
+                      : ""
+                  }
+                </article>
+              `
+            )
+            .join("")}
+        </div>
+      `
+    : `
+        <div class="journey-event-panel journey-history-empty">
+          <h4>${escapeHtml(emptyTitle)}</h4>
+          <p>${escapeHtml(emptyBody)}</p>
+        </div>
+      `;
+
+  journeyHistoryModal.hidden = false;
+  syncBodyScrollLock();
+}
+
+export function closeJourneyHistoryModal() {
+  if (!journeyHistoryModal) return;
+  journeyHistoryModal.hidden = true;
+  if (journeyHistoryBodyEl) journeyHistoryBodyEl.innerHTML = "";
+  syncBodyScrollLock();
+}
+
+export function handleJourneyHistoryModalClick(event) {
+  if (!(event.target instanceof HTMLElement)) return;
+  if (event.target.closest("[data-close-journey-history]")) {
+    closeJourneyHistoryModal();
+  }
+}
+
 export function renderIdleJourney(state, games, sessions, xpSummary) {
   if (!journeyContentEl) return;
 
@@ -492,25 +572,40 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
             <span>Hunger</span>
             <strong>${Math.round(viewModel.state.currentHunger)} / ${viewModel.journeyStats.maxHunger}</strong>
           </div>
-          <div class="journey-story-stat">
-            <span>Road cleared</span>
-            <strong>${viewModel.state.bossIndex}</strong>
-          </div>
-          <div class="journey-story-stat">
+          <button
+            type="button"
+            class="journey-story-stat journey-story-stat-button"
+            data-journey-action="open-road-history"
+          >
+            <span>Roads cleared</span>
+            <strong>${viewModel.clearedRoadCount}</strong>
+            <span class="journey-story-stat-hint">${escapeHtml(
+              viewModel.latestClearedRoad
+                ? `Latest: ${viewModel.latestClearedRoad.title}`
+                : "Open the road log"
+            )}</span>
+          </button>
+          <button
+            type="button"
+            class="journey-story-stat journey-story-stat-button"
+            data-journey-action="open-retreat-history"
+          >
             <span>Retreats</span>
-            <strong>${viewModel.state.townVisits}</strong>
-          </div>
+            <strong>${viewModel.retreatCount}</strong>
+            <span class="journey-story-stat-hint">${escapeHtml(
+              viewModel.latestRetreat
+                ? `Latest: ${viewModel.latestRetreat.title}`
+                : "Open the retreat log"
+            )}</span>
+          </button>
         </div>
-        <p class="muted-text">
-          Manage HP, hunger, skills, and inventory from the Character screen so this page can stay focused on travel and events.
-        </p>
       </article>
     </section>
 
     <section class="journey-log-grid">
       <article class="journey-log-card">
         <p class="journey-overline">Travel log</p>
-        <h4>Latest hardships</h4>
+        <h4>Recent events</h4>
         <div class="journey-log-list">
           ${viewModel.state.log.length
             ? viewModel.state.log
@@ -863,6 +958,8 @@ function buildJourneyViewModel(state, games, sessions, xpSummary) {
   const weaponInventory = getJourneyWeaponInventory(state);
   const pendingWeapons = getJourneyPendingWeapons(state);
   const knownNotes = getJourneyKnownNotes(state);
+  const clearedRoads = Array.isArray(state.clearedRoads) ? state.clearedRoads : [];
+  const retreatHistory = Array.isArray(state.retreatHistory) ? state.retreatHistory : [];
   const levelProgress =
     storyXpToNextLevel <= xpSummary.xpToNextLevel
       ? {
@@ -907,6 +1004,12 @@ function buildJourneyViewModel(state, games, sessions, xpSummary) {
     weaponInventory,
     pendingWeapons,
     knownNotes,
+    clearedRoads,
+    retreatHistory,
+    clearedRoadCount: Math.max(state.bossIndex, clearedRoads.length),
+    retreatCount: Math.max(state.townVisits, retreatHistory.length),
+    latestClearedRoad: clearedRoads[0] || null,
+    latestRetreat: retreatHistory[0] || null,
     classLabel: JOURNEY_CLASS_META[state.classType].label,
     classDescription: JOURNEY_CLASS_META[state.classType].description,
     statusLabel: getJourneyStatusLabel(state.status),

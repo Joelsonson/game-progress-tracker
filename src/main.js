@@ -29,9 +29,12 @@ import {
   journeyContentEl,
   journeyEventCloseButton,
   journeyEventModal,
+  journeyHistoryCloseButton,
+  journeyHistoryModal,
   languagePreferenceInput,
   journeyOutcomeCloseButton,
   journeyOutcomeModal,
+  mobileQuickSwitchEl,
   openSettingsButton,
   screenNavButtons,
   sessionsTabButtons,
@@ -62,7 +65,9 @@ import { handleHomeJourneyClick, handleJourneyClick, handleJourneyEventModalClic
 import { buildJourneySupplies, syncJourneyState } from "./features/journey/journeyEngine.js";
 import {
   closeJourneyEventModal,
+  closeJourneyHistoryModal,
   closeJourneyOutcomeModal,
+  handleJourneyHistoryModalClick,
   initializeJourneySpritePreviews,
   renderCharacterSheet,
   renderHomeJourney,
@@ -78,6 +83,9 @@ import {
 } from "./features/sessions/sessionsView.js";
 
 document.addEventListener("DOMContentLoaded", init);
+
+let lastQuickSwitchScrollY = 0;
+let quickSwitchFramePending = false;
 
 async function init() {
   try {
@@ -136,6 +144,8 @@ function bindEvents() {
   journeyEventCloseButton?.addEventListener("click", closeJourneyEventModal);
   journeyOutcomeModal?.addEventListener("click", handleJourneyOutcomeModalClick);
   journeyOutcomeCloseButton?.addEventListener("click", closeJourneyOutcomeModal);
+  journeyHistoryModal?.addEventListener("click", handleJourneyHistoryModalClick);
+  journeyHistoryCloseButton?.addEventListener("click", closeJourneyHistoryModal);
   characterSkillModalRoot?.addEventListener("click", handleJourneyClick);
   document.addEventListener("keydown", handleGlobalKeyDown);
 
@@ -148,6 +158,8 @@ function bindEvents() {
   }
 
   window.addEventListener("resize", handleViewportResize);
+  window.addEventListener("scroll", handleWindowScroll, { passive: true });
+  syncQuickSwitchChrome();
 }
 
 function handleGlobalKeyDown(event) {
@@ -163,6 +175,11 @@ function handleGlobalKeyDown(event) {
 
   if (event.key === "Escape" && gameActionsModal && !gameActionsModal.hidden) {
     closeGameActionsSheet();
+    return;
+  }
+
+  if (event.key === "Escape" && journeyHistoryModal && !journeyHistoryModal.hidden) {
+    closeJourneyHistoryModal();
     return;
   }
 
@@ -187,6 +204,40 @@ function handleSettingsModalClick(event) {
   if (event.target.closest("[data-close-settings-modal]")) {
     closeSettingsModal();
   }
+}
+
+function handleWindowScroll() {
+  if (quickSwitchFramePending) return;
+
+  quickSwitchFramePending = true;
+  window.requestAnimationFrame(() => {
+    quickSwitchFramePending = false;
+    syncQuickSwitchChrome();
+  });
+}
+
+function syncQuickSwitchChrome() {
+  if (!mobileQuickSwitchEl) return;
+
+  const nextScrollY = Math.max(window.scrollY || 0, 0);
+  const scrollDelta = nextScrollY - lastQuickSwitchScrollY;
+  const scrollProgress = Math.min(nextScrollY / 220, 1);
+  let scrollState = mobileQuickSwitchEl.dataset.scrollState || "top";
+
+  if (nextScrollY <= 12) {
+    scrollState = "top";
+  } else if (scrollDelta > 4) {
+    scrollState = "hidden";
+  } else if (scrollDelta < -4) {
+    scrollState = "visible";
+  }
+
+  mobileQuickSwitchEl.dataset.scrollState = scrollState;
+  mobileQuickSwitchEl.style.setProperty(
+    "--quick-nav-scroll-progress",
+    scrollProgress.toFixed(3)
+  );
+  lastQuickSwitchScrollY = nextScrollY;
 }
 
 export async function renderApp() {

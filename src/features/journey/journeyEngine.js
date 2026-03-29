@@ -26,6 +26,8 @@ import { computeStreak } from "../../core/formatters.js";
 import { appState } from "../../core/state.js";
 import { normalizeJourneyChoice, normalizeJourneyEvent } from "./journeyEvents.js";
 
+const JOURNEY_HISTORY_LIMIT = 24;
+
 export async function syncJourneyState(rawState, games, sessions, xpSummary) {
   const now = new Date();
   const state = normalizeJourneyState(rawState);
@@ -90,6 +92,8 @@ export async function syncJourneyState(rawState, games, sessions, xpSummary) {
 export function normalizeJourneyState(rawState = null) {
   const nowIso = new Date().toISOString();
   const source = rawState && typeof rawState === "object" ? rawState : {};
+  const legacyClearedRoads = buildLegacyClearedRoadHistory(source.log, nowIso);
+  const legacyRetreatHistory = buildLegacyRetreatHistory(source.log, nowIso);
   const allocatedStats = JOURNEY_STAT_KEYS.reduce((accumulator, key) => {
     accumulator[key] = Math.max(
       0,
@@ -169,7 +173,7 @@ export function normalizeJourneyState(rawState = null) {
     inferredWeapon || keptWeaponKeys.length > 0 || pendingWeaponKeys.length > 0;
 
   return {
-    version: 6,
+    version: 7,
     classType,
     unlockedClasses,
     allocatedStats,
@@ -244,6 +248,16 @@ export function normalizeJourneyState(rawState = null) {
           .map((entry) => createJourneyDebugSnapshot(entry))
           .filter(Boolean)
       : [],
+    clearedRoads: normalizeJourneyHistoryEntries(
+      source.clearedRoads,
+      nowIso,
+      legacyClearedRoads
+    ),
+    retreatHistory: normalizeJourneyHistoryEntries(
+      source.retreatHistory,
+      nowIso,
+      legacyRetreatHistory
+    ),
     log: Array.isArray(source.log)
       ? source.log
           .slice(0, JOURNEY_LOG_LIMIT)
@@ -254,6 +268,130 @@ export function normalizeJourneyState(rawState = null) {
           .filter((entry) => entry.text)
       : [],
   };
+}
+
+function normalizeJourneyHistoryEntries(sourceEntries, nowIso, fallbackEntries = []) {
+  const entries = Array.isArray(sourceEntries) ? sourceEntries : fallbackEntries;
+
+  return entries
+    .slice(0, JOURNEY_HISTORY_LIMIT)
+    .map((entry) => ({
+      title: String(entry?.title || "").trim(),
+      detail: String(entry?.detail || "").trim(),
+      at: entry?.at || nowIso,
+    }))
+    .filter((entry) => entry.title && entry.at);
+}
+
+function buildLegacyClearedRoadHistory(logEntries, nowIso) {
+  if (!Array.isArray(logEntries)) return [];
+
+  return logEntries
+    .map((entry) => parseLegacyClearedRoadEntry(entry, nowIso))
+    .filter(Boolean)
+    .slice(0, JOURNEY_HISTORY_LIMIT);
+}
+
+function parseLegacyClearedRoadEntry(entry, nowIso) {
+  const text = String(entry?.text || "").trim();
+  const at = entry?.at || nowIso;
+
+  if (!text) return null;
+
+  if (text.startsWith("You survived the boar and cleared the stretch.")) {
+    return {
+      title: JOURNEY_ZONE_NAMES[0] || "Unknown Forest",
+      detail: "Cleared by surviving Cornered Forest Boar.",
+      at,
+    };
+  }
+
+  const clearedMatch = text.match(
+    /^You cleared (.+?) with .*? The path opened into (.+?)\. Rewards:/
+  );
+  if (!clearedMatch) return null;
+
+  const bossName = clearedMatch[1].trim();
+  const nextZoneName = clearedMatch[2].trim();
+  const nextZoneIndex = JOURNEY_ZONE_NAMES.findIndex(
+    (zoneName) => zoneName === nextZoneName
+  );
+  const clearedZoneName =
+    nextZoneIndex > 0 ? JOURNEY_ZONE_NAMES[nextZoneIndex - 1] : nextZoneName;
+
+  return {
+    title: clearedZoneName,
+    detail: `Cleared by defeating ${bossName}.`,
+    at,
+  };
+}
+
+function buildLegacyRetreatHistory(logEntries, nowIso) {
+  if (!Array.isArray(logEntries)) return [];
+
+  return logEntries
+    .map((entry) => parseLegacyRetreatEntry(entry, nowIso))
+    .filter(Boolean)
+    .slice(0, JOURNEY_HISTORY_LIMIT);
+}
+
+function parseLegacyRetreatEntry(entry, nowIso) {
+  const text = String(entry?.text || "").trim();
+  const at = entry?.at || nowIso;
+
+  if (!text) return null;
+
+  if (text.startsWith("Recovering after ")) {
+    return {
+      title: "Forced retreat",
+      detail: text,
+      at,
+    };
+  }
+
+  if (
+    text === "You were in no state to continue and had to crawl back toward safety." ||
+    text ===
+      "The aftermath forced you to stop and recover before you could go any farther."
+  ) {
+    return {
+      title: "Forced retreat",
+      detail: text,
+      at,
+    };
+  }
+
+  return null;
+}
+
+function addJourneyHistoryEntry(collection, entry) {
+  if (!Array.isArray(collection)) {
+    return [entry].slice(0, JOURNEY_HISTORY_LIMIT);
+  }
+
+  return [entry, ...collection].slice(0, JOURNEY_HISTORY_LIMIT);
+}
+
+function addJourneyRoadClear(state, title, detail, at) {
+  const safeTitle = String(title || "").trim();
+  if (!safeTitle) return;
+
+  state.clearedRoads = addJourneyHistoryEntry(state.clearedRoads, {
+    title: safeTitle,
+    detail: String(detail || "").trim(),
+    at,
+  });
+}
+
+function addJourneyRetreat(state, title, detail, at) {
+  const safeTitle = String(title || "").trim();
+  if (!safeTitle) return;
+
+  state.retreatHistory = addJourneyHistoryEntry(state.retreatHistory, {
+    title: safeTitle,
+    detail: String(detail || "").trim(),
+    at,
+  });
 }
 
 export function randomJourneyStarterItem() {
@@ -498,6 +636,7 @@ export function getJourneyGoalMeta(state, boss, progress, journeyStats, supplies
       return {
         goalTitle: "Find your bearings",
         goalAction: "finding your bearings",
+        innerThoughtAction: "getting my bearings",
         horizonLabel: "Right now",
         horizonValue: "Nothing here feels familiar yet.",
       };
@@ -712,25 +851,27 @@ export function getJourneyProgressFeeling(state, progressPercent) {
 }
 
 export function buildJourneyInnerThoughts(state, goalMeta, journeyStats) {
+  const innerThoughtAction = goalMeta.innerThoughtAction || goalMeta.goalAction;
+
   if (state.status === "recovering") {
-    return `I need to slow down and ${goalMeta.goalAction} before I even think about pushing any farther.`;
+    return `I need to slow down and ${innerThoughtAction} before I even think about pushing any farther.`;
   }
 
   const stretchChallenge = buildJourneyStretchChallenge(state, journeyStats);
 
   if (stretchChallenge.successChance >= 0.74) {
-    return `I think I can handle this. If I keep my head, I should manage ${goalMeta.goalAction} before this stretch turns ugly.`;
+    return `I think I can handle this. If I keep my head, I should manage ${innerThoughtAction} before this stretch turns ugly.`;
   }
 
   if (stretchChallenge.successChance >= 0.56) {
-    return `I am not comfortable, but I can probably manage ${goalMeta.goalAction} if I stay focused and do not panic.`;
+    return `I am not comfortable, but I can probably manage ${innerThoughtAction} if I stay focused and do not panic.`;
   }
 
   if (stretchChallenge.successChance >= 0.38) {
-    return `I keep second-guessing myself. Maybe I can manage ${goalMeta.goalAction}, but it feels like one mistake could ruin the whole thing.`;
+    return `I keep second-guessing myself. Maybe I can manage ${innerThoughtAction}, but it feels like one mistake could ruin the whole thing.`;
   }
 
-  return `Things are not looking good. I can barely trust my own sense of direction right now, and ${goalMeta.goalAction} feels farther away every time I look up.`;
+  return `Things are not looking good. I can barely trust my own sense of direction right now, and ${innerThoughtAction} feels farther away every time I look up.`;
 }
 
 export function buildJourneyRecoveryObjective(state, journeyLevel, journeyStats) {
@@ -1134,6 +1275,7 @@ export function resolveJourneyBoss(state, journeyStats, atDate) {
   const boss = getJourneyBoss(state.bossIndex);
   const stretchChallenge = buildJourneyStretchChallenge(state, journeyStats);
   const success = Math.random() < stretchChallenge.successChance;
+  const clearedZoneName = getJourneyZoneName(state.bossIndex);
 
   if (success) {
     state.bossIndex += 1;
@@ -1155,6 +1297,14 @@ export function resolveJourneyBoss(state, journeyStats, atDate) {
       state,
       journeyStats.level,
       atDate
+    );
+    addJourneyRoadClear(
+      state,
+      clearedZoneName,
+      `Cleared by defeating ${boss.name}. The road opened into ${getJourneyZoneName(
+        state.bossIndex
+      )}.`,
+      atDate.toISOString()
     );
 
     if (boss.name === "Cornered Forest Boar") {
@@ -3790,6 +3940,12 @@ export function sendJourneyToTown(
   state.currentHunger = Math.max(
     state.currentHunger,
     Math.max(8, Math.round(currentJourneyStats.maxHunger * 0.12))
+  );
+  addJourneyRetreat(
+    state,
+    `Retreated from ${getJourneyZoneName(state.bossIndex)}`,
+    message,
+    atDate.toISOString()
   );
   state.recoveryObjective = buildJourneyRecoveryObjective(
     state,

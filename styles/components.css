@@ -1396,6 +1396,73 @@
   padding: 18px 22px 22px;
 }
 
+.journey-history-dialog {
+  border-color: rgba(var(--ink-rgb), 0.12);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.96), rgba(var(--surface-rgb), 0.9)),
+    radial-gradient(circle at top left, rgba(var(--accent-blue-strong), 0.1), transparent 34%);
+  color: var(--text);
+}
+
+.journey-history-body {
+  gap: 14px;
+}
+
+.journey-history-list {
+  display: grid;
+  gap: 12px;
+}
+
+.journey-history-entry {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.9), rgba(var(--surface-rgb), 0.78)),
+    rgba(var(--panel-rgb), 0.68);
+}
+
+.journey-history-entry-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.journey-history-entry-head h4,
+.journey-history-empty h4 {
+  margin: 4px 0 0;
+}
+
+.journey-history-entry-kicker {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.journey-history-entry-time {
+  color: var(--muted);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.journey-history-entry-copy,
+.journey-history-empty p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.journey-history-empty {
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.92), rgba(var(--surface-rgb), 0.82)),
+    rgba(var(--panel-rgb), 0.72);
+}
+
 .journey-event-panel {
   display: grid;
   gap: 14px;
@@ -1890,6 +1957,49 @@
   line-height: 1.4;
   font-weight: 600;
   color: var(--text);
+}
+
+.journey-story-stat-button {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.journey-story-stat-button::after {
+  content: "Open log";
+  position: absolute;
+  right: 15px;
+  top: 16px;
+  color: var(--accent-2);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.journey-story-stat-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(var(--accent-blue-strong), 0.16);
+  box-shadow:
+    0 14px 24px rgba(var(--ink-rgb), 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.journey-story-stat-hint {
+  display: block;
+  margin-top: 2px;
+  padding-right: 74px;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
 }
 
 .journey-alert-card {

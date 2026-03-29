@@ -41,6 +41,7 @@ import {
   closeJourneyEventModal,
   closeJourneyOutcomeModal,
   openJourneyEventModal,
+  openJourneyHistoryModal,
   openJourneyOutcomeModal,
   showJourneyEventThinking,
 } from "./journeyView.js";
@@ -138,6 +139,52 @@ export async function handleJourneyClick(event) {
       }
 
       openJourneyEventModal(pendingEvent);
+      return;
+    }
+
+    if (action === "open-road-history") {
+      openJourneyHistoryModal({
+        eyebrow: "Expedition focus",
+        title: "Roads cleared",
+        meta:
+          state.bossIndex === 0
+            ? "No stretches cleared yet."
+            : `${state.bossIndex} cleared ${state.bossIndex === 1 ? "road" : "roads"} so far.`,
+        entries: (Array.isArray(state.clearedRoads) ? state.clearedRoads : []).map(
+          (entry) => ({
+            ...entry,
+            kicker: "Cleared stretch",
+          })
+        ),
+        emptyTitle: "No road clears logged yet",
+        emptyBody:
+          state.bossIndex > 0
+            ? "Some earlier progress predates the detailed road log, so only newer clears will appear here."
+            : "Win a stretch and it will show up here with its timestamp.",
+      });
+      return;
+    }
+
+    if (action === "open-retreat-history") {
+      openJourneyHistoryModal({
+        eyebrow: "Expedition focus",
+        title: "Retreats",
+        meta:
+          state.townVisits === 0
+            ? "You have not had to fall back yet."
+            : `${state.townVisits} ${state.townVisits === 1 ? "retreat" : "retreats"} recorded so far.`,
+        entries: (Array.isArray(state.retreatHistory) ? state.retreatHistory : []).map(
+          (entry) => ({
+            ...entry,
+            kicker: "Fallback",
+          })
+        ),
+        emptyTitle: "No retreats logged yet",
+        emptyBody:
+          state.townVisits > 0
+            ? "Some earlier retreats predate the detailed log, so only newer ones will appear here."
+            : "If the road forces you to fall back, it will be recorded here.",
+      });
       return;
     }
 

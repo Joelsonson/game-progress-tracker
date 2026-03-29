@@ -6,11 +6,11 @@
     <title>Tabi no Kiroku — Journey Log</title>
     <meta name="theme-color" content="#f8f4f1" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20260328a" />
-    <link rel="stylesheet" href="./styles/tokens.css?v=20260329a" />
-    <link rel="stylesheet" href="./styles/base.css?v=20260329a" />
-    <link rel="stylesheet" href="./styles/layout.css?v=20260329a" />
-    <link rel="stylesheet" href="./styles/components.css?v=20260329a" />
-    <link rel="stylesheet" href="./styles/screens.css?v=20260329a" />
+    <link rel="stylesheet" href="./styles/tokens.css?v=20260329b" />
+    <link rel="stylesheet" href="./styles/base.css?v=20260329b" />
+    <link rel="stylesheet" href="./styles/layout.css?v=20260329b" />
+    <link rel="stylesheet" href="./styles/components.css?v=20260329b" />
+    <link rel="stylesheet" href="./styles/screens.css?v=20260329b" />
   </head>
   <body>
     <main class="app-shell">
@@ -537,21 +537,6 @@
             </article>
 
             <article class="settings-card">
-              <p class="eyebrow" data-i18n="settings.artEyebrow">Artwork guide</p>
-              <h3 data-i18n="settings.artTitle">Better-looking cards start with the right framing</h3>
-              <p class="muted-text" data-i18n="settings.artBody">
-                Covers should be portrait and readable even when small. Banners
-                should keep the subject near the center so the hero panels and
-                deck cards still look clean on smaller screens.
-              </p>
-              <div class="summary-row">
-                <span class="summary-pill" data-i18n="settings.artCover">Cover: 3:4 portrait</span>
-                <span class="summary-pill" data-i18n="settings.artBanner">Banner: 16:9 wide</span>
-                <span class="summary-pill" data-i18n="settings.artCrop">Crop editor included</span>
-              </div>
-            </article>
-
-            <article class="settings-card">
               <p class="eyebrow" data-i18n="settings.backupEyebrow">Local backup</p>
               <h3 data-i18n="settings.backupTitle">Move your tracker to another device</h3>
               <p class="muted-text" data-i18n="settings.backupBody">
@@ -751,6 +736,37 @@
       </div>
     </div>
 
+    <div id="journeyHistoryModal" class="journey-event-modal journey-history-modal" hidden>
+      <div class="journey-event-backdrop" data-close-journey-history></div>
+
+      <div
+        class="journey-event-dialog journey-history-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="journeyHistoryTitle"
+      >
+        <div class="journey-event-header">
+          <div>
+            <p id="journeyHistoryEyebrow" class="eyebrow">Journey history</p>
+            <h2 id="journeyHistoryTitle">Journey history</h2>
+            <p id="journeyHistoryMeta" class="muted-text">
+              A record of the road behind you.
+            </p>
+          </div>
+          <button
+            id="journeyHistoryCloseButton"
+            type="button"
+            class="secondary-button"
+            data-close-journey-history
+          >
+            Close
+          </button>
+        </div>
+
+        <div id="journeyHistoryBody" class="journey-event-body journey-history-body"></div>
+      </div>
+    </div>
+
     <div id="gameActionsModal" class="mobile-action-sheet" hidden>
       <div class="mobile-action-sheet-backdrop" data-close-game-actions></div>
 
@@ -787,6 +803,6 @@
     <div id="characterSkillModalRoot"></div>
     <div id="toastViewport" class="toast-viewport" aria-live="polite" aria-atomic="true"></div>
 
-    <script type="module" src="./src/main.js?v=20260329a"></script>
+    <script type="module" src="./src/main.js?v=20260329b"></script>
   </body>
 </html>
