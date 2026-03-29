@@ -449,12 +449,19 @@ export function renderGameCard(game, sessionStats) {
   return `
     <article class="${cardClasses.join(" ")}">
       <div class="game-card-banner"${bannerStyle}>
-        <div class="game-card-body">
-          <div class="game-card-top">
+        <div class="game-card-banner-content">
+          <div class="game-card-banner-hero">
             ${renderCoverVisual(game, "game-cover-thumb")}
-            <div class="game-card-info">
-              <div class="game-title-row">
+            <div class="game-card-banner-copy">
+              <div class="game-card-banner-heading">
                 <h4 class="game-title">${escapeHtml(game.title)}</h4>
+                <p class="game-meta">${escapeHtml(
+                  t("tracker.summaryPills.platform", {
+                    value: getPlatformText(game),
+                  })
+                )}</p>
+              </div>
+              <div class="game-card-banner-badges">
                 ${mainBadge}
                 <span class="badge badge-status ${statusMeta.badgeClass}">${escapeHtml(
     statusMeta.label
@@ -463,11 +470,6 @@ export function renderGameCard(game, sessionStats) {
     getGameDifficultyLabel(game.difficulty)
   )}</span>
               </div>
-              <p class="game-meta">${escapeHtml(
-                t("tracker.summaryPills.platform", {
-                  value: getPlatformText(game),
-                })
-              )}</p>
             </div>
           </div>
         </div>

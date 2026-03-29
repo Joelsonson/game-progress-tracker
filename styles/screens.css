@@ -429,6 +429,19 @@
     align-items: flex-start;
   }
 
+  .game-card-banner-content {
+    padding: 14px;
+  }
+
+  .game-card-banner-hero {
+    gap: 12px;
+  }
+
+  .game-card-banner-copy {
+    padding: 11px 12px 12px;
+    border-radius: 18px;
+  }
+
   .game-cover-thumb,
   .game-art-placeholder {
     width: 72px;
