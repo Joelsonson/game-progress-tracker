@@ -1958,7 +1958,7 @@ function getJourneyStretchSprite(state, hpPercent, hungerPercent) {
     };
   }
 
-  if (state.status === "recovering" && hungerPercent < hpPercent) {
+  if (isJourneyFoodRecoverySprite(state, hpPercent, hungerPercent)) {
     return {
       sprite: JOURNEY_BERRY_SPRITE,
       label: t("journeyUi.common.foraging"),
@@ -1976,6 +1976,18 @@ function getJourneyStretchSprite(state, hpPercent, hungerPercent) {
     sprite: JOURNEY_WALK_SPRITE,
     label: t("journeyUi.common.onRoad"),
   };
+}
+
+function isJourneyFoodRecoverySprite(state, hpPercent, hungerPercent) {
+  if (state.status !== "recovering") return false;
+
+  const needsHealingFirst = hpPercent <= 22;
+  const needsFoodFirst = hungerPercent <= 20 && !needsHealingFirst;
+
+  if (needsFoodFirst) return true;
+  if (needsHealingFirst) return false;
+
+  return hpPercent >= 50 && hungerPercent < 55;
 }
 
 function renderJourneyInlineHelp(label, lines) {
