@@ -635,20 +635,23 @@ export function openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeI
     return;
   }
 
+  const showRollSummary = resolution?.showRollSummary !== false;
   journeyOutcomeTitleEl.textContent = getJourneyEventTitle(
     eventEntry?.title || t("journeyUi.modals.whatHappenedNext")
   );
   journeyOutcomeMetaEl.textContent = resolution
-    ? `${resolution.success ? t("journeyUi.modals.succeeded") : t("journeyUi.modals.failed")} • ${resolution.statLabel} • ${t("journeyUi.modals.chance", {
-        value: resolution.successPercent,
-      })}`
+    ? showRollSummary
+      ? `${resolution.success ? t("journeyUi.modals.succeeded") : t("journeyUi.modals.failed")} • ${resolution.statLabel} • ${t("journeyUi.modals.chance", {
+          value: resolution.successPercent,
+        })}`
+      : t("journeyUi.modals.roadAnswered")
     : choice?.label
       ? t("journeyUi.modals.youChose", { label: choice.label })
       : t("journeyUi.modals.roadAnswered");
   journeyOutcomeBodyEl.innerHTML = `
     <div class="journey-event-panel journey-outcome-panel">
       ${
-        resolution
+        resolution && showRollSummary
           ? `
             <div class="journey-outcome-summary">
               <span class="journey-outcome-result ${escapeAttribute(
@@ -670,7 +673,7 @@ export function openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeI
           : ""
       }
       ${
-        choice
+        choice && showRollSummary
           ? `
             <p class="journey-outcome-choice-copy">
               ${escapeHtml(t("journeyUi.modals.triedPrefix"))}

@@ -42,6 +42,8 @@ import {
   pushJourneyDebugSnapshot,
   rememberJourneyCompletedEventKey,
   replaceJourneyWeapon,
+  resolveJourneyBossBattleTurn,
+  startJourneyEventCooldown,
   syncJourneyState,
 } from "./journeyEngine.js";
 import { normalizeJourneyEvent } from "./journeyEvents.js";
@@ -154,6 +156,14 @@ export async function handleHomeJourneyClick(event) {
 
     const pendingEvent = state.pendingEvents.find((entry) => entry.id === eventId);
     if (pendingEvent) {
+      if (pendingEvent.autoResolve) {
+        await resolveJourneyEventChoice(
+          pendingEvent.id,
+          pendingEvent.choices[0]?.id || ""
+        );
+        return;
+      }
+
       openJourneyEventModal(pendingEvent);
       return;
     }
@@ -203,6 +213,14 @@ export async function handleJourneyClick(event) {
       if (!pendingEvent) {
         showJourneyFeedback("That event is no longer waiting.", true);
         await appState.renderApp();
+        return;
+      }
+
+      if (pendingEvent.autoResolve) {
+        await resolveJourneyEventChoice(
+          pendingEvent.id,
+          pendingEvent.choices[0]?.id || ""
+        );
         return;
       }
 
@@ -661,6 +679,8 @@ export async function resolveJourneyEventChoice(eventId, choiceId) {
     const journeyStats = buildJourneyDerived(state, journeyLevel);
     const eventEntry = state.pendingEvents.find((entry) => entry.id === eventId);
     const choice = eventEntry?.choices.find((entry) => entry.id === choiceId);
+    const atIso = new Date().toISOString();
+    const atDate = new Date(atIso);
 
     if (!eventEntry || !choice) {
       closeJourneyEventModal();
@@ -669,27 +689,48 @@ export async function resolveJourneyEventChoice(eventId, choiceId) {
       return;
     }
 
-    state.pendingEvents = state.pendingEvents.filter((entry) => entry.id !== eventId);
-    const beforeState = normalizeJourneyState({
-      ...state,
-      pendingEvents: [],
-      debugHistory: [],
-    });
-    const resolution = applyJourneyChoiceEffects(
-      state,
-      choice,
-      journeyStats,
-      new Date().toISOString()
-    );
-    if (!eventEntry.repeatable) {
-      rememberJourneyCompletedEventKey(
+    let beforeState = null;
+    let resolution = null;
+
+    if (eventEntry.kind === "boss") {
+      const bossBattleResolution = resolveJourneyBossBattleTurn(
         state,
-        eventEntry.eventKey || eventEntry.title
+        eventEntry,
+        choice,
+        journeyStats,
+        atIso
       );
+
+      if (!bossBattleResolution) {
+        closeJourneyEventModal();
+        showJourneyFeedback("That fight could not be resolved.", true);
+        await appState.renderApp();
+        return;
+      }
+
+      beforeState = bossBattleResolution.beforeState;
+      resolution = bossBattleResolution.resolution;
+    } else {
+      state.pendingEvents = state.pendingEvents.filter((entry) => entry.id !== eventId);
+      beforeState = normalizeJourneyState({
+        ...state,
+        pendingEvents: [],
+        debugHistory: [],
+      });
+      resolution = applyJourneyChoiceEffects(state, choice, journeyStats, atIso);
+      startJourneyEventCooldown(state, atDate);
+
+      if (!eventEntry.repeatable) {
+        rememberJourneyCompletedEventKey(
+          state,
+          eventEntry.eventKey || eventEntry.title
+        );
+      }
+      if (eventEntry.kind === "aid") {
+        state.aidUrgency = Math.max(0, state.aidUrgency - 2);
+      }
     }
-    if (eventEntry.kind === "aid") {
-      state.aidUrgency = Math.max(0, state.aidUrgency - 2);
-    }
+
     const outcomeItems = buildJourneyOutcomeItems(beforeState, state, resolution);
 
     await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));

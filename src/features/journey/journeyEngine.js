@@ -30,8 +30,12 @@ import { normalizeJourneyChoice, normalizeJourneyEvent } from "./journeyEvents.j
 const JOURNEY_HISTORY_LIMIT = 24;
 const JOURNEY_AMBIENT_LOG_COOLDOWN_MS = 1000 * 60 * 60 * 4;
 const JOURNEY_AMBIENT_REPEAT_MEMORY = 3;
+const JOURNEY_EVENT_COOLDOWN_MIN_HOURS = 1;
+const JOURNEY_EVENT_COOLDOWN_MAX_HOURS = 3;
 const JOURNEY_EVENT_HP_GAIN_MULTIPLIER = 2;
 const JOURNEY_EVENT_HP_LOSS_MULTIPLIER = 3;
+const JOURNEY_BOSS_BATTLE_MAX_HP = 100;
+const JOURNEY_BOSS_BATTLE_TURN_LIMIT = 3;
 const JOURNEY_STRETCH_FAILURE_HP_RATIO = 0.05;
 const JOURNEY_TRAVELER_AID_LOG =
   "A passing traveler shared dried meat and better directions after seeing the state you were in.";
@@ -217,7 +221,7 @@ export function normalizeJourneyState(rawState = null) {
     inferredWeapon || keptWeaponKeys.length > 0 || pendingWeaponKeys.length > 0;
 
   return {
-    version: 7,
+    version: 8,
     classType,
     unlockedClasses,
     allocatedStats,
@@ -247,6 +251,7 @@ export function normalizeJourneyState(rawState = null) {
     currentHunger: Math.max(0, Number(source.currentHunger) || 70),
     status: source.status === "recovering" ? "recovering" : "adventuring",
     lastUpdatedAt: source.lastUpdatedAt || nowIso,
+    nextEventAt: source.nextEventAt || null,
     restUntil: source.restUntil || null,
     recoveryObjective:
       typeof source.recoveryObjective === "string"
@@ -1285,18 +1290,24 @@ export function buildJourneyOutcomeItems(beforeState, afterState, resolution = n
   };
 
   if (resolution) {
-    items.push({
-      label: resolution.success ? "Succeeded" : "Failed",
-      className: resolution.success ? "is-positive" : "is-negative",
-    });
-    items.push({
-      label: `${resolution.statLabel} ${resolution.statValue}`,
-      className: "is-neutral",
-    });
-    items.push({
-      label: `Chance ${resolution.successPercent}%`,
-      className: "is-neutral",
-    });
+    if (resolution.showRollSummary !== false) {
+      items.push({
+        label: resolution.success ? "Succeeded" : "Failed",
+        className: resolution.success ? "is-positive" : "is-negative",
+      });
+      items.push({
+        label: `${resolution.statLabel} ${resolution.statValue}`,
+        className: "is-neutral",
+      });
+      items.push({
+        label: `Chance ${resolution.successPercent}%`,
+        className: "is-neutral",
+      });
+    }
+
+    if (Array.isArray(resolution.extraOutcomeItems)) {
+      items.push(...resolution.extraOutcomeItems);
+    }
   }
 
   addDelta("Health", Math.round(afterState.currentHp - beforeState.currentHp));
@@ -1413,6 +1424,10 @@ export function simulateJourneyState(state, elapsedMs, journeyStats, journeyCont
   let cursor = new Date(state.lastUpdatedAt || new Date().toISOString());
 
   while (remainingMs > 0) {
+    if (state.pendingEvents.length) {
+      break;
+    }
+
     const sliceMs = Math.min(JOURNEY_TICK_MS, remainingMs);
     const nextCursor = new Date(cursor.getTime() + sliceMs);
     const hours = sliceMs / (1000 * 60 * 60);
@@ -1553,23 +1568,28 @@ export function simulateJourneyState(state, elapsedMs, journeyStats, journeyCont
         state.totalDistance >= (state.bossIndex + 1) * JOURNEY_BOSS_DISTANCE
       ) {
         if (state.pendingEvents.length) {
-          autoResolvePendingJourneyEvents(
-            state,
-            journeyStats,
-            nextCursor.toISOString()
-          );
+          break;
+        }
 
-          if (state.status !== "adventuring") {
-            break;
-          }
+        if (supportsJourneyBossBattle(state)) {
+          queueJourneyStretchBossBattle(state, journeyStats, nextCursor);
+          break;
         }
 
         resolveJourneyBoss(state, journeyStats, nextCursor);
       }
 
+      if (state.pendingEvents.length) {
+        break;
+      }
+
       maybeAddAmbientJourneyLog(state, nextCursor);
       maybeApplyJourneyIncident(state, nextCursor, journeyStats, journeyContext);
       maybeQueueJourneyEvent(state, nextCursor, journeyStats.level, journeyContext);
+    }
+
+    if (state.pendingEvents.length) {
+      break;
     }
 
     cursor = nextCursor;
@@ -1608,6 +1628,522 @@ export function autoResolvePendingJourneyEvents(state, journeyStats, atIso) {
   }
 }
 
+export function supportsJourneyBossBattle(state) {
+  return Math.max(0, Math.floor(Number(state?.bossIndex) || 0)) <= 1;
+}
+
+export function queueJourneyStretchBossBattle(state, journeyStats, atDate) {
+  const nextEvent = buildJourneyStretchBossBattleEvent(state, journeyStats, atDate);
+  if (!nextEvent) {
+    resolveJourneyBoss(state, journeyStats, atDate);
+    return null;
+  }
+
+  state.totalDistance = (state.bossIndex + 1) * JOURNEY_BOSS_DISTANCE;
+  state.pendingEvents = [nextEvent];
+  addJourneyLog(
+    state,
+    `The road closes in around ${nextEvent.title}. This stretch will not move until the fight is settled.`,
+    atDate.toISOString()
+  );
+  return nextEvent;
+}
+
+export function resolveJourneyBossBattleTurn(
+  state,
+  eventEntry,
+  choice,
+  journeyStats,
+  atIso
+) {
+  const atDate = new Date(atIso);
+  const battle = eventEntry?.battle;
+  const boss = getJourneyBoss(state.bossIndex);
+  const profile = getJourneyBossBattleProfile(state.bossIndex, boss);
+  const move = profile?.moves.find((entry) => entry.key === choice?.id);
+
+  if (!battle || !profile || !move) {
+    return null;
+  }
+
+  const statKey = JOURNEY_STAT_META[move.statKey] ? move.statKey : "resolve";
+  const statValue = Math.max(0, Number(journeyStats?.stats?.[statKey]) || 0);
+  const successChance = getJourneyChoiceSuccessChance(choice, journeyStats);
+  const successRoll = Math.random();
+  const success = successRoll <= successChance;
+  const bossDamage = Math.max(
+    success ? 14 : 8,
+    Math.round(
+      (success ? move.bossDamage.successBase : move.bossDamage.failBase) +
+        statValue * (success ? move.bossDamage.successPerStat : move.bossDamage.failPerStat) +
+        randomInt(0, success ? 4 : 2)
+    )
+  );
+  const incomingDamage = Math.max(
+    success ? 3 : 7,
+    Math.round(
+      (success ? move.selfDamage.successBase : move.selfDamage.failBase) +
+        battle.turn * profile.turnPressure -
+        statValue * move.selfDamage.reductionPerStat
+    )
+  );
+  const bossHpBefore = battle.bossHp;
+  const hpBefore = state.currentHp;
+  const hungerBefore = state.currentHunger;
+
+  battle.bossHp = clamp(
+    battle.bossHp - bossDamage,
+    0,
+    battle.bossMaxHp || JOURNEY_BOSS_BATTLE_MAX_HP
+  );
+  state.currentHp = clamp(state.currentHp - incomingDamage, 0, journeyStats.maxHp);
+  state.currentHunger = clamp(
+    state.currentHunger - profile.turnHungerCost,
+    0,
+    journeyStats.maxHunger
+  );
+
+  const bossHpPercent = getJourneyBossBattlePercent(battle.bossHp, battle.bossMaxHp);
+  const heroHpPercent = getJourneyBossBattlePercent(
+    state.currentHp,
+    journeyStats.maxHp
+  );
+  const turnText = success ? move.successText : move.failureText;
+  const exchangeText = `${turnText} ${profile.counterText(
+    battle.turn,
+    bossHpPercent,
+    heroHpPercent
+  )}`.trim();
+  const beforeState = normalizeJourneyState({
+    ...state,
+    currentHp: hpBefore,
+    currentHunger: hungerBefore,
+    pendingEvents: [],
+    debugHistory: [],
+  });
+
+  let finalOutcome = "continue";
+  let battleResultText = `${exchangeText} ${buildJourneyBossBattleStatusText(
+    battle,
+    state,
+    journeyStats
+  )}`.trim();
+
+  if (battle.bossHp <= 0) {
+    finalOutcome = "defeated";
+  } else if (state.currentHp <= 0) {
+    finalOutcome = "lost";
+  } else if (battle.turn >= battle.maxTurns) {
+    finalOutcome = heroHpPercent > bossHpPercent ? "outlasted" : "lost";
+  }
+
+  const resolution = {
+    success,
+    statKey,
+    statLabel: JOURNEY_STAT_META[statKey].label,
+    statValue,
+    successChance,
+    successPercent: Math.round(successChance * 100),
+    successRoll,
+    resultText: battleResultText,
+    showRollSummary: true,
+    extraOutcomeItems: [
+      {
+        label: `Turn ${battle.turn}/${battle.maxTurns}`,
+        className: "is-neutral",
+      },
+      {
+        label: `Boss ${formatSignedNumber(-Math.round(bossHpBefore - battle.bossHp))}`,
+        className: "is-positive",
+      },
+      {
+        label: `${boss.name} ${bossHpPercent}%`,
+        className: battle.bossHp <= 0 ? "is-positive" : "is-neutral",
+      },
+    ],
+  };
+
+  if (finalOutcome === "continue") {
+    battle.turn += 1;
+    battle.lastExchange = exchangeText;
+    const updatedEvent = buildJourneyStretchBossBattleEvent(
+      state,
+      journeyStats,
+      atDate,
+      eventEntry,
+      battle
+    );
+    state.pendingEvents = updatedEvent ? [updatedEvent] : [];
+    addJourneyLog(state, exchangeText, atIso);
+    return {
+      beforeState,
+      resolution,
+      eventEntry,
+    };
+  }
+
+  state.pendingEvents = [];
+
+  if (finalOutcome === "defeated" || finalOutcome === "outlasted") {
+    const outcomeText = resolveJourneyBossBattleVictory(
+      state,
+      journeyStats,
+      atDate,
+      boss,
+      finalOutcome
+    );
+    battleResultText = `${exchangeText} ${outcomeText}`.trim();
+    resolution.resultText = battleResultText;
+    startJourneyEventCooldown(state, atDate);
+  } else {
+    const outcomeText = resolveJourneyBossBattleLoss(state, journeyStats, atDate, boss);
+    battleResultText = `${exchangeText} ${outcomeText}`.trim();
+    resolution.resultText = battleResultText;
+  }
+
+  return {
+    beforeState,
+    resolution,
+    eventEntry,
+  };
+}
+
+function buildJourneyStretchBossBattleEvent(
+  state,
+  journeyStats,
+  atDate,
+  existingEvent = null,
+  existingBattle = null
+) {
+  const boss = getJourneyBoss(state.bossIndex);
+  const profile = getJourneyBossBattleProfile(state.bossIndex, boss);
+  if (!profile) return null;
+
+  const battle = existingBattle
+    ? {
+        ...existingBattle,
+        bossHp: clamp(
+          existingBattle.bossHp,
+          0,
+          existingBattle.bossMaxHp || JOURNEY_BOSS_BATTLE_MAX_HP
+        ),
+      }
+    : {
+        bossIndex: state.bossIndex,
+        bossName: boss.name,
+        turn: 1,
+        maxTurns: JOURNEY_BOSS_BATTLE_TURN_LIMIT,
+        bossHp: JOURNEY_BOSS_BATTLE_MAX_HP,
+        bossMaxHp: JOURNEY_BOSS_BATTLE_MAX_HP,
+        intro: profile.intro,
+        opening: profile.opening,
+        lastExchange: "",
+      };
+  const rotatedMoves = rotateJourneyChoices(profile.moves, Math.max(0, battle.turn - 1));
+  const detail = buildJourneyBossBattleDetail(battle, profile, state, journeyStats);
+
+  return normalizeJourneyEvent(
+    {
+      id: existingEvent?.id,
+      eventKey: `boss:${state.bossIndex}`,
+      kind: "boss",
+      repeatable: false,
+      title: boss.name,
+      teaser: `Turn ${battle.turn}/${battle.maxTurns} • ${boss.name} ${getJourneyBossBattlePercent(
+        battle.bossHp,
+        battle.bossMaxHp
+      )}%`,
+      detail,
+      createdAt: existingEvent?.createdAt || atDate.toISOString(),
+      battle,
+      choices: rotatedMoves.map((move) => ({
+        id: move.key,
+        label: move.label,
+        preview: move.preview,
+        highlightWord: move.highlightWord,
+        statKey: move.statKey,
+        chanceBase: move.chanceBase,
+        chancePerStat: move.chancePerStat,
+        minChance: move.minChance,
+        maxChance: move.maxChance,
+        successText: move.successText,
+        failureText: move.failureText,
+        successEffects: {},
+        failureEffects: {},
+      })),
+    },
+    atDate.toISOString()
+  );
+}
+
+function buildJourneyBossBattleDetail(battle, profile, state, journeyStats) {
+  const bossHpPercent = getJourneyBossBattlePercent(battle.bossHp, battle.bossMaxHp);
+  const heroHpPercent = getJourneyBossBattlePercent(state.currentHp, journeyStats.maxHp);
+  const leadText =
+    battle.turn === 1
+      ? `${battle.intro} ${battle.opening}`
+      : battle.lastExchange || profile.turnPrompts[Math.max(0, battle.turn - 2)];
+  const prompt =
+    profile.turnPrompts[Math.max(0, Math.min(profile.turnPrompts.length - 1, battle.turn - 1))];
+
+  return `${leadText} ${prompt} Turn ${battle.turn} of ${battle.maxTurns}. You are holding at ${heroHpPercent}% health. ${battle.bossName} is down to ${bossHpPercent}%.`;
+}
+
+function buildJourneyBossBattleStatusText(battle, state, journeyStats) {
+  const bossHpPercent = getJourneyBossBattlePercent(battle.bossHp, battle.bossMaxHp);
+  const heroHpPercent = getJourneyBossBattlePercent(state.currentHp, journeyStats.maxHp);
+
+  if (battle.bossHp <= 0) {
+    return `${battle.bossName} drops before it can recover.`;
+  }
+
+  if (state.currentHp <= 0) {
+    return `You hit the ground before the stretch can break in your favor.`;
+  }
+
+  if (battle.turn >= battle.maxTurns) {
+    return heroHpPercent > bossHpPercent
+      ? `${battle.bossName} is worse off than you are and finally gives ground.`
+      : `${battle.bossName} is still pressing harder than you can answer.`;
+  }
+
+  return `The fight is still live with ${bossHpPercent}% boss health against your ${heroHpPercent}%.`;
+}
+
+function resolveJourneyBossBattleVictory(
+  state,
+  journeyStats,
+  atDate,
+  boss,
+  finalOutcome
+) {
+  const clearedZoneName = getJourneyZoneName(state.bossIndex);
+  const resultVerb =
+    finalOutcome === "defeated" ? `defeating ${boss.name}` : `driving ${boss.name} off`;
+
+  state.bossIndex += 1;
+  state.storyXp += state.bossIndex === 1 ? 24 : 16;
+  state.bonusSkillPoints += 1;
+  state.aidUrgency = Math.max(0, state.aidUrgency - 1);
+
+  const rewardText = applyJourneyVictoryRewards(state, journeyStats.level, atDate);
+  addJourneyRoadClear(
+    state,
+    clearedZoneName,
+    `Cleared by ${resultVerb}. The road opened into ${getJourneyZoneName(
+      state.bossIndex
+    )}.`,
+    atDate.toISOString()
+  );
+
+  if (state.bossIndex === 1) {
+    state.storyFlags.boarDefeated = true;
+    state.bonusRations += 1;
+  }
+
+  const victoryText =
+    finalOutcome === "defeated"
+      ? `You brought ${boss.name} down and cleared the stretch. Rewards: ${rewardText}.`
+      : `You lasted three brutal turns, left ${boss.name} in worse shape than yourself, and forced it to break away. Rewards: ${rewardText}.`;
+  addJourneyLog(state, victoryText, atDate.toISOString());
+  return victoryText;
+}
+
+function resolveJourneyBossBattleLoss(state, journeyStats, atDate, boss) {
+  state.totalDistance = Math.max(
+    state.bossIndex * JOURNEY_BOSS_DISTANCE + 22,
+    state.totalDistance - randomInt(18, 34)
+  );
+  state.currentHp = Math.max(
+    1,
+    Math.round(journeyStats.maxHp * JOURNEY_STRETCH_FAILURE_HP_RATIO)
+  );
+  state.currentHunger = Math.min(
+    clamp(state.currentHunger - randomInt(14, 24), 0, journeyStats.maxHunger),
+    Math.round(journeyStats.maxHunger * 0.28)
+  );
+  state.storyXp += 4;
+  const defeatText = `${boss.name} overwhelms you before the stretch breaks.`;
+  addJourneyLog(state, defeatText, atDate.toISOString());
+  sendJourneyToTown(
+    state,
+    atDate,
+    `Recovering after ${boss.name}.`,
+    5,
+    9,
+    journeyStats.level,
+    journeyStats
+  );
+  return `${defeatText} You are forced into recovery before you can try again.`;
+}
+
+function getJourneyBossBattleProfile(bossIndex, boss) {
+  if (bossIndex === 0) {
+    return {
+      intro:
+        "The brush detonates and a huge boar comes in low, all muscle, mud, and broken tusk.",
+      opening:
+        "There is no more road beyond this point until one of you gives way.",
+      turnPrompts: [
+        "Its first charge is the moment to claim the rhythm of the fight.",
+        "The boar is angrier now and the lane beside it is getting tighter.",
+        "One last exchange will decide whether the stretch belongs to you or the beast.",
+      ],
+      turnPressure: 1.5,
+      turnHungerCost: 2,
+      counterText: (_turn, bossHpPercent, heroHpPercent) =>
+        `Mud and bark explode around the next pass, with the boar still at ${bossHpPercent}% and you at ${heroHpPercent}%.`,
+      moves: [
+        {
+          key: "boar:shoulder-cut",
+          label: "Slide wide and cut behind the shoulder",
+          preview: "Use footwork and timing to punish the charge.",
+          highlightWord: "cut",
+          statKey: "finesse",
+          chanceBase: 0.38,
+          chancePerStat: 0.05,
+          minChance: 0.26,
+          maxChance: 0.86,
+          bossDamage: { successBase: 27, successPerStat: 2.3, failBase: 10, failPerStat: 0.8 },
+          selfDamage: { successBase: 8, failBase: 16, reductionPerStat: 0.55 },
+          successText:
+            "You turn just outside the tusks and rake a deep line behind the shoulder before the boar can twist back into you.",
+          failureText:
+            "You almost make the angle, but the boar clips you on the way past and forces a messy, shallow strike.",
+        },
+        {
+          key: "boar:brace-thrust",
+          label: "Brace low and drive straight into the charge",
+          preview: "Meet force with force and try to stop it cold.",
+          highlightWord: "Brace",
+          statKey: "might",
+          chanceBase: 0.34,
+          chancePerStat: 0.05,
+          minChance: 0.24,
+          maxChance: 0.82,
+          bossDamage: { successBase: 31, successPerStat: 2.5, failBase: 12, failPerStat: 1 },
+          selfDamage: { successBase: 10, failBase: 18, reductionPerStat: 0.48 },
+          successText:
+            "You plant your feet, catch the rush head-on, and shove your weapon in hard enough to make the boar scream past you.",
+          failureText:
+            "The impact lands uglier than planned. You hurt it, but the charge folds straight through your guard.",
+        },
+        {
+          key: "boar:root-feint",
+          label: "Bait it across the roots and strike when it stumbles",
+          preview: "Keep your nerve and make the ground fight for you.",
+          highlightWord: "Bait",
+          statKey: "resolve",
+          chanceBase: 0.4,
+          chancePerStat: 0.045,
+          minChance: 0.3,
+          maxChance: 0.84,
+          bossDamage: { successBase: 24, successPerStat: 2.1, failBase: 9, failPerStat: 0.7 },
+          selfDamage: { successBase: 7, failBase: 14, reductionPerStat: 0.58 },
+          successText:
+            "You hold just long enough for the boar to hit the roots wrong, then carve into the opening while it scrabbles for footing.",
+          failureText:
+            "You wait a heartbeat too long and the boar barrels through the trap before you can turn it cleanly.",
+        },
+      ],
+    };
+  }
+
+  if (bossIndex === 1) {
+    return {
+      intro:
+        "The wolves do not rush all at once. They fan out, testing the edges of the path until the alpha steps into view.",
+      opening:
+        "This stretch becomes a three-turn contest of space, nerve, and who gets to decide the shape of the pack.",
+      turnPrompts: [
+        "The first move is about denying the pack an easy surround.",
+        "They have your scent and they are trying to tighten the circle now.",
+        "The last turn is about breaking the alpha's nerve before yours breaks first.",
+      ],
+      turnPressure: 1.8,
+      turnHungerCost: 2,
+      counterText: (_turn, bossHpPercent, heroHpPercent) =>
+        `The pack keeps shifting through the brush, with the alpha at ${bossHpPercent}% and you at ${heroHpPercent}%.`,
+      moves: [
+        {
+          key: "wolves:break-alpha",
+          label: "Hit the alpha before the pack closes",
+          preview: "A hard opening can shake the rest of them loose.",
+          highlightWord: "alpha",
+          statKey: "might",
+          chanceBase: 0.33,
+          chancePerStat: 0.05,
+          minChance: 0.22,
+          maxChance: 0.8,
+          bossDamage: { successBase: 30, successPerStat: 2.4, failBase: 11, failPerStat: 0.8 },
+          selfDamage: { successBase: 11, failBase: 18, reductionPerStat: 0.44 },
+          successText:
+            "You hammer into the lead wolf before the rest can commit, forcing the alpha to yelp and recoil instead of leading the crush.",
+          failureText:
+            "You reach the alpha, but not cleanly enough. The rest of the pack crashes into the exchange before you can reset.",
+        },
+        {
+          key: "wolves:high-ground",
+          label: "Take the stones and cut their angles away",
+          preview: "Use positioning to keep the pack from owning the lane.",
+          highlightWord: "angles",
+          statKey: "finesse",
+          chanceBase: 0.39,
+          chancePerStat: 0.05,
+          minChance: 0.28,
+          maxChance: 0.86,
+          bossDamage: { successBase: 25, successPerStat: 2.2, failBase: 10, failPerStat: 0.7 },
+          selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.58 },
+          successText:
+            "You hop the stones, steal the better footing, and cut every lunge into a narrower, bloodier approach than the pack wanted.",
+          failureText:
+            "You almost find the high line, but loose rock gives under you and the wolves get a bite at your flank before you recover.",
+        },
+        {
+          key: "wolves:fire-line",
+          label: "Use flame and noise to split the charge",
+          preview: "Break their rhythm before they decide yours.",
+          highlightWord: "split",
+          statKey: "arcana",
+          chanceBase: 0.36,
+          chancePerStat: 0.05,
+          minChance: 0.24,
+          maxChance: 0.84,
+          bossDamage: { successBase: 26, successPerStat: 2.3, failBase: 9, failPerStat: 0.8 },
+          selfDamage: { successBase: 9, failBase: 16, reductionPerStat: 0.5 },
+          successText:
+            "Light, sparks, and a hard shout hit together. The pack splits at the wrong moment and the alpha takes the worst of it.",
+          failureText:
+            "The flare goes wide and only startles them for a breath. It still buys a cut, but not the clean break you needed.",
+        },
+      ],
+    };
+  }
+
+  return null;
+}
+
+function rotateJourneyChoices(choices, offset) {
+  if (!Array.isArray(choices) || !choices.length) return [];
+  const normalizedOffset = ((offset % choices.length) + choices.length) % choices.length;
+  return [...choices.slice(normalizedOffset), ...choices.slice(0, normalizedOffset)];
+}
+
+function getJourneyBossBattlePercent(current, max) {
+  return Math.round((Math.max(0, current) / Math.max(1, max)) * 100);
+}
+
+export function startJourneyEventCooldown(
+  state,
+  atDate,
+  minHours = JOURNEY_EVENT_COOLDOWN_MIN_HOURS,
+  maxHours = JOURNEY_EVENT_COOLDOWN_MAX_HOURS
+) {
+  state.nextEventAt = new Date(
+    atDate.getTime() + randomInt(minHours, maxHours) * 60 * 60 * 1000
+  ).toISOString();
+}
+
 export function resolveJourneyBoss(state, journeyStats, atDate) {
   const boss = getJourneyBoss(state.bossIndex);
   const stretchChallenge = buildJourneyStretchChallenge(state, journeyStats);
@@ -1635,6 +2171,7 @@ export function resolveJourneyBoss(state, journeyStats, atDate) {
       journeyStats.level,
       atDate
     );
+    startJourneyEventCooldown(state, atDate);
     addJourneyRoadClear(
       state,
       clearedZoneName,
@@ -1644,7 +2181,7 @@ export function resolveJourneyBoss(state, journeyStats, atDate) {
       atDate.toISOString()
     );
 
-    if (boss.name === "Cornered Forest Boar") {
+    if (state.bossIndex === 1) {
       state.storyFlags.boarDefeated = true;
       state.bonusRations += 1;
       addJourneyLog(
@@ -1789,11 +2326,15 @@ export function maybeApplyJourneyIncident(state, atDate, journeyStats, journeyCo
 export function maybeQueueJourneyEvent(state, atDate, journeyLevel, journeyContext) {
   const aidMode = state.aidUrgency > 0;
 
-  if (state.pendingEvents.length >= JOURNEY_PENDING_EVENT_LIMIT) {
+  if (state.pendingEvents.length) {
     return;
   }
 
   if (state.status !== "adventuring" && !aidMode) {
+    return;
+  }
+
+  if (state.nextEventAt && atDate < new Date(state.nextEventAt)) {
     return;
   }
 
@@ -1929,6 +2470,28 @@ function createJourneyStatChoice({
   };
 }
 
+function createJourneyGuaranteedChoice({
+  label,
+  preview,
+  resultText,
+  effects,
+}) {
+  return {
+    label,
+    preview,
+    statKey: "resolve",
+    chanceBase: 1,
+    chancePerStat: 0,
+    minChance: 1,
+    maxChance: 1,
+    successText: resultText,
+    failureText: resultText,
+    successEffects: effects,
+    failureEffects: effects,
+    forceSuccess: true,
+  };
+}
+
 export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyContext) {
   const eventTime = atDate.toISOString();
   const candidates = [];
@@ -1960,76 +2523,21 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
           "A traveling healer reins in beside you, takes one long look, and decides you are too close to collapsing to be left alone.",
         createdAt: eventTime,
         choices: [
-          createJourneyStatChoice({
-            label: "Stay still and let him work",
-            preview: "Trust patience over pride for once.",
-            highlightWord: "still",
-            statKey: "resolve",
-            chanceBase: 0.38,
-            chancePerStat: 0.06,
-            minChance: 0.28,
-            successText:
-              "You keep yourself calm long enough for the healer to clean the worst wounds, bind your ribs, and press proper supplies into your hands.",
-            failureText:
-              "You try to stay composed, but pain keeps breaking your focus. The treatment helps, just not as much as it should have.",
-            successEffects: {
-              hp: 24,
+          createJourneyGuaranteedChoice({
+            label: "Take the healer's aid",
+            preview: "Let the treatment land and get back on your feet.",
+            resultText:
+              "The healer cleans the worst of the damage, binds you properly, and presses a tonic and trail food into your hands before sending you back to the road.",
+            effects: {
+              hp: 22,
               hunger: 8,
               bonusTonics: 1,
               bonusRations: 1,
               storyXp: 10,
             },
-            failureEffects: {
-              hp: 5,
-              hunger: 0,
-              storyXp: 0,
-            },
-          }),
-          createJourneyStatChoice({
-            label: "Endure a quick field patch",
-            preview: "Take the rough version and keep your feet under you.",
-            highlightWord: "Endure",
-            statKey: "vitality",
-            chanceBase: 0.34,
-            chancePerStat: 0.07,
-            minChance: 0.24,
-            successText:
-              "You grit through the fast stitching and rough bandages, then walk away patched up enough to keep going.",
-            failureText:
-              "The rushed work leaves you dizzy and half-finished, forcing you onward with only a little relief.",
-            successEffects: {
-              hp: 16,
-              bonusTonics: 1,
-              storyXp: 8,
-            },
-            failureEffects: {
-              hp: 3,
-              hunger: -2,
-              storyXp: 0,
-            },
-          }),
-          createJourneyStatChoice({
-            label: "Pocket a spare tonic while he works",
-            preview: "Keep one eye on his satchel and one on the road.",
-            highlightWord: "Pocket",
-            statKey: "finesse",
-            chanceBase: 0.24,
-            chancePerStat: 0.08,
-            successText:
-              "While the healer fusses over your scrapes, your hand is already moving. You leave steadier, with one more tonic than he meant to give.",
-            failureText:
-              "Your hand strays once too often. He notices, snorts, and sends you off with less sympathy than before.",
-            successEffects: {
-              hp: 12,
-              bonusTonics: 2,
-              storyXp: 9,
-            },
-            failureEffects: {
-              hp: 2,
-              storyXp: 0,
-            },
           }),
         ],
+        autoResolve: true,
       }),
       "aid",
       true
@@ -2042,76 +2550,24 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
         title: "A traveling herbalist waves you over",
         teaser: "She has a sharp eye for exhaustion and a pack full of remedies.",
         detail:
-          "An herbalist sorting roots by the roadside sees you limping and offers a fast trade: listen to her advice, and she will share what you need most.",
+          "An herbalist sorting roots by the roadside sees you limping, waves you in without bargaining, and starts putting together exactly the kind of help your body has been begging for.",
         createdAt: eventTime,
         choices: [
-          createJourneyStatChoice({
-            label: "Read the brew before you drink",
-            preview: "Watch the steam, scent, and color before committing.",
-            highlightWord: "Read",
-            statKey: "arcana",
-            chanceBase: 0.28,
-            chancePerStat: 0.09,
-            successText:
-              "You catch the little signs in the mixture, choose the safer cup, and feel the warmth settle in exactly where you need it.",
-            failureText:
-              "You overthink it, pick the wrong bottle, and end up with something useful but weaker than you hoped.",
-            successEffects: {
-              hp: 18,
+          createJourneyGuaranteedChoice({
+            label: "Take the herbalist's help",
+            preview: "Drink, eat, and listen while she patches the worst of it.",
+            resultText:
+              "She talks you through what to eat, what to avoid, and which salve to keep for later. By the time you leave, the ache is quieter and your pack is heavier with useful supplies.",
+            effects: {
+              hp: 10,
+              hunger: 16,
+              bonusRations: 2,
               bonusTonics: 1,
               storyXp: 10,
             },
-            failureEffects: {
-              hp: 4,
-              storyXp: 0,
-            },
-          }),
-          createJourneyStatChoice({
-            label: "Carry the crate she points to",
-            preview: "Earn the better supplies the hard way.",
-            highlightWord: "Carry",
-            statKey: "might",
-            chanceBase: 0.3,
-            chancePerStat: 0.08,
-            successText:
-              "You shoulder the heavy crate without complaint, and the herbalist rewards the effort with food, salves, and a little respect.",
-            failureText:
-              "You get the crate moving, but not gracefully. By the end you are winded and only half-rewarded for the trouble.",
-            successEffects: {
-              hunger: 14,
-              bonusRations: 2,
-              hp: 6,
-              storyXp: 8,
-            },
-            failureEffects: {
-              hunger: 5,
-              hp: -5,
-              storyXp: 0,
-            },
-          }),
-          createJourneyStatChoice({
-            label: "Listen until she changes her mind",
-            preview: "Let patience and good timing do the bargaining.",
-            highlightWord: "Listen",
-            statKey: "resolve",
-            chanceBase: 0.35,
-            chancePerStat: 0.06,
-            minChance: 0.26,
-            successText:
-              "You hear out every warning and every side note. By the time you part, she has packed enough careful advice and trail food to matter.",
-            failureText:
-              "You hold the conversation together, but only barely. She still helps, just without the extra care she gives the truly patient.",
-            successEffects: {
-              hunger: 16,
-              bonusRations: 1,
-              storyXp: 9,
-            },
-            failureEffects: {
-              hunger: 5,
-              storyXp: 0,
-            },
           }),
         ],
+        autoResolve: true,
       }),
       "aid",
       true
@@ -2127,72 +2583,20 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
           "You spot a spring giving off a pale glow, untouched by mud or rot. The air around it feels unnaturally calm.",
         createdAt: eventTime,
         choices: [
-          createJourneyStatChoice({
-            label: "Listen to the water before touching it",
-            preview: "Give the strange place a moment to reveal itself.",
-            highlightWord: "Listen",
-            statKey: "arcana",
-            chanceBase: 0.28,
-            chancePerStat: 0.09,
-            successText:
-              "You catch the rhythm in the spring before you touch it. When you finally drink, the strange water settles cleanly through you.",
-            failureText:
-              "You think you have the spring figured out, but the pulse of it shifts under your hand. You still gain something, just not the full blessing.",
-            successEffects: {
+          createJourneyGuaranteedChoice({
+            label: "Drink from the spring",
+            preview: "Take the quiet gift and keep moving.",
+            resultText:
+              "The water goes through you like cold light. The worst of the ache eases, your breathing settles, and you manage to bottle enough of it to keep some of that strange calm for later.",
+            effects: {
               hp: 16,
               hunger: 12,
-              storyXp: 12,
-            },
-            failureEffects: {
-              hp: 2,
-              hunger: 1,
-              storyXp: 0,
-            },
-          }),
-          createJourneyStatChoice({
-            label: "Brace yourself and drink anyway",
-            preview: "Trust your body to survive what it cannot understand.",
-            highlightWord: "Brace",
-            statKey: "vitality",
-            chanceBase: 0.3,
-            chancePerStat: 0.08,
-            successText:
-              "The cold shock hits like lightning, but your body takes it and comes out steadier on the other side.",
-            failureText:
-              "The water burns colder than expected. You stagger back shaking, helped more by stubbornness than by the spring itself.",
-            successEffects: {
-              hp: 14,
-              hunger: 8,
               bonusTonics: 1,
-              storyXp: 10,
-            },
-            failureEffects: {
-              hp: -1,
-              storyXp: 0,
-            },
-          }),
-          createJourneyStatChoice({
-            label: "Cup only what you can carry",
-            preview: "Take a measured amount and leave the rest alone.",
-            highlightWord: "Cup",
-            statKey: "finesse",
-            chanceBase: 0.33,
-            chancePerStat: 0.07,
-            minChance: 0.24,
-            successText:
-              "You move carefully, saving enough of the glowing water to turn into trail medicine without wasting a drop.",
-            failureText:
-              "The bottle slips in your fingers and part of the spring's gift spills into the dirt before you can save it.",
-            successEffects: {
-              bonusTonics: 2,
-              bonusRations: 1,
-              storyXp: 10,
-            },
-            failureEffects: {
-              storyXp: 0,
+              storyXp: 12,
             },
           }),
         ],
+        autoResolve: true,
       }),
       "aid",
       true
@@ -2208,77 +2612,20 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
           "You spot the carriage first, wheels sunk in the mud, then the camp beyond it. One bandit is dozing by a tent with the wagon's missing goods stacked close at hand.",
         createdAt: eventTime,
         choices: [
-          createJourneyStatChoice({
-            label: "Slip in and lift the loot",
-            preview: "Trust quiet feet more than a fair fight.",
-            highlightWord: "Slip",
-            statKey: "finesse",
-            chanceBase: 0.26,
-            chancePerStat: 0.09,
-            successText:
-              "You move between the tent ropes like a shadow, gather what matters, and vanish before the bandit ever fully wakes.",
-            failureText:
-              "A pot shifts under your boot and the bandit jerks awake. You still wrench something free, but not before taking a rough hit on the way out.",
-            successEffects: {
+          createJourneyGuaranteedChoice({
+            label: "Take what you can and go",
+            preview: "A quick grab, a quick exit, and no heroics.",
+            resultText:
+              "You wait for the bandit to drift the wrong way, snatch the nearest bundle of supplies, and leave before the camp ever properly wakes around you.",
+            effects: {
               hunger: 10,
               bonusRations: 2,
               bonusTonics: 1,
-              storyXp: 12,
-            },
-            failureEffects: {
-              hp: -8,
-              bonusRations: 1,
-              storyXp: 0,
-            },
-          }),
-          createJourneyStatChoice({
-            label: "Press him before he finds his feet",
-            preview: "Hit the problem head-on while surprise still matters.",
-            highlightWord: "Press",
-            statKey: "might",
-            chanceBase: 0.24,
-            chancePerStat: 0.09,
-            successText:
-              "You are on him before the sleep leaves his eyes. One brutal exchange later, the supplies are yours and the camp is quiet again.",
-            failureText:
-              "He wakes faster than expected and the scuffle turns ugly. You drive him off in the end, but pay for it.",
-            successEffects: {
-              hp: -3,
-              hunger: 8,
-              bonusRations: 2,
-              storyXp: 14,
-            },
-            failureEffects: {
-              hp: -11,
-              bonusRations: 1,
-              storyXp: 0,
-            },
-          }),
-          createJourneyStatChoice({
-            label: "Sprint for the stash when he turns",
-            preview: "Bet on your legs and accept the bruises later.",
-            highlightWord: "Sprint",
-            statKey: "vitality",
-            chanceBase: 0.31,
-            chancePerStat: 0.08,
-            successText:
-              "Your thrown stone buys only a heartbeat, but that is enough. You tear through the camp, grab what you can, and keep running until the shouting fades behind you.",
-            failureText:
-              "You break cover too early and the chase comes hard. You escape with scraps and a pounding chest, not the full haul.",
-            successEffects: {
-              hunger: 8,
-              distance: 6,
-              bonusRations: 1,
-              bonusTonics: 1,
-              storyXp: 11,
-            },
-            failureEffects: {
-              hp: -6,
-              distance: 3,
-              storyXp: 0,
+              storyXp: 10,
             },
           }),
         ],
+        autoResolve: true,
       }),
       "aid",
       true
@@ -3847,8 +4194,8 @@ function applyJourneyPermanentStatBonus(state, rawBonus) {
 
 export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
   const successChance = getJourneyChoiceSuccessChance(choice, journeyStats);
-  const successRoll = Math.random();
-  const success = successRoll <= successChance;
+  const successRoll = choice.forceSuccess ? 0 : Math.random();
+  const success = choice.forceSuccess || successRoll <= successChance;
   const effects = success ? choice.successEffects : choice.failureEffects;
   const notes = [];
   const hpDelta = scaleJourneyEventHpDelta(effects.hp);
@@ -3959,6 +4306,7 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
     successPercent: Math.round(successChance * 100),
     successRoll,
     resultText: finalText,
+    showRollSummary: !choice.forceSuccess,
   };
 }
 

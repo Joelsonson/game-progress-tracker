@@ -21,12 +21,19 @@ export function normalizeJourneyEvent(eventEntry, nowIso) {
     eventKey: String(
       eventEntry.eventKey || eventEntry.key || eventEntry.title || "journey-event"
     ),
-    kind: eventEntry.kind === "aid" ? "aid" : "normal",
+    kind:
+      eventEntry.kind === "aid"
+        ? "aid"
+        : eventEntry.kind === "boss"
+          ? "boss"
+          : "normal",
     repeatable: Boolean(eventEntry.repeatable),
+    autoResolve: Boolean(eventEntry.autoResolve),
     title: String(eventEntry.title || "Journey event"),
     teaser: String(eventEntry.teaser || "A choice is waiting."),
     detail: String(eventEntry.detail || eventEntry.teaser || ""),
     createdAt: eventEntry.createdAt || nowIso,
+    battle: normalizeJourneyBattleState(eventEntry.battle),
     choices,
   };
 }
@@ -78,7 +85,33 @@ export function normalizeJourneyChoice(choice) {
     failureEffects: hasExplicitOutcomeBranches
       ? normalizeJourneyChoiceEffects(choice.failureEffects)
       : normalizeJourneyChoiceEffects(null),
+    forceSuccess: Boolean(choice.forceSuccess),
   };
+}
+
+function normalizeJourneyBattleState(rawBattle) {
+  if (!rawBattle || typeof rawBattle !== "object") return null;
+
+  const bossName = String(rawBattle.bossName || "").trim();
+  if (!bossName) return null;
+
+  return {
+    bossIndex: Math.max(0, Math.floor(Number(rawBattle.bossIndex) || 0)),
+    bossName,
+    turn: clampBattleValue(rawBattle.turn, 1, 3, 1),
+    maxTurns: clampBattleValue(rawBattle.maxTurns, 1, 3, 3),
+    bossHp: clampBattleValue(rawBattle.bossHp, 0, 100, 100),
+    bossMaxHp: clampBattleValue(rawBattle.bossMaxHp, 1, 100, 100),
+    intro: String(rawBattle.intro || "").trim(),
+    opening: String(rawBattle.opening || "").trim(),
+    lastExchange: String(rawBattle.lastExchange || "").trim(),
+  };
+}
+
+function clampBattleValue(value, min, max, fallback) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(numeric)));
 }
 
 function normalizeJourneyChoiceEffects(effects) {
