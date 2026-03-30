@@ -1424,7 +1424,7 @@ export function simulateJourneyState(state, elapsedMs, journeyStats, journeyCont
   let cursor = new Date(state.lastUpdatedAt || new Date().toISOString());
 
   while (remainingMs > 0) {
-    if (state.pendingEvents.length) {
+    if (state.pendingEvents.some((eventEntry) => eventEntry.kind === "boss")) {
       break;
     }
 
@@ -1433,7 +1433,6 @@ export function simulateJourneyState(state, elapsedMs, journeyStats, journeyCont
     const hours = sliceMs / (1000 * 60 * 60);
 
     if (state.status === "recovering") {
-      const recoveryObjectiveBefore = state.recoveryObjective;
       state.currentHp = clamp(
         state.currentHp + journeyStats.maxHp * 0.055 * hours,
         0,
@@ -1477,12 +1476,6 @@ export function simulateJourneyState(state, elapsedMs, journeyStats, journeyCont
               )}.`,
           nextCursor.toISOString()
         );
-      } else if (state.recoveryObjective !== recoveryObjectiveBefore) {
-        addJourneyLog(
-          state,
-          state.recoveryObjective,
-          nextCursor.toISOString()
-        );
       }
 
       maybeQueueJourneyEvent(state, nextCursor, journeyStats.level, journeyContext);
@@ -1518,36 +1511,6 @@ export function simulateJourneyState(state, elapsedMs, journeyStats, journeyCont
         );
       }
 
-      if (Math.random() < Math.min(0.24, 0.09 * hours + state.bossIndex * 0.015)) {
-        const encounterDamage = Math.max(
-          2,
-          Math.round(
-            Math.max(
-              1,
-              randomInt(2, 6 + Math.max(0, state.bossIndex)) -
-                Math.floor(journeyStats.stats.finesse / 3)
-            ) * 2
-          )
-        );
-        state.currentHp = clamp(
-          state.currentHp - encounterDamage,
-          0,
-          journeyStats.maxHp
-        );
-
-        if (Math.random() < 0.6) {
-          addJourneyLog(
-            state,
-            state.bossIndex === 0
-              ? "Something moved in the brush and you came out of it bruised."
-              : `You fought off trouble on the edge of ${getJourneyZoneName(
-                  state.bossIndex
-                )}.`,
-            nextCursor.toISOString()
-          );
-        }
-      }
-
       if (
         state.currentHp <= journeyStats.maxHp * 0.16 ||
         state.currentHunger <= journeyStats.maxHunger * 0.1
@@ -1580,16 +1543,16 @@ export function simulateJourneyState(state, elapsedMs, journeyStats, journeyCont
       }
 
       if (state.pendingEvents.length) {
-        break;
+        if (state.pendingEvents.some((eventEntry) => eventEntry.kind === "boss")) {
+          break;
+        }
+        cursor = nextCursor;
+        remainingMs -= sliceMs;
+        continue;
       }
 
       maybeAddAmbientJourneyLog(state, nextCursor);
-      maybeApplyJourneyIncident(state, nextCursor, journeyStats, journeyContext);
       maybeQueueJourneyEvent(state, nextCursor, journeyStats.level, journeyContext);
-    }
-
-    if (state.pendingEvents.length) {
-      break;
     }
 
     cursor = nextCursor;
@@ -1660,7 +1623,8 @@ export function resolveJourneyBossBattleTurn(
   const battle = eventEntry?.battle;
   const boss = getJourneyBoss(state.bossIndex);
   const profile = getJourneyBossBattleProfile(state.bossIndex, boss);
-  const move = profile?.moves.find((entry) => entry.key === choice?.id);
+  const currentTurn = getJourneyBossBattleTurnProfile(profile, battle?.turn);
+  const move = currentTurn?.moves.find((entry) => entry.key === choice?.id);
 
   if (!battle || !profile || !move) {
     return null;
@@ -1779,6 +1743,8 @@ export function resolveJourneyBossBattleTurn(
       beforeState,
       resolution,
       eventEntry,
+      updatedEvent,
+      finished: false,
     };
   }
 
@@ -1805,6 +1771,8 @@ export function resolveJourneyBossBattleTurn(
     beforeState,
     resolution,
     eventEntry,
+    updatedEvent: null,
+    finished: true,
   };
 }
 
@@ -1839,7 +1807,8 @@ function buildJourneyStretchBossBattleEvent(
         opening: profile.opening,
         lastExchange: "",
       };
-  const rotatedMoves = rotateJourneyChoices(profile.moves, Math.max(0, battle.turn - 1));
+  const currentTurn = getJourneyBossBattleTurnProfile(profile, battle.turn);
+  if (!currentTurn) return null;
   const detail = buildJourneyBossBattleDetail(battle, profile, state, journeyStats);
 
   return normalizeJourneyEvent(
@@ -1856,7 +1825,7 @@ function buildJourneyStretchBossBattleEvent(
       detail,
       createdAt: existingEvent?.createdAt || atDate.toISOString(),
       battle,
-      choices: rotatedMoves.map((move) => ({
+      choices: currentTurn.moves.map((move) => ({
         id: move.key,
         label: move.label,
         preview: move.preview,
@@ -1877,16 +1846,18 @@ function buildJourneyStretchBossBattleEvent(
 }
 
 function buildJourneyBossBattleDetail(battle, profile, state, journeyStats) {
+  const currentTurn = getJourneyBossBattleTurnProfile(profile, battle.turn);
+  if (!currentTurn) {
+    return `${battle.bossName} is still blocking the road.`;
+  }
   const bossHpPercent = getJourneyBossBattlePercent(battle.bossHp, battle.bossMaxHp);
   const heroHpPercent = getJourneyBossBattlePercent(state.currentHp, journeyStats.maxHp);
   const leadText =
     battle.turn === 1
-      ? `${battle.intro} ${battle.opening}`
-      : battle.lastExchange || profile.turnPrompts[Math.max(0, battle.turn - 2)];
-  const prompt =
-    profile.turnPrompts[Math.max(0, Math.min(profile.turnPrompts.length - 1, battle.turn - 1))];
+      ? `${battle.intro} ${battle.opening} ${currentTurn.scene}`
+      : `${battle.lastExchange || profile.opening} ${currentTurn.scene}`;
 
-  return `${leadText} ${prompt} Turn ${battle.turn} of ${battle.maxTurns}. You are holding at ${heroHpPercent}% health. ${battle.bossName} is down to ${bossHpPercent}%.`;
+  return `${leadText} ${currentTurn.prompt} Turn ${battle.turn} of ${battle.maxTurns}. You are holding at ${heroHpPercent}% health. ${battle.bossName} is down to ${bossHpPercent}%.`;
 }
 
 function buildJourneyBossBattleStatusText(battle, state, journeyStats) {
@@ -1984,66 +1955,187 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
         "The brush detonates and a huge boar comes in low, all muscle, mud, and broken tusk.",
       opening:
         "There is no more road beyond this point until one of you gives way.",
-      turnPrompts: [
-        "Its first charge is the moment to claim the rhythm of the fight.",
-        "The boar is angrier now and the lane beside it is getting tighter.",
-        "One last exchange will decide whether the stretch belongs to you or the beast.",
-      ],
       turnPressure: 1.5,
       turnHungerCost: 2,
       counterText: (_turn, bossHpPercent, heroHpPercent) =>
         `Mud and bark explode around the next pass, with the boar still at ${bossHpPercent}% and you at ${heroHpPercent}%.`,
-      moves: [
+      turns: [
         {
-          key: "boar:shoulder-cut",
-          label: "Slide wide and cut behind the shoulder",
-          preview: "Use footwork and timing to punish the charge.",
-          highlightWord: "cut",
-          statKey: "finesse",
-          chanceBase: 0.38,
-          chancePerStat: 0.05,
-          minChance: 0.26,
-          maxChance: 0.86,
-          bossDamage: { successBase: 27, successPerStat: 2.3, failBase: 10, failPerStat: 0.8 },
-          selfDamage: { successBase: 8, failBase: 16, reductionPerStat: 0.55 },
-          successText:
-            "You turn just outside the tusks and rake a deep line behind the shoulder before the boar can twist back into you.",
-          failureText:
-            "You almost make the angle, but the boar clips you on the way past and forces a messy, shallow strike.",
+          scene:
+            "The boar tears straight down the center of the trail, smashing saplings flat as it commits to the first charge.",
+          prompt:
+            "This first exchange is about surviving the rush and stealing momentum before it owns the whole path.",
+          moves: [
+            {
+              key: "boar:shoulder-cut",
+              label: "Slide wide and cut behind the shoulder",
+              preview: "Use footwork and timing to punish the charge.",
+              highlightWord: "cut",
+              statKey: "finesse",
+              chanceBase: 0.38,
+              chancePerStat: 0.05,
+              minChance: 0.26,
+              maxChance: 0.86,
+              bossDamage: { successBase: 27, successPerStat: 2.3, failBase: 10, failPerStat: 0.8 },
+              selfDamage: { successBase: 8, failBase: 16, reductionPerStat: 0.55 },
+              successText:
+                "You turn just outside the tusks and rake a deep line behind the shoulder before the boar can twist back into you.",
+              failureText:
+                "You almost make the angle, but the boar clips you on the way past and forces a messy, shallow strike.",
+            },
+            {
+              key: "boar:brace-thrust",
+              label: "Brace low and drive straight into the charge",
+              preview: "Meet force with force and try to stop it cold.",
+              highlightWord: "Brace",
+              statKey: "might",
+              chanceBase: 0.34,
+              chancePerStat: 0.05,
+              minChance: 0.24,
+              maxChance: 0.82,
+              bossDamage: { successBase: 31, successPerStat: 2.5, failBase: 12, failPerStat: 1 },
+              selfDamage: { successBase: 10, failBase: 18, reductionPerStat: 0.48 },
+              successText:
+                "You plant your feet, catch the rush head-on, and shove your weapon in hard enough to make the boar scream past you.",
+              failureText:
+                "The impact lands uglier than planned. You hurt it, but the charge folds straight through your guard.",
+            },
+            {
+              key: "boar:root-feint",
+              label: "Bait it across the roots and strike when it stumbles",
+              preview: "Keep your nerve and make the ground fight for you.",
+              highlightWord: "Bait",
+              statKey: "resolve",
+              chanceBase: 0.4,
+              chancePerStat: 0.045,
+              minChance: 0.3,
+              maxChance: 0.84,
+              bossDamage: { successBase: 24, successPerStat: 2.1, failBase: 9, failPerStat: 0.7 },
+              selfDamage: { successBase: 7, failBase: 14, reductionPerStat: 0.58 },
+              successText:
+                "You hold just long enough for the boar to hit the roots wrong, then carve into the opening while it scrabbles for footing.",
+              failureText:
+                "You wait a heartbeat too long and the boar barrels through the trap before you can turn it cleanly.",
+            },
+          ],
         },
         {
-          key: "boar:brace-thrust",
-          label: "Brace low and drive straight into the charge",
-          preview: "Meet force with force and try to stop it cold.",
-          highlightWord: "Brace",
-          statKey: "might",
-          chanceBase: 0.34,
-          chancePerStat: 0.05,
-          minChance: 0.24,
-          maxChance: 0.82,
-          bossDamage: { successBase: 31, successPerStat: 2.5, failBase: 12, failPerStat: 1 },
-          selfDamage: { successBase: 10, failBase: 18, reductionPerStat: 0.48 },
-          successText:
-            "You plant your feet, catch the rush head-on, and shove your weapon in hard enough to make the boar scream past you.",
-          failureText:
-            "The impact lands uglier than planned. You hurt it, but the charge folds straight through your guard.",
+          scene:
+            "Blood and foam streak the boar's jaw now, and it starts carving tighter circles through the mud instead of committing to a clean lane.",
+          prompt:
+            "The second turn is uglier. You need to break its balance before it keeps grinding you down in close quarters.",
+          moves: [
+            {
+              key: "boar:eye-dust",
+              label: "Kick dirt high and stab through the blink",
+              preview: "Create a split-second blind spot and use it.",
+              highlightWord: "blink",
+              statKey: "finesse",
+              chanceBase: 0.36,
+              chancePerStat: 0.05,
+              minChance: 0.25,
+              maxChance: 0.84,
+              bossDamage: { successBase: 25, successPerStat: 2.2, failBase: 10, failPerStat: 0.8 },
+              selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.55 },
+              successText:
+                "Dirt flashes up into the boar's face and your weapon is already inside that brief, furious blink.",
+              failureText:
+                "The dirt buys less than you hoped, and you only scrape it before the boar shoulders you backward.",
+            },
+            {
+              key: "boar:jaw-hook",
+              label: "Catch the tusk line and wrench its head aside",
+              preview: "Turn the weight of the beast off-center with raw force.",
+              highlightWord: "wrench",
+              statKey: "might",
+              chanceBase: 0.33,
+              chancePerStat: 0.05,
+              minChance: 0.22,
+              maxChance: 0.8,
+              bossDamage: { successBase: 30, successPerStat: 2.4, failBase: 11, failPerStat: 0.9 },
+              selfDamage: { successBase: 11, failBase: 18, reductionPerStat: 0.46 },
+              successText:
+                "You catch the tusk line at just the right instant and wrench the boar off its own charge hard enough to spill blood and footing together.",
+              failureText:
+                "You get hands on it, but not enough leverage. The boar rips free and drags you through the exchange.",
+            },
+            {
+              key: "boar:tree-line",
+              label: "Give ground and pin it against the tree line",
+              preview: "Stay calm, cede space, then trap the rebound.",
+              highlightWord: "trap",
+              statKey: "resolve",
+              chanceBase: 0.39,
+              chancePerStat: 0.045,
+              minChance: 0.29,
+              maxChance: 0.84,
+              bossDamage: { successBase: 23, successPerStat: 2, failBase: 9, failPerStat: 0.7 },
+              selfDamage: { successBase: 7, failBase: 14, reductionPerStat: 0.58 },
+              successText:
+                "You give it just enough lane to overcommit into the trees, then hammer the rebound while it fights its own turn.",
+              failureText:
+                "You try to sell the retreat, but the boar keeps better footing than expected and crashes into you before the trap closes.",
+            },
+          ],
         },
         {
-          key: "boar:root-feint",
-          label: "Bait it across the roots and strike when it stumbles",
-          preview: "Keep your nerve and make the ground fight for you.",
-          highlightWord: "Bait",
-          statKey: "resolve",
-          chanceBase: 0.4,
-          chancePerStat: 0.045,
-          minChance: 0.3,
-          maxChance: 0.84,
-          bossDamage: { successBase: 24, successPerStat: 2.1, failBase: 9, failPerStat: 0.7 },
-          selfDamage: { successBase: 7, failBase: 14, reductionPerStat: 0.58 },
-          successText:
-            "You hold just long enough for the boar to hit the roots wrong, then carve into the opening while it scrabbles for footing.",
-          failureText:
-            "You wait a heartbeat too long and the boar barrels through the trap before you can turn it cleanly.",
+          scene:
+            "The whole stretch is churned to slop, the boar breathing like a bellows and still looking for one last killing lane.",
+          prompt:
+            "This final turn decides the road. Finish it cleanly or leave it worse off than you and make it quit first.",
+          moves: [
+            {
+              key: "boar:hamstring-finish",
+              label: "Cut low and leave it no leg to push from",
+              preview: "A technical finish aimed at ending the charge for good.",
+              highlightWord: "finish",
+              statKey: "finesse",
+              chanceBase: 0.37,
+              chancePerStat: 0.05,
+              minChance: 0.26,
+              maxChance: 0.84,
+              bossDamage: { successBase: 29, successPerStat: 2.3, failBase: 11, failPerStat: 0.8 },
+              selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.56 },
+              successText:
+                "You go low at exactly the right moment and take the drive out of its back leg, leaving the beast stumbling where it wanted to kill.",
+              failureText:
+                "You get low, but not low enough. The boar clips you hard before you can finish the cut.",
+            },
+            {
+              key: "boar:front-on-break",
+              label: "Meet the final rush and break it head-on",
+              preview: "Trust your body for one decisive answer.",
+              highlightWord: "break",
+              statKey: "vitality",
+              chanceBase: 0.35,
+              chancePerStat: 0.05,
+              minChance: 0.24,
+              maxChance: 0.81,
+              bossDamage: { successBase: 32, successPerStat: 2.5, failBase: 12, failPerStat: 0.9 },
+              selfDamage: { successBase: 10, failBase: 18, reductionPerStat: 0.48 },
+              successText:
+                "You absorb the last rush without folding, drive through the shock, and leave the boar unable to keep pressing the road.",
+              failureText:
+                "You stand into it, but the final rush lands like a falling tree and the answer costs you more than planned.",
+            },
+            {
+              key: "boar:blood-scent",
+              label: "Hold your ground until it feels your nerve",
+              preview: "Make the beast doubt the trade before it commits.",
+              highlightWord: "nerve",
+              statKey: "resolve",
+              chanceBase: 0.41,
+              chancePerStat: 0.045,
+              minChance: 0.3,
+              maxChance: 0.85,
+              bossDamage: { successBase: 24, successPerStat: 2.1, failBase: 10, failPerStat: 0.8 },
+              selfDamage: { successBase: 7, failBase: 14, reductionPerStat: 0.6 },
+              successText:
+                "You refuse to flinch and the boar feels it. When it finally commits, the opening is smaller but far more final.",
+              failureText:
+                "You hold, but the boar reads only blood and weakness in the moment, forcing a harsher collision than you wanted.",
+            },
+          ],
         },
       ],
     };
@@ -2055,66 +2147,187 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
         "The wolves do not rush all at once. They fan out, testing the edges of the path until the alpha steps into view.",
       opening:
         "This stretch becomes a three-turn contest of space, nerve, and who gets to decide the shape of the pack.",
-      turnPrompts: [
-        "The first move is about denying the pack an easy surround.",
-        "They have your scent and they are trying to tighten the circle now.",
-        "The last turn is about breaking the alpha's nerve before yours breaks first.",
-      ],
       turnPressure: 1.8,
       turnHungerCost: 2,
       counterText: (_turn, bossHpPercent, heroHpPercent) =>
         `The pack keeps shifting through the brush, with the alpha at ${bossHpPercent}% and you at ${heroHpPercent}%.`,
-      moves: [
+      turns: [
         {
-          key: "wolves:break-alpha",
-          label: "Hit the alpha before the pack closes",
-          preview: "A hard opening can shake the rest of them loose.",
-          highlightWord: "alpha",
-          statKey: "might",
-          chanceBase: 0.33,
-          chancePerStat: 0.05,
-          minChance: 0.22,
-          maxChance: 0.8,
-          bossDamage: { successBase: 30, successPerStat: 2.4, failBase: 11, failPerStat: 0.8 },
-          selfDamage: { successBase: 11, failBase: 18, reductionPerStat: 0.44 },
-          successText:
-            "You hammer into the lead wolf before the rest can commit, forcing the alpha to yelp and recoil instead of leading the crush.",
-          failureText:
-            "You reach the alpha, but not cleanly enough. The rest of the pack crashes into the exchange before you can reset.",
+          scene:
+            "They start wide, paws silent in the brush, every pair of eyes waiting to see if you give them an easy flank.",
+          prompt:
+            "Turn one is about denying the surround before the pack decides the whole shape of the fight.",
+          moves: [
+            {
+              key: "wolves:break-alpha",
+              label: "Hit the alpha before the pack closes",
+              preview: "A hard opening can shake the rest of them loose.",
+              highlightWord: "alpha",
+              statKey: "might",
+              chanceBase: 0.33,
+              chancePerStat: 0.05,
+              minChance: 0.22,
+              maxChance: 0.8,
+              bossDamage: { successBase: 30, successPerStat: 2.4, failBase: 11, failPerStat: 0.8 },
+              selfDamage: { successBase: 11, failBase: 18, reductionPerStat: 0.44 },
+              successText:
+                "You hammer into the lead wolf before the rest can commit, forcing the alpha to yelp and recoil instead of leading the crush.",
+              failureText:
+                "You reach the alpha, but not cleanly enough. The rest of the pack crashes into the exchange before you can reset.",
+            },
+            {
+              key: "wolves:high-ground",
+              label: "Take the stones and cut their angles away",
+              preview: "Use positioning to keep the pack from owning the lane.",
+              highlightWord: "angles",
+              statKey: "finesse",
+              chanceBase: 0.39,
+              chancePerStat: 0.05,
+              minChance: 0.28,
+              maxChance: 0.86,
+              bossDamage: { successBase: 25, successPerStat: 2.2, failBase: 10, failPerStat: 0.7 },
+              selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.58 },
+              successText:
+                "You hop the stones, steal the better footing, and cut every lunge into a narrower, bloodier approach than the pack wanted.",
+              failureText:
+                "You almost find the high line, but loose rock gives under you and the wolves get a bite at your flank before you recover.",
+            },
+            {
+              key: "wolves:fire-line",
+              label: "Use flame and noise to split the charge",
+              preview: "Break their rhythm before they decide yours.",
+              highlightWord: "split",
+              statKey: "arcana",
+              chanceBase: 0.36,
+              chancePerStat: 0.05,
+              minChance: 0.24,
+              maxChance: 0.84,
+              bossDamage: { successBase: 26, successPerStat: 2.3, failBase: 9, failPerStat: 0.8 },
+              selfDamage: { successBase: 9, failBase: 16, reductionPerStat: 0.5 },
+              successText:
+                "Light, sparks, and a hard shout hit together. The pack splits at the wrong moment and the alpha takes the worst of it.",
+              failureText:
+                "The flare goes wide and only startles them for a breath. It still buys a cut, but not the clean break you needed.",
+            },
+          ],
         },
         {
-          key: "wolves:high-ground",
-          label: "Take the stones and cut their angles away",
-          preview: "Use positioning to keep the pack from owning the lane.",
-          highlightWord: "angles",
-          statKey: "finesse",
-          chanceBase: 0.39,
-          chancePerStat: 0.05,
-          minChance: 0.28,
-          maxChance: 0.86,
-          bossDamage: { successBase: 25, successPerStat: 2.2, failBase: 10, failPerStat: 0.7 },
-          selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.58 },
-          successText:
-            "You hop the stones, steal the better footing, and cut every lunge into a narrower, bloodier approach than the pack wanted.",
-          failureText:
-            "You almost find the high line, but loose rock gives under you and the wolves get a bite at your flank before you recover.",
+          scene:
+            "The alpha stops testing now and starts directing, trying to herd you toward the softer ground where the others can commit together.",
+          prompt:
+            "Turn two is about breaking their coordination before the full circle closes around you.",
+          moves: [
+            {
+              key: "wolves:callout",
+              label: "Roar back and challenge the alpha's lead",
+              preview: "Make the pack hesitate for one precious beat.",
+              highlightWord: "challenge",
+              statKey: "resolve",
+              chanceBase: 0.38,
+              chancePerStat: 0.045,
+              minChance: 0.28,
+              maxChance: 0.84,
+              bossDamage: { successBase: 24, successPerStat: 2.1, failBase: 9, failPerStat: 0.7 },
+              selfDamage: { successBase: 8, failBase: 14, reductionPerStat: 0.58 },
+              successText:
+                "You answer the alpha with enough force that the whole pack hesitates, and that single beat gives you a bloody opening.",
+              failureText:
+                "You try to seize the sound of the fight, but the pack hears only strain and surges harder into you.",
+            },
+            {
+              key: "wolves:tree-pivot",
+              label: "Use the trees to force them into single-file lunges",
+              preview: "Turn the brush into a choke point.",
+              highlightWord: "single-file",
+              statKey: "finesse",
+              chanceBase: 0.4,
+              chancePerStat: 0.05,
+              minChance: 0.29,
+              maxChance: 0.86,
+              bossDamage: { successBase: 26, successPerStat: 2.2, failBase: 10, failPerStat: 0.8 },
+              selfDamage: { successBase: 7, failBase: 14, reductionPerStat: 0.6 },
+              successText:
+                "You pivot through the trees and turn the pack's numbers against itself, cutting the front lunges before the rear can join them.",
+              failureText:
+                "You try to thread the trunks, but one wolf beats you to the turn and the rest pile pressure in behind it.",
+            },
+            {
+              key: "wolves:hard-kick",
+              label: "Cripple the nearest wolf and break their spacing",
+              preview: "A brutal answer meant to reopen the lane.",
+              highlightWord: "break",
+              statKey: "might",
+              chanceBase: 0.34,
+              chancePerStat: 0.05,
+              minChance: 0.23,
+              maxChance: 0.81,
+              bossDamage: { successBase: 29, successPerStat: 2.4, failBase: 11, failPerStat: 0.8 },
+              selfDamage: { successBase: 10, failBase: 17, reductionPerStat: 0.46 },
+              successText:
+                "You smash the nearest wolf out of the line hard enough to ruin the pack's spacing and draw the alpha into a worse angle.",
+              failureText:
+                "You hit one of them hard, but not hard enough to stop the rest from folding into the gap around you.",
+            },
+          ],
         },
         {
-          key: "wolves:fire-line",
-          label: "Use flame and noise to split the charge",
-          preview: "Break their rhythm before they decide yours.",
-          highlightWord: "split",
-          statKey: "arcana",
-          chanceBase: 0.36,
-          chancePerStat: 0.05,
-          minChance: 0.24,
-          maxChance: 0.84,
-          bossDamage: { successBase: 26, successPerStat: 2.3, failBase: 9, failPerStat: 0.8 },
-          selfDamage: { successBase: 9, failBase: 16, reductionPerStat: 0.5 },
-          successText:
-            "Light, sparks, and a hard shout hit together. The pack splits at the wrong moment and the alpha takes the worst of it.",
-          failureText:
-            "The flare goes wide and only startles them for a breath. It still buys a cut, but not the clean break you needed.",
+          scene:
+            "The alpha is showing blood now, but it keeps circling for one last clean opening while the rest look ready to follow or bolt on its lead.",
+          prompt:
+            "Turn three is the deciding moment. End the alpha, shame it off, or it will keep the stretch closed.",
+          moves: [
+            {
+              key: "wolves:finish-alpha",
+              label: "Sprint the alpha and end the lead outright",
+              preview: "A direct finish before the pack can reset behind it.",
+              highlightWord: "end",
+              statKey: "might",
+              chanceBase: 0.34,
+              chancePerStat: 0.05,
+              minChance: 0.23,
+              maxChance: 0.8,
+              bossDamage: { successBase: 31, successPerStat: 2.5, failBase: 11, failPerStat: 0.9 },
+              selfDamage: { successBase: 11, failBase: 18, reductionPerStat: 0.45 },
+              successText:
+                "You explode straight through the thin space around the alpha and turn the whole pack's attention into a losing scramble.",
+              failureText:
+                "You commit to the finish, but the pack sees it and the answer comes from three bodies at once.",
+            },
+            {
+              key: "wolves:scar-line",
+              label: "Cut a long scar across the leader and stand firm",
+              preview: "Make the alpha feel that you can still win the trade.",
+              highlightWord: "firm",
+              statKey: "resolve",
+              chanceBase: 0.4,
+              chancePerStat: 0.045,
+              minChance: 0.3,
+              maxChance: 0.85,
+              bossDamage: { successBase: 25, successPerStat: 2.1, failBase: 10, failPerStat: 0.8 },
+              selfDamage: { successBase: 8, failBase: 14, reductionPerStat: 0.6 },
+              successText:
+                "You mark the alpha deep and refuse to yield a single step, forcing the whole pack to read the cost of one more rush.",
+              failureText:
+                "You land the cut, but the stand costs you and the wolves keep pressing like they still own the ground.",
+            },
+            {
+              key: "wolves:flare-finish",
+              label: "Throw the last flare into their retreat line",
+              preview: "Blind, split, and make the choice to stay feel wrong.",
+              highlightWord: "split",
+              statKey: "arcana",
+              chanceBase: 0.37,
+              chancePerStat: 0.05,
+              minChance: 0.26,
+              maxChance: 0.84,
+              bossDamage: { successBase: 27, successPerStat: 2.3, failBase: 10, failPerStat: 0.8 },
+              selfDamage: { successBase: 9, failBase: 15, reductionPerStat: 0.52 },
+              successText:
+                "The last flare bursts exactly where the pack wants to wheel, and the panic that follows leaves the alpha exposed and unsure.",
+              failureText:
+                "The flare lands close, but not close enough. The wolves flinch, then come on through the light anyway.",
+            },
+          ],
         },
       ],
     };
@@ -2123,10 +2336,10 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
   return null;
 }
 
-function rotateJourneyChoices(choices, offset) {
-  if (!Array.isArray(choices) || !choices.length) return [];
-  const normalizedOffset = ((offset % choices.length) + choices.length) % choices.length;
-  return [...choices.slice(normalizedOffset), ...choices.slice(0, normalizedOffset)];
+function getJourneyBossBattleTurnProfile(profile, turn) {
+  if (!profile?.turns?.length) return null;
+  const safeIndex = Math.max(0, Math.min(profile.turns.length - 1, Number(turn || 1) - 1));
+  return profile.turns[safeIndex];
 }
 
 function getJourneyBossBattlePercent(current, max) {

@@ -710,6 +710,17 @@ export async function resolveJourneyEventChoice(eventId, choiceId) {
 
       beforeState = bossBattleResolution.beforeState;
       resolution = bossBattleResolution.resolution;
+
+      if (!bossBattleResolution.finished) {
+        await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
+        await appState.renderApp();
+        if (bossBattleResolution.updatedEvent) {
+          openJourneyEventModal(bossBattleResolution.updatedEvent);
+        } else {
+          closeJourneyEventModal();
+        }
+        return;
+      }
     } else {
       state.pendingEvents = state.pendingEvents.filter((entry) => entry.id !== eventId);
       beforeState = normalizeJourneyState({
