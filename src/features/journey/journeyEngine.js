@@ -541,9 +541,9 @@ export function buildJourneyDerived(state, journeyLevel) {
     stats.vitality * 0.9 +
     stats.resolve * 1 +
     journeyLevel * 4;
-  const speedPerHour = 2.9 + stats.finesse * 0.34 + stats.resolve * 0.08;
+  const speedPerHour = 3.2 + stats.finesse * 0.34 + stats.resolve * 0.08;
   const regenPerHour = 0.8 + stats.vitality * 0.28 + stats.resolve * 0.08;
-  const hungerDrainPerHour = Math.max(1.5, 4.6 - stats.resolve * 0.18);
+  const hungerDrainPerHour = Math.max(1.35, 4.1 - stats.resolve * 0.18);
 
   return {
     classMeta,
@@ -1517,7 +1517,7 @@ export function simulateJourneyState(state, elapsedMs, journeyStats, journeyCont
 
       while (
         state.status === "adventuring" &&
-        state.totalDistance >= (state.bossIndex + 1) * JOURNEY_BOSS_DISTANCE
+        state.totalDistance >= getJourneyBossThreshold(state.bossIndex)
       ) {
         if (state.pendingEvents.length) {
           break;
@@ -1590,7 +1590,7 @@ export function queueJourneyStretchBossBattle(state, journeyStats, atDate) {
     return null;
   }
 
-  state.totalDistance = (state.bossIndex + 1) * JOURNEY_BOSS_DISTANCE;
+  state.totalDistance = getJourneyBossThreshold(state.bossIndex);
   state.pendingEvents = [nextEvent];
   addJourneyLog(
     state,
@@ -1910,7 +1910,8 @@ function resolveJourneyBossBattleVictory(
 
 function resolveJourneyBossBattleLoss(state, journeyStats, atDate, boss) {
   state.totalDistance = Math.max(
-    state.bossIndex * JOURNEY_BOSS_DISTANCE + 22,
+    getJourneySegmentStartDistance(state.bossIndex) +
+      Math.round(getJourneyStretchDistance(state.bossIndex) * 0.22),
     state.totalDistance - randomInt(18, 34)
   );
   state.currentHp = Math.max(
@@ -2404,7 +2405,8 @@ export function resolveJourneyBoss(state, journeyStats, atDate) {
   }
 
   state.totalDistance = Math.max(
-    state.bossIndex * JOURNEY_BOSS_DISTANCE + 22,
+    getJourneySegmentStartDistance(state.bossIndex) +
+      Math.round(getJourneyStretchDistance(state.bossIndex) * 0.22),
     state.totalDistance - randomInt(18, 34)
   );
   state.currentHp = Math.max(
@@ -2543,15 +2545,15 @@ export function maybeQueueJourneyEvent(state, atDate, journeyLevel, journeyConte
   const baseChance = aidMode
     ? 0.48
     : phase === "arrival"
-      ? 0.12
+      ? 0.18
       : phase === "survival"
-        ? 0.09
-        : 0.06;
+        ? 0.13
+        : 0.08;
   const pressureBonus = journeyContext?.neglectScore
     ? Math.min(0.05, journeyContext.neglectScore * 0.008)
     : 0;
   const eventChance = Math.min(
-    aidMode ? 0.72 : 0.24,
+    aidMode ? 0.72 : 0.3,
     baseChance +
       Math.max(0, journeyLevel - 1) * 0.01 +
       pressureBonus +
@@ -4929,23 +4931,47 @@ export function getJourneyZoneName(bossIndex) {
   return zoneNames[bossIndex % zoneNames.length];
 }
 
+export function getJourneyStretchDistance(bossIndex) {
+  if (bossIndex === 0) return 70;
+  if (bossIndex === 1) return 90;
+  return JOURNEY_BOSS_DISTANCE;
+}
+
+export function getJourneySegmentStartDistance(bossIndex) {
+  let total = 0;
+
+  for (let index = 0; index < bossIndex; index += 1) {
+    total += getJourneyStretchDistance(index);
+  }
+
+  return total;
+}
+
+export function getJourneyBossThreshold(bossIndex) {
+  return (
+    getJourneySegmentStartDistance(bossIndex) +
+    getJourneyStretchDistance(bossIndex)
+  );
+}
+
 export function getJourneySegmentProgress(totalDistance, bossIndex) {
-  const segmentStart = bossIndex * JOURNEY_BOSS_DISTANCE;
-  const nextBossDistance = (bossIndex + 1) * JOURNEY_BOSS_DISTANCE;
+  const stretchDistance = getJourneyStretchDistance(bossIndex);
+  const segmentStart = getJourneySegmentStartDistance(bossIndex);
+  const nextBossDistance = getJourneyBossThreshold(bossIndex);
   const distanceIntoSegment = clamp(
     totalDistance - segmentStart,
     0,
-    JOURNEY_BOSS_DISTANCE
+    stretchDistance
   );
   const remainingDistance = Math.max(0, nextBossDistance - totalDistance);
   const percent = Math.round(
-    clamp((distanceIntoSegment / JOURNEY_BOSS_DISTANCE) * 100, 0, 100)
+    clamp((distanceIntoSegment / Math.max(1, stretchDistance)) * 100, 0, 100)
   );
 
   return {
     percent,
     remainingDistance,
-    currentLabel: `${Math.floor(distanceIntoSegment)} / ${JOURNEY_BOSS_DISTANCE} through this stretch`,
+    currentLabel: `${Math.floor(distanceIntoSegment)} / ${stretchDistance} through this stretch`,
     remainingLabel: `${Math.ceil(remainingDistance)} until the next major threat`,
   };
 }
@@ -5130,7 +5156,12 @@ export function getJourneyStatusLabel(status) {
 }
 
 export function getJourneyPhase(state) {
-  if (state.bossIndex === 0 && state.totalDistance < 42) return "arrival";
+  if (
+    state.bossIndex === 0 &&
+    state.totalDistance < Math.round(getJourneyStretchDistance(0) * 0.6)
+  ) {
+    return "arrival";
+  }
   if (state.bossIndex <= 1) return "survival";
   return "frontier";
 }
