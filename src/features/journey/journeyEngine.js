@@ -1465,17 +1465,6 @@ export function simulateJourneyState(state, elapsedMs, journeyStats, journeyCont
           state.currentHunger,
           journeyStats.maxHunger * 0.56
         );
-        addJourneyLog(
-          state,
-          recoveredEnough && !servedFullRecoveryTime
-            ? `You felt steady enough to stop hiding and head back toward ${getJourneyZoneName(
-                state.bossIndex
-              )}.`
-            : `You left shelter and headed back toward ${getJourneyZoneName(
-                state.bossIndex
-              )}.`,
-          nextCursor.toISOString()
-        );
       }
 
       maybeQueueJourneyEvent(state, nextCursor, journeyStats.level, journeyContext);
@@ -1551,7 +1540,6 @@ export function simulateJourneyState(state, elapsedMs, journeyStats, journeyCont
         continue;
       }
 
-      maybeAddAmbientJourneyLog(state, nextCursor);
       maybeQueueJourneyEvent(state, nextCursor, journeyStats.level, journeyContext);
     }
 
@@ -4893,7 +4881,6 @@ export function sendJourneyToTown(
     currentJourneyLevel,
     currentJourneyStats
   );
-  addJourneyLog(state, message, atDate.toISOString());
 }
 
 export function addJourneyLog(state, text, at) {
