@@ -69,6 +69,14 @@ const JOURNEY_INJURED_SPRITE = {
   maxDisplayHeight: 168,
 };
 
+const JOURNEY_ATTACK_SPRITE = {
+  src: "./assets/journey/sprites/Attack.png",
+  frameCount: 12,
+  frameDurationMs: 100,
+  maxDisplayWidth: 156,
+  maxDisplayHeight: 184,
+};
+
 const JOURNEY_PORTRAIT_SPRITE = {
   src: "./assets/journey/sprites/Idlethink.png",
   frameCount: 12,
@@ -1929,6 +1937,13 @@ function renderCharacterVitalChip(config) {
 }
 
 function getJourneyStretchSprite(state, hpPercent) {
+  if (state.pendingEvents.some((eventEntry) => eventEntry.kind === "boss")) {
+    return {
+      sprite: JOURNEY_ATTACK_SPRITE,
+      label: t("journeyUi.common.battling"),
+    };
+  }
+
   if (state.status === "recovering" || hpPercent <= 55) {
     return {
       sprite: JOURNEY_INJURED_SPRITE,

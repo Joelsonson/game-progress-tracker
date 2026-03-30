@@ -319,8 +319,9 @@ const translations = {
         health: "Health",
         hunger: "Hunger",
         hpShort: "HP",
-        onRoad: "On the road",
-        recovering: "Recovering",
+      onRoad: "On the road",
+      recovering: "Recovering",
+      battling: "In battle",
       },
       home: {
         atGlance: "Journey at a glance",
@@ -866,8 +867,9 @@ const translations = {
         health: "体力",
         hunger: "空腹",
         hpShort: "HP",
-        onRoad: "旅の途中",
-        recovering: "療養中",
+      onRoad: "旅の途中",
+      recovering: "療養中",
+      battling: "戦闘中",
       },
       home: {
         atGlance: "旅路のひと目まとめ",
