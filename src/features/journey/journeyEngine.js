@@ -1662,11 +1662,13 @@ export function resolveJourneyBossBattleTurn(
     state.currentHp,
     journeyStats.maxHp
   );
+  const bossConditionText = describeJourneyBattleCondition(bossHpPercent, "enemy");
+  const heroConditionText = describeJourneyBattleCondition(heroHpPercent, "hero");
   const turnText = success ? move.successText : move.failureText;
   const exchangeText = `${turnText} ${profile.counterText(
     battle.turn,
-    bossHpPercent,
-    heroHpPercent
+    bossConditionText,
+    heroConditionText
   )}`.trim();
   const beforeState = normalizeJourneyState({
     ...state,
@@ -1700,19 +1702,25 @@ export function resolveJourneyBossBattleTurn(
     successPercent: Math.round(successChance * 100),
     successRoll,
     resultText: battleResultText,
-    showRollSummary: true,
+    showRollSummary: false,
     extraOutcomeItems: [
       {
-        label: `Turn ${battle.turn}/${battle.maxTurns}`,
-        className: "is-neutral",
+        label: `${JOURNEY_STAT_META[statKey].label} check ${
+          success ? "succeeded" : "failed"
+        }`,
+        className: success ? "is-positive" : "is-negative",
       },
       {
-        label: `Boss ${formatSignedNumber(-Math.round(bossHpBefore - battle.bossHp))}`,
-        className: "is-positive",
-      },
-      {
-        label: `${boss.name} ${bossHpPercent}%`,
+        label: `${boss.name}: ${bossConditionText}`,
         className: battle.bossHp <= 0 ? "is-positive" : "is-neutral",
+      },
+      {
+        label: `You: ${heroConditionText}`,
+        className: state.currentHp <= 0 ? "is-negative" : "is-neutral",
+      },
+      {
+        label: `Damage dealt ${Math.round(bossHpBefore - battle.bossHp)}`,
+        className: "is-positive",
       },
     ],
   };
@@ -1748,13 +1756,55 @@ export function resolveJourneyBossBattleTurn(
       boss,
       finalOutcome
     );
-    battleResultText = `${exchangeText} ${outcomeText}`.trim();
+    battleResultText = outcomeText;
     resolution.resultText = battleResultText;
+    resolution.outcomeMeta =
+      finalOutcome === "defeated" ? "Boss defeated" : "Boss driven off";
+    resolution.extraOutcomeItems = [
+      {
+        label:
+          finalOutcome === "defeated" ? "Boss defeated" : "Boss driven off",
+        className: "is-positive",
+      },
+      {
+        label: `${JOURNEY_STAT_META[statKey].label} check ${
+          success ? "succeeded" : "failed"
+        }`,
+        className: success ? "is-positive" : "is-negative",
+      },
+      {
+        label: `You: ${describeJourneyBattleCondition(
+          getJourneyBossBattlePercent(state.currentHp, journeyStats.maxHp),
+          "hero"
+        )}`,
+        className: "is-neutral",
+      },
+    ];
     startJourneyEventCooldown(state, atDate);
   } else {
     const outcomeText = resolveJourneyBossBattleLoss(state, journeyStats, atDate, boss);
-    battleResultText = `${exchangeText} ${outcomeText}`.trim();
+    battleResultText = outcomeText;
     resolution.resultText = battleResultText;
+    resolution.outcomeMeta = "Forced to retreat";
+    resolution.extraOutcomeItems = [
+      {
+        label: "Forced to retreat",
+        className: "is-negative",
+      },
+      {
+        label: `${JOURNEY_STAT_META[statKey].label} check ${
+          success ? "succeeded" : "failed"
+        }`,
+        className: success ? "is-positive" : "is-negative",
+      },
+      {
+        label: `You: ${describeJourneyBattleCondition(
+          getJourneyBossBattlePercent(state.currentHp, journeyStats.maxHp),
+          "hero"
+        )}`,
+        className: "is-neutral",
+      },
+    ];
   }
 
   return {
@@ -1808,10 +1858,10 @@ function buildJourneyStretchBossBattleEvent(
       kind: "boss",
       repeatable: false,
       title: boss.name,
-      teaser: `Turn ${battle.turn}/${battle.maxTurns} • ${boss.name} ${getJourneyBossBattlePercent(
-        battle.bossHp,
-        battle.bossMaxHp
-      )}%`,
+      teaser: `Turn ${battle.turn}/${battle.maxTurns} • ${describeJourneyBattleCondition(
+        getJourneyBossBattlePercent(battle.bossHp, battle.bossMaxHp),
+        "enemy"
+      )}`,
       detail,
       createdAt: existingEvent?.createdAt || atDate.toISOString(),
       battle,
@@ -1847,7 +1897,10 @@ function buildJourneyBossBattleDetail(battle, profile, state, journeyStats) {
       ? `${battle.intro} ${battle.opening} ${currentTurn.scene}`
       : `${battle.lastExchange || profile.opening} ${currentTurn.scene}`;
 
-  return `${leadText} ${currentTurn.prompt} Turn ${battle.turn} of ${battle.maxTurns}. You are holding at ${heroHpPercent}% health. ${battle.bossName} is down to ${bossHpPercent}%.`;
+  return `${leadText} ${currentTurn.prompt} Right now ${battle.bossName} looks ${describeJourneyBattleCondition(
+    bossHpPercent,
+    "enemy"
+  )}, and you look ${describeJourneyBattleCondition(heroHpPercent, "hero")}.`;
 }
 
 function buildJourneyBossBattleStatusText(battle, state, journeyStats) {
@@ -1864,11 +1917,14 @@ function buildJourneyBossBattleStatusText(battle, state, journeyStats) {
 
   if (battle.turn >= battle.maxTurns) {
     return heroHpPercent > bossHpPercent
-      ? `${battle.bossName} is worse off than you are and finally gives ground.`
-      : `${battle.bossName} is still pressing harder than you can answer.`;
+      ? `${battle.bossName} looks worse than you do and finally gives ground.`
+      : `${battle.bossName} still looks stronger than you in this moment.`;
   }
 
-  return `The fight is still live with ${bossHpPercent}% boss health against your ${heroHpPercent}%.`;
+  return `The fight is still live, with ${battle.bossName} looking ${describeJourneyBattleCondition(
+    bossHpPercent,
+    "enemy"
+  )} and you looking ${describeJourneyBattleCondition(heroHpPercent, "hero")}.`;
 }
 
 function resolveJourneyBossBattleVictory(
@@ -1904,8 +1960,14 @@ function resolveJourneyBossBattleVictory(
 
   const victoryText =
     finalOutcome === "defeated"
-      ? `You brought ${boss.name} down and cleared the stretch. Rewards: ${rewardText}.`
-      : `You lasted three brutal turns, left ${boss.name} in worse shape than yourself, and forced it to break away. Rewards: ${rewardText}.`;
+      ? `You bring ${boss.name} down and clear the stretch. By the end, you still look ${describeJourneyBattleCondition(
+          getJourneyBossBattlePercent(state.currentHp, journeyStats.maxHp),
+          "hero"
+        )}. Rewards: ${rewardText}.`
+      : `You outlast ${boss.name} and force it to back off, leaving it in worse shape than you. By the end, you still look ${describeJourneyBattleCondition(
+          getJourneyBossBattlePercent(state.currentHp, journeyStats.maxHp),
+          "hero"
+        )}. Rewards: ${rewardText}.`;
   addJourneyLog(state, victoryText, atDate.toISOString());
   return victoryText;
 }
@@ -1925,7 +1987,7 @@ function resolveJourneyBossBattleLoss(state, journeyStats, atDate, boss) {
     Math.round(journeyStats.maxHunger * 0.28)
   );
   state.storyXp += 4;
-  const defeatText = `${boss.name} overwhelms you before the stretch breaks.`;
+  const defeatText = `${boss.name} overwhelms you before the stretch breaks, and you have to fall back in rough shape.`;
   addJourneyLog(state, defeatText, atDate.toISOString());
   sendJourneyToTown(
     state,
@@ -1943,19 +2005,19 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
   if (bossIndex === 0) {
     return {
       intro:
-        "The brush detonates and a huge boar comes in low, all muscle, mud, and broken tusk.",
+        "The thick undergrowth bursts open and a huge boar charges low, all muscle, mud, and broken tusk.",
       opening:
         "There is no more road beyond this point until one of you gives way.",
       turnPressure: 1.5,
       turnHungerCost: 2,
-      counterText: (_turn, bossHpPercent, heroHpPercent) =>
-        `Mud and bark explode around the next pass, with the boar still at ${bossHpPercent}% and you at ${heroHpPercent}%.`,
+      counterText: (_turn, bossConditionText, heroConditionText) =>
+        `The next clash comes fast. The boar now looks ${bossConditionText}, and you look ${heroConditionText}.`,
       turns: [
         {
           scene:
-            "The boar tears straight down the center of the trail, smashing saplings flat as it commits to the first charge.",
+            "The boar tears straight down the middle of the trail, flattening young trees as it commits to the first charge.",
           prompt:
-            "This first exchange is about surviving the rush and stealing momentum before it owns the whole path.",
+            "This first clash is about surviving the rush and taking control before it owns the whole path.",
           moves: [
             {
               key: "boar:shoulder-cut",
@@ -2012,9 +2074,9 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
         },
         {
           scene:
-            "Blood and foam streak the boar's jaw now, and it starts carving tighter circles through the mud instead of committing to a clean lane.",
+            "Blood and foam streak the boar's jaw now, and it starts circling tighter through the mud instead of charging in a straight line.",
           prompt:
-            "The second turn is uglier. You need to break its balance before it keeps grinding you down in close quarters.",
+            "The next clash is uglier. You need to break its balance before it keeps pushing you around at close range.",
           moves: [
             {
               key: "boar:eye-dust",
@@ -2071,9 +2133,9 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
         },
         {
           scene:
-            "The whole stretch is churned to slop, the boar breathing like a bellows and still looking for one last killing lane.",
+            "The whole trail is churned into mud, the boar breathing hard and still hunting for one last clean charge.",
           prompt:
-            "This final turn decides the road. Finish it cleanly or leave it worse off than you and make it quit first.",
+            "This last exchange decides the road. Finish it cleanly or leave it in worse shape than you and make it back off.",
           moves: [
             {
               key: "boar:hamstring-finish",
@@ -2140,14 +2202,14 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
         "This stretch becomes a three-turn contest of space, nerve, and who gets to decide the shape of the pack.",
       turnPressure: 1.8,
       turnHungerCost: 2,
-      counterText: (_turn, bossHpPercent, heroHpPercent) =>
-        `The pack keeps shifting through the brush, with the alpha at ${bossHpPercent}% and you at ${heroHpPercent}%.`,
+      counterText: (_turn, bossConditionText, heroConditionText) =>
+        `The pack keeps shifting around you. The alpha now looks ${bossConditionText}, and you look ${heroConditionText}.`,
       turns: [
         {
           scene:
-            "They start wide, paws silent in the brush, every pair of eyes waiting to see if you give them an easy flank.",
+            "They start wide, paws silent in the undergrowth, every pair of eyes waiting to see if you give them an easy opening.",
           prompt:
-            "Turn one is about denying the surround before the pack decides the whole shape of the fight.",
+            "This first clash is about stopping the surround before the pack shapes the whole fight.",
           moves: [
             {
               key: "wolves:break-alpha",
@@ -2206,7 +2268,7 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
           scene:
             "The alpha stops testing now and starts directing, trying to herd you toward the softer ground where the others can commit together.",
           prompt:
-            "Turn two is about breaking their coordination before the full circle closes around you.",
+            "Now you need to break their coordination before the full circle closes around you.",
           moves: [
             {
               key: "wolves:callout",
@@ -2265,7 +2327,7 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
           scene:
             "The alpha is showing blood now, but it keeps circling for one last clean opening while the rest look ready to follow or bolt on its lead.",
           prompt:
-            "Turn three is the deciding moment. End the alpha, shame it off, or it will keep the stretch closed.",
+            "This is the deciding moment. End the alpha, scare it off, or it will keep the stretch closed.",
           moves: [
             {
               key: "wolves:finish-alpha",
@@ -2331,6 +2393,28 @@ function getJourneyBossBattleTurnProfile(profile, turn) {
   if (!profile?.turns?.length) return null;
   const safeIndex = Math.max(0, Math.min(profile.turns.length - 1, Number(turn || 1) - 1));
   return profile.turns[safeIndex];
+}
+
+function describeJourneyBattleCondition(percent, role = "enemy") {
+  const safePercent = clamp(Number(percent) || 0, 0, 100);
+
+  if (role === "hero") {
+    if (safePercent <= 0) return "down";
+    if (safePercent <= 15) return "about to collapse";
+    if (safePercent <= 30) return "barely standing";
+    if (safePercent <= 50) return "badly hurt";
+    if (safePercent <= 70) return "somewhat injured";
+    if (safePercent <= 90) return "still steady";
+    return "fresh";
+  }
+
+  if (safePercent <= 0) return "down";
+  if (safePercent <= 15) return "about to collapse";
+  if (safePercent <= 30) return "barely standing";
+  if (safePercent <= 50) return "badly wounded";
+  if (safePercent <= 70) return "clearly hurt";
+  if (safePercent <= 90) return "still dangerous";
+  return "fresh";
 }
 
 function getJourneyBossBattlePercent(current, max) {

@@ -738,7 +738,9 @@ export function openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeI
     eventEntry?.title || t("journeyUi.modals.whatHappenedNext")
   );
   journeyOutcomeMetaEl.textContent = resolution
-    ? showRollSummary
+    ? resolution.outcomeMeta
+      ? resolution.outcomeMeta
+      : showRollSummary
       ? `${resolution.success ? t("journeyUi.modals.succeeded") : t("journeyUi.modals.failed")} • ${resolution.statLabel} • ${t("journeyUi.modals.chance", {
           value: resolution.successPercent,
         })}`
