@@ -322,6 +322,7 @@ const translations = {
       onRoad: "On the road",
       recovering: "Recovering",
       battling: "In battle",
+      foraging: "Foraging",
       },
       home: {
         atGlance: "Journey at a glance",
@@ -870,6 +871,7 @@ const translations = {
       onRoad: "旅の途中",
       recovering: "療養中",
       battling: "戦闘中",
+      foraging: "食料探し",
       },
       home: {
         atGlance: "旅路のひと目まとめ",

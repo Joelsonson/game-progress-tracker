@@ -77,6 +77,14 @@ const JOURNEY_ATTACK_SPRITE = {
   maxDisplayHeight: 184,
 };
 
+const JOURNEY_BERRY_SPRITE = {
+  src: "./assets/journey/sprites/Berry.png",
+  frameCount: 12,
+  frameDurationMs: 100,
+  maxDisplayWidth: 156,
+  maxDisplayHeight: 184,
+};
+
 const JOURNEY_PORTRAIT_SPRITE = {
   src: "./assets/journey/sprites/Idlethink.png",
   frameCount: 12,
@@ -517,7 +525,7 @@ export function renderHomeJourney(state, xpSummary, supplies) {
   );
   const pendingEvent = state.pendingEvents[0] || null;
   const displayName = getJourneyDisplayName(state);
-  const stretchSprite = getJourneyStretchSprite(state, hpPercent);
+  const stretchSprite = getJourneyStretchSprite(state, hpPercent, hungerPercent);
   const progressDisplay = buildJourneyProgressDisplay({
     state,
     progress,
@@ -899,7 +907,11 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
   if (!journeyContentEl) return;
 
   const viewModel = buildJourneyViewModel(state, games, sessions, xpSummary);
-  const stretchSprite = getJourneyStretchSprite(viewModel.state, viewModel.hpPercent);
+  const stretchSprite = getJourneyStretchSprite(
+    viewModel.state,
+    viewModel.hpPercent,
+    viewModel.hungerPercent
+  );
   const progressDisplay = buildJourneyProgressDisplay({
     state: viewModel.state,
     progress: viewModel.progress,
@@ -1938,11 +1950,18 @@ function renderCharacterVitalChip(config) {
   `;
 }
 
-function getJourneyStretchSprite(state, hpPercent) {
+function getJourneyStretchSprite(state, hpPercent, hungerPercent) {
   if (state.pendingEvents.some((eventEntry) => eventEntry.kind === "boss")) {
     return {
       sprite: JOURNEY_ATTACK_SPRITE,
       label: t("journeyUi.common.battling"),
+    };
+  }
+
+  if (state.status === "recovering" && hungerPercent < hpPercent) {
+    return {
+      sprite: JOURNEY_BERRY_SPRITE,
+      label: t("journeyUi.common.foraging"),
     };
   }
 
