@@ -221,7 +221,7 @@ export function normalizeJourneyState(rawState = null) {
     inferredWeapon || keptWeaponKeys.length > 0 || pendingWeaponKeys.length > 0;
 
   return {
-    version: 8,
+    version: 9,
     classType,
     unlockedClasses,
     allocatedStats,
@@ -253,6 +253,7 @@ export function normalizeJourneyState(rawState = null) {
     lastUpdatedAt: source.lastUpdatedAt || nowIso,
     nextEventAt: source.nextEventAt || null,
     restUntil: source.restUntil || null,
+    recoveryStartedAt: source.recoveryStartedAt || null,
     recoveryObjective:
       typeof source.recoveryObjective === "string"
         ? source.recoveryObjective.trim()
@@ -1458,6 +1459,7 @@ export function simulateJourneyState(state, elapsedMs, journeyStats, journeyCont
       if (recoveredEnough || servedFullRecoveryTime) {
         state.status = "adventuring";
         state.restUntil = null;
+        state.recoveryStartedAt = null;
         state.recoveryObjective = "";
         state.aidUrgency = Math.max(0, state.aidUrgency - 1);
         state.currentHp = Math.max(state.currentHp, journeyStats.maxHp * 0.46);
@@ -4861,6 +4863,7 @@ export function sendJourneyToTown(
   state.status = "recovering";
   state.townVisits += 1;
   state.aidUrgency = Math.min(4, state.aidUrgency + 2);
+  state.recoveryStartedAt = atDate.toISOString();
   state.restUntil = new Date(
     atDate.getTime() + randomInt(minHours, maxHours) * 60 * 60 * 1000
   ).toISOString();

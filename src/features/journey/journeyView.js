@@ -38,6 +38,7 @@ import {
   getJourneyBagMeta,
   buildJourneyStretchPresentation,
   buildJourneySupplies,
+  formatDurationMs,
   formatDurationRangeHours,
   getJourneyActivityText,
   getJourneyBoss,
@@ -396,6 +397,96 @@ function getJourneyLogText(text) {
   return JOURNEY_LOG_TRANSLATIONS_JA[text] || text;
 }
 
+function buildJourneyProgressDisplay({
+  state,
+  progress,
+  stretchPresentation,
+  journeyStats,
+}) {
+  if (state.status === "recovering") {
+    return buildJourneyRecoveryProgressDisplay(state);
+  }
+
+  return {
+    widthPercent: progress.percent,
+    trackClassName: "",
+    fillClassName: "",
+    currentLabel: stretchPresentation.currentLabel,
+    remainingLabel: stretchPresentation.remainingLabel,
+    motionClassName: getJourneyProgressMotionClass(journeyStats.speedPerHour),
+    chevronCount: journeyStats.speedPerHour >= 3.8 ? 2 : 1,
+  };
+}
+
+function buildJourneyRecoveryProgressDisplay(state) {
+  const nowMs = Date.now();
+  const recoveryStartMs = state.recoveryStartedAt
+    ? new Date(state.recoveryStartedAt).getTime()
+    : null;
+  const recoveryEndMs = state.restUntil ? new Date(state.restUntil).getTime() : null;
+  const totalMs =
+    recoveryStartMs && recoveryEndMs && recoveryEndMs > recoveryStartMs
+      ? recoveryEndMs - recoveryStartMs
+      : 0;
+  const remainingMs = recoveryEndMs ? Math.max(0, recoveryEndMs - nowMs) : 0;
+  const elapsedMs = totalMs ? Math.max(0, totalMs - remainingMs) : 0;
+  const widthPercent = totalMs
+    ? clamp((elapsedMs / totalMs) * 100, 6, 100)
+    : 24;
+
+  return {
+    widthPercent,
+    trackClassName: "is-recovery",
+    fillClassName: "is-recovery",
+    currentLabel: t("journeyUi.progress.recoveryTimeLeft", {
+      value: formatDurationMs(remainingMs),
+    }),
+    remainingLabel:
+      state.recoveryObjective || t("journeyUi.progress.recoveryInProgress"),
+    motionClassName: "pace-slow",
+    chevronCount: 1,
+  };
+}
+
+function getJourneyProgressMotionClass(speedPerHour) {
+  if (!Number.isFinite(speedPerHour) || speedPerHour < 3.6) {
+    return "pace-slow";
+  }
+
+  if (speedPerHour < 4.5) {
+    return "pace-steady";
+  }
+
+  return "pace-fast";
+}
+
+function renderJourneyProgressDisplay(progressDisplay) {
+  const chevrons = Array.from({ length: progressDisplay.chevronCount }, (_, index) => {
+    const delayMs = index * 180;
+    return `<span class="journey-progress-chevron" style="animation-delay: ${delayMs}ms;">&gt;</span>`;
+  }).join("");
+
+  return `
+    <div class="journey-progress-track ${escapeAttribute(progressDisplay.trackClassName || "")}">
+      <div
+        class="journey-progress-fill ${escapeAttribute(progressDisplay.fillClassName || "")}"
+        style="width: ${progressDisplay.widthPercent}%"
+      ></div>
+      <div
+        class="journey-progress-flow ${escapeAttribute(progressDisplay.motionClassName || "pace-slow")}"
+        aria-hidden="true"
+      >
+        ${chevrons}
+      </div>
+    </div>
+
+    <div class="journey-progress-meta">
+      <span>${escapeHtml(progressDisplay.currentLabel)}</span>
+      <span>${escapeHtml(progressDisplay.remainingLabel)}</span>
+    </div>
+  `;
+}
+
 export function renderHomeJourney(state, xpSummary, supplies) {
   if (!homeJourneyContentEl) return;
 
@@ -419,6 +510,12 @@ export function renderHomeJourney(state, xpSummary, supplies) {
   const pendingEvent = state.pendingEvents[0] || null;
   const displayName = getJourneyDisplayName(state);
   const stretchSprite = getJourneyStretchSprite(state, hpPercent);
+  const progressDisplay = buildJourneyProgressDisplay({
+    state,
+    progress,
+    stretchPresentation,
+    journeyStats,
+  });
 
   homeJourneyContentEl.innerHTML = `
     <div class="journey-home-shell">
@@ -436,14 +533,7 @@ export function renderHomeJourney(state, xpSummary, supplies) {
             label: stretchSprite.label,
           })}
 
-          <div class="journey-progress-track">
-            <div class="journey-progress-fill" style="width: ${progress.percent}%"></div>
-          </div>
-
-          <div class="journey-progress-meta">
-            <span>${stretchPresentation.currentLabel}</span>
-            <span>${stretchPresentation.remainingLabel}</span>
-          </div>
+          ${renderJourneyProgressDisplay(progressDisplay)}
 
           <div class="summary-row">
             <span class="summary-pill">${escapeHtml(t("journeyUi.home.currentGoal"))}: ${escapeHtml(
@@ -800,6 +890,12 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
 
   const viewModel = buildJourneyViewModel(state, games, sessions, xpSummary);
   const stretchSprite = getJourneyStretchSprite(viewModel.state, viewModel.hpPercent);
+  const progressDisplay = buildJourneyProgressDisplay({
+    state: viewModel.state,
+    progress: viewModel.progress,
+    stretchPresentation: viewModel.stretchPresentation,
+    journeyStats: viewModel.journeyStats,
+  });
   const pendingEventsMarkup = viewModel.state.pendingEvents.length
     ? `
         <article class="journey-side-card journey-alert-card">
@@ -870,13 +966,7 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
           label: stretchSprite.label,
         })}
       </div>
-      <div class="journey-progress-track">
-        <div class="journey-progress-fill" style="width: ${viewModel.progress.percent}%"></div>
-      </div>
-      <div class="journey-progress-meta">
-        <span>${viewModel.stretchPresentation.currentLabel}</span>
-        <span>${viewModel.stretchPresentation.remainingLabel}</span>
-      </div>
+      ${renderJourneyProgressDisplay(progressDisplay)}
 
       <div class="journey-story-stats journey-story-stats-compact">
         <div class="journey-story-stat">

@@ -351,7 +351,7 @@ const translations = {
       page: {
         eventQueue: "Event queue",
         awaitingChoice: "Awaiting a choice",
-        eventQueueBody: "Open an encounter when you are ready to deal with it.",
+        eventQueueBody: "Open an encounter to see how you resolved what happened.",
         quietStretch: "Quiet stretch",
         noImmediateEvent: "No immediate event",
         quietStretchBody:
@@ -453,6 +453,8 @@ const translations = {
       },
       progress: {
         recoveryComesFirst: "Recovery comes first",
+        recoveryTimeLeft: ({ value }) => `${value} left until you're fully recovered`,
+        recoveryInProgress: "Food, rest, and regrouping are still in progress.",
       },
       radar: {
         ariaLabel:
@@ -896,7 +898,7 @@ const translations = {
       page: {
         eventQueue: "保留中の出来事",
         awaitingChoice: "選択待ち",
-        eventQueueBody: "対応する準備ができたら、遭遇を開いてください。",
+        eventQueueBody: "遭遇を開いて、どう切り抜けたかを確認してください。",
         quietStretch: "静かな道のり",
         noImmediateEvent: "急ぎの出来事なし",
         quietStretchBody:
@@ -998,6 +1000,8 @@ const translations = {
       },
       progress: {
         recoveryComesFirst: "まずは立て直しが先だ",
+        recoveryTimeLeft: ({ value }) => `全快まであと ${value}`,
+        recoveryInProgress: "食料集めと休息で態勢を立て直している。",
       },
       radar: {
         ariaLabel:
