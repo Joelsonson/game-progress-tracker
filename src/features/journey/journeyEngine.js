@@ -1658,6 +1658,7 @@ export function resolveJourneyBossBattleTurn(
   );
   battle.heroHp = Math.round(state.currentHp);
   battle.heroMaxHp = Math.round(journeyStats.maxHp);
+  battle.heroHunger = Math.round(state.currentHunger);
   battle.lastBossDamage = Math.round(bossHpBefore - battle.bossHp);
   battle.lastHeroDamage = Math.round(hpBefore - state.currentHp);
   battle.weaponLabel = journeyStats?.equippedWeaponMeta?.label || "";
@@ -1693,6 +1694,13 @@ export function resolveJourneyBossBattleTurn(
     bossMaxHp: battle.bossMaxHp,
     heroHp: Math.round(state.currentHp),
     heroMaxHp: Math.round(journeyStats.maxHp),
+    heroHunger: Math.round(state.currentHunger),
+    heroStartHp: Math.round(battle.heroStartHp || hpBefore),
+    heroStartHunger: Math.round(
+      Number.isFinite(Number(battle.heroStartHunger))
+        ? battle.heroStartHunger
+        : hungerBefore
+    ),
     lastBossDamage: Math.round(bossHpBefore - battle.bossHp),
     lastHeroDamage: Math.round(hpBefore - state.currentHp),
     weaponLabel: journeyStats?.equippedWeaponMeta?.label || "",
@@ -1883,6 +1891,19 @@ function buildJourneyStretchBossBattleEvent(
         ),
         heroHp: Math.round(state.currentHp),
         heroMaxHp: Math.round(journeyStats.maxHp),
+        heroHunger: Math.round(state.currentHunger),
+        heroStartHp: Math.max(
+          0,
+          Math.round(Number(existingBattle.heroStartHp ?? existingBattle.heroHp ?? state.currentHp) || 0)
+        ),
+        heroStartHunger: Math.max(
+          0,
+          Math.round(
+            Number(
+              existingBattle.heroStartHunger ?? existingBattle.heroHunger ?? state.currentHunger
+            ) || 0
+          )
+        ),
         lastBossDamage: Math.max(0, Math.round(Number(existingBattle.lastBossDamage) || 0)),
         lastHeroDamage: Math.max(0, Math.round(Number(existingBattle.lastHeroDamage) || 0)),
         weaponLabel: journeyStats?.equippedWeaponMeta?.label || "",
@@ -1899,6 +1920,9 @@ function buildJourneyStretchBossBattleEvent(
         bossMaxHp: JOURNEY_BOSS_BATTLE_MAX_HP,
         heroHp: Math.round(state.currentHp),
         heroMaxHp: Math.round(journeyStats.maxHp),
+        heroHunger: Math.round(state.currentHunger),
+        heroStartHp: Math.round(state.currentHp),
+        heroStartHunger: Math.round(state.currentHunger),
         lastBossDamage: 0,
         lastHeroDamage: 0,
         weaponLabel: journeyStats?.equippedWeaponMeta?.label || "",

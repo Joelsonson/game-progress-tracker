@@ -1880,22 +1880,6 @@
   line-height: 1.5;
 }
 
-.journey-boss-outcome-check {
-  display: grid;
-  gap: 4px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(var(--ink-rgb), 0.08);
-  background:
-    linear-gradient(180deg, rgba(var(--panel-rgb), 0.9), rgba(var(--surface-rgb), 0.82)),
-    rgba(var(--panel-rgb), 0.72);
-}
-
-.journey-boss-outcome-check strong {
-  color: var(--text);
-}
-
-.journey-boss-outcome-check span,
 .journey-boss-outcome-copy {
   color: var(--muted);
   line-height: 1.56;

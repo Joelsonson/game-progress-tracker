@@ -1033,7 +1033,6 @@ function renderJourneyBossOutcomePanel(resolution, beforeState, afterState) {
   const checkText = `${resolution.statLabel} check ${
     resolution.success ? "succeeded" : "failed"
   }`;
-  const checkMeta = `${resolution.statLabel} ${resolution.statValue} against a ${resolution.successPercent}% chance.`;
   const summaryCards = buildJourneyBossOutcomeCards(beforeState, afterState, resolution);
 
   return `
@@ -1045,10 +1044,6 @@ function renderJourneyBossOutcomePanel(resolution, beforeState, afterState) {
       <p class="journey-boss-outcome-kicker">
         ${escapeHtml(`This is the battle outcome. The deciding ${checkText.toLowerCase()}.`)}
       </p>
-    </div>
-    <div class="journey-boss-outcome-check">
-      <strong>${escapeHtml(checkText)}</strong>
-      <span>${escapeHtml(checkMeta)}</span>
     </div>
     <p class="journey-boss-outcome-copy">${escapeHtml(
       resolution.resultText || t("journeyUi.modals.roadAnswered")
@@ -1088,27 +1083,30 @@ function getJourneyBossOutcomeTone(outcomeMeta) {
 }
 
 function buildJourneyBossOutcomeCards(beforeState, afterState, resolution) {
-  if (!beforeState || !afterState || !resolution) {
+  const snapshot = resolution?.battleSnapshot;
+  if (!afterState || !resolution || !snapshot) {
     return [];
   }
 
   const damageDealt = Math.max(
     0,
-    Math.round(Number(resolution?.battleSnapshot?.lastBossDamage) || 0)
+    Math.round(Number(snapshot.bossMaxHp) || 0) - Math.round(Number(snapshot.bossHp) || 0)
   );
   const damageTaken = Math.max(
     0,
-    Math.round(Number(resolution?.battleSnapshot?.lastHeroDamage) || 0)
+    Math.round(Number(snapshot.heroStartHp) || 0) - Math.round(Number(snapshot.heroHp) || 0)
   );
-  const hpDelta = Math.round(afterState.currentHp - beforeState.currentHp);
-  const hungerDelta = Math.round(afterState.currentHunger - beforeState.currentHunger);
-  const travelDelta = Math.round(afterState.totalDistance - beforeState.totalDistance);
-  const storyXpDelta = Math.round(afterState.storyXp - beforeState.storyXp);
-  const statusChanged = beforeState.status !== afterState.status;
+  const hpDelta = -damageTaken;
+  const hungerDelta =
+    Math.round(Number(snapshot.heroHunger) || 0) -
+    Math.round(Number(snapshot.heroStartHunger) || 0);
+  const travelDelta = beforeState ? Math.round(afterState.totalDistance - beforeState.totalDistance) : 0;
+  const storyXpDelta = beforeState ? Math.round(afterState.storyXp - beforeState.storyXp) : 0;
+  const statusChanged = beforeState ? beforeState.status !== afterState.status : false;
 
   const cards = [
     {
-      label: "Exchange",
+      label: "Whole battle",
       primary: `${damageDealt} dealt`,
       secondary: `${damageTaken} taken`,
     },
@@ -1119,24 +1117,22 @@ function buildJourneyBossOutcomeCards(beforeState, afterState, resolution) {
     },
   ];
 
-  if (statusChanged || travelDelta || storyXpDelta) {
+  const aftermathDetails = [];
+  if (statusChanged) {
+    aftermathDetails.push(`Status ${getJourneyStatusLabel(afterState.status)}`);
+  }
+  if (storyXpDelta) {
+    aftermathDetails.push(`Story XP ${formatJourneyDelta(storyXpDelta)}`);
+  }
+  if (travelDelta) {
+    aftermathDetails.push(`Travel ${formatJourneyDelta(travelDelta)}`);
+  }
+
+  if (aftermathDetails.length) {
     cards.push({
       label: "Aftermath",
-      primary: statusChanged
-        ? `Status ${getJourneyStatusLabel(afterState.status)}`
-        : storyXpDelta
-          ? `Story XP ${formatJourneyDelta(storyXpDelta)}`
-          : `Travel ${formatJourneyDelta(travelDelta)}`,
-      secondary:
-        statusChanged && travelDelta
-          ? `Travel ${formatJourneyDelta(travelDelta)}`
-          : storyXpDelta && travelDelta
-            ? `Travel ${formatJourneyDelta(travelDelta)}`
-            : statusChanged && storyXpDelta
-              ? `Story XP ${formatJourneyDelta(storyXpDelta)}`
-              : storyXpDelta
-                ? `Story XP ${formatJourneyDelta(storyXpDelta)}`
-                : "",
+      primary: aftermathDetails[0],
+      secondary: aftermathDetails.slice(1).join(" • "),
     });
   }
 
