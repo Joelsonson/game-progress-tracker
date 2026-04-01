@@ -797,6 +797,15 @@ export function openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeI
           `
           : ""
       }
+      ${
+        resolution?.exchangeText
+          ? `
+            <p class="journey-outcome-exchange-copy">${escapeHtml(
+              resolution.exchangeText
+            )}</p>
+          `
+          : ""
+      }
       <p>${escapeHtml(resolution?.resultText || t("journeyUi.modals.roadAnswered"))}</p>
       ${
         outcomeItems.length
@@ -932,6 +941,7 @@ function renderJourneyBossBattlePanel(eventEntry) {
 
   const bossArt = getJourneyBossBattleArt(battle);
   const loadoutLabel = battle.weaponLabel || "Unarmed";
+  const exchangeSummary = renderJourneyBossBattleExchangeSummary(battle);
 
   return `
     <div class="journey-event-panel journey-battle-panel">
@@ -942,6 +952,7 @@ function renderJourneyBossBattlePanel(eventEntry) {
             <span class="journey-chip is-active">Turn ${battle.turn} / ${battle.maxTurns}</span>
             <span class="journey-chip">${escapeHtml(loadoutLabel)}</span>
           </div>
+          ${exchangeSummary}
           ${renderJourneyBossBattleHealthCard({
             label: "Boss",
             name: battle.bossName,
@@ -965,6 +976,31 @@ function renderJourneyBossBattlePanel(eventEntry) {
       <div class="journey-battle-copy">
         <p>${escapeHtml(eventEntry.detail)}</p>
       </div>
+    </div>
+  `;
+}
+
+function renderJourneyBossBattleExchangeSummary(battle) {
+  if (!battle?.lastCheckLabel) {
+    return `
+      <div class="journey-battle-exchange-summary is-neutral">
+        <strong>First clash</strong>
+        <span>No roll yet. Pick your opening move.</span>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="journey-battle-exchange-summary ${
+      battle.lastCheckSuccess ? "is-success" : "is-failure"
+    }">
+      <strong>${escapeHtml(battle.lastCheckLabel)} check ${
+        battle.lastCheckSuccess ? "succeeded" : "failed"
+      }</strong>
+      <span>You hit for ${Math.max(0, Math.round(Number(battle.lastBossDamage) || 0))} and took ${Math.max(
+        0,
+        Math.round(Number(battle.lastHeroDamage) || 0)
+      )}.</span>
     </div>
   `;
 }

@@ -1662,6 +1662,8 @@ export function resolveJourneyBossBattleTurn(
   battle.lastHeroDamage = Math.round(hpBefore - state.currentHp);
   battle.weaponLabel = journeyStats?.equippedWeaponMeta?.label || "";
   battle.heroBattleNote = buildJourneyBossBattleLoadoutNote(state.bossIndex, journeyStats);
+  battle.lastCheckLabel = JOURNEY_STAT_META[statKey].label;
+  battle.lastCheckSuccess = success;
 
   const bossHpPercent = getJourneyBossBattlePercent(battle.bossHp, battle.bossMaxHp);
   const heroHpPercent = getJourneyBossBattlePercent(
@@ -1708,7 +1710,8 @@ export function resolveJourneyBossBattleTurn(
     successPercent: Math.round(successChance * 100),
     successRoll,
     resultText: battleResultText,
-    showRollSummary: false,
+    exchangeText,
+    showRollSummary: true,
     extraOutcomeItems: [
       {
         label: `${JOURNEY_STAT_META[statKey].label} check ${
@@ -1783,6 +1786,14 @@ export function resolveJourneyBossBattleTurn(
         className: success ? "is-positive" : "is-negative",
       },
       {
+        label: `Damage dealt ${Math.round(bossHpBefore - battle.bossHp)}`,
+        className: "is-positive",
+      },
+      {
+        label: `Damage taken ${Math.round(hpBefore - state.currentHp)}`,
+        className: "is-negative",
+      },
+      {
         label: `You: ${describeJourneyBattleCondition(
           getJourneyBossBattlePercent(state.currentHp, journeyStats.maxHp),
           "hero"
@@ -1806,6 +1817,14 @@ export function resolveJourneyBossBattleTurn(
           success ? "succeeded" : "failed"
         }`,
         className: success ? "is-positive" : "is-negative",
+      },
+      {
+        label: `Damage dealt ${Math.round(bossHpBefore - battle.bossHp)}`,
+        className: "is-positive",
+      },
+      {
+        label: `Damage taken ${Math.round(hpBefore - state.currentHp)}`,
+        className: "is-negative",
       },
       {
         label: `You: ${describeJourneyBattleCondition(
@@ -1851,6 +1870,8 @@ function buildJourneyStretchBossBattleEvent(
         lastHeroDamage: Math.max(0, Math.round(Number(existingBattle.lastHeroDamage) || 0)),
         weaponLabel: journeyStats?.equippedWeaponMeta?.label || "",
         heroBattleNote: buildJourneyBossBattleLoadoutNote(state.bossIndex, journeyStats),
+        lastCheckLabel: String(existingBattle.lastCheckLabel || "").trim(),
+        lastCheckSuccess: Boolean(existingBattle.lastCheckSuccess),
       }
     : {
         bossIndex: state.bossIndex,
@@ -1865,6 +1886,8 @@ function buildJourneyStretchBossBattleEvent(
         lastHeroDamage: 0,
         weaponLabel: journeyStats?.equippedWeaponMeta?.label || "",
         heroBattleNote: buildJourneyBossBattleLoadoutNote(state.bossIndex, journeyStats),
+        lastCheckLabel: "",
+        lastCheckSuccess: false,
         intro: profile.intro,
         opening: profile.opening,
         lastExchange: "",
@@ -1919,7 +1942,16 @@ function buildJourneyBossBattleDetail(battle, profile) {
       ? `${battle.intro} ${battle.opening} ${currentTurn.scene}`
       : `${battle.lastExchange || profile.opening} ${currentTurn.scene}`;
 
-  return [leadText, currentTurn.prompt, battle.heroBattleNote].filter(Boolean).join(" ");
+  return [
+    leadText,
+    currentTurn.prompt,
+    battle.turn >= battle.maxTurns
+      ? "If neither of you drops here, whoever is in better shape takes the road."
+      : "",
+    battle.heroBattleNote,
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function buildJourneyBossBattleStatusText(battle, state, journeyStats) {

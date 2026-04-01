@@ -1578,6 +1578,40 @@
   gap: 12px;
 }
 
+.journey-battle-exchange-summary {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
+  background: rgba(var(--panel-rgb), 0.72);
+}
+
+.journey-battle-exchange-summary strong {
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.journey-battle-exchange-summary span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.journey-battle-exchange-summary.is-success {
+  background: rgba(95, 122, 86, 0.1);
+  border-color: rgba(95, 122, 86, 0.18);
+}
+
+.journey-battle-exchange-summary.is-failure {
+  background: rgba(164, 86, 75, 0.1);
+  border-color: rgba(164, 86, 75, 0.18);
+}
+
+.journey-battle-exchange-summary.is-neutral {
+  background: rgba(var(--accent-rgb), 0.08);
+}
+
 .journey-battle-chip-row {
   display: flex;
   flex-wrap: wrap;
@@ -1642,7 +1676,7 @@
 }
 
 .journey-battle-health-fill.is-hero {
-  background: linear-gradient(90deg, rgba(var(--accent-blue-strong), 0.92), rgba(95, 122, 86, 0.86));
+  background: linear-gradient(90deg, var(--accent-blue-strong), rgba(95, 122, 86, 0.86));
 }
 
 .journey-battle-health-loss {
@@ -1686,8 +1720,8 @@
 }
 
 .journey-battle-damage-pill.is-hero {
-  background: rgba(var(--accent-blue-strong), 0.12);
-  border-color: rgba(var(--accent-blue-strong), 0.18);
+  background: rgba(79, 142, 245, 0.12);
+  border-color: rgba(79, 142, 245, 0.18);
 }
 
 .journey-battle-damage-chevrons {
@@ -1698,6 +1732,16 @@
 }
 
 .journey-battle-copy p {
+  line-height: 1.58;
+}
+
+.journey-outcome-exchange-copy {
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.9), rgba(var(--surface-rgb), 0.8)),
+    rgba(var(--panel-rgb), 0.72);
   line-height: 1.58;
 }
 
