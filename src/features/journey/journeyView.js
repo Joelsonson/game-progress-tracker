@@ -2498,7 +2498,7 @@ function renderJourneyRadarChart(journeyStats) {
       breakdown,
     };
   });
-  const maxValue = Math.max(10, ...entries.map((entry) => entry.value), 1);
+  const maxValue = Math.max(20, ...entries.map((entry) => entry.value), 1);
   const center = 130;
   const radius = 76;
   const ringFractions = [0.25, 0.5, 0.75, 1];
@@ -2569,13 +2569,25 @@ function renderCharacterRadarLegendItem(entry) {
     Boolean(breakdown?.weaponBonus) ||
     Boolean(breakdown?.modifier) ||
     Boolean(breakdown?.allocated);
+  const rollBonusText = breakdown
+    ? t("journeyUi.stats.rollBonus", {
+        value: formatSignedNumber(breakdown.rollModifier),
+      })
+    : "";
 
   return `
     <details class="character-radar-legend-item ${hasBonus ? "is-boosted" : ""}">
       <summary class="character-radar-legend-summary">
         <span>${escapeHtml(entry.label)}</span>
         <div class="character-radar-legend-summary-value">
-          <strong class="${hasBonus ? "is-boosted" : ""}">${entry.value}</strong>
+          <div class="character-radar-legend-summary-math">
+            <strong class="${hasBonus ? "is-boosted" : ""}">${entry.value}</strong>
+            ${
+              rollBonusText
+                ? `<small class="character-radar-roll-bonus">${escapeHtml(rollBonusText)}</small>`
+                : ""
+            }
+          </div>
           <span class="character-chevron" aria-hidden="true">⌄</span>
         </div>
       </summary>
