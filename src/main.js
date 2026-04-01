@@ -341,11 +341,12 @@ async function handleLanguagePreferenceChange(event) {
 
 function getStoredThemePreference() {
   try {
-    return normalizeThemePreference(
-      window.localStorage.getItem("gameTracker.themePreference")
-    );
+    const storedPreference = window.localStorage.getItem("gameTracker.themePreference");
+    return storedPreference === null
+      ? "dark"
+      : normalizeThemePreference(storedPreference);
   } catch (error) {
-    return "system";
+    return "dark";
   }
 }
 

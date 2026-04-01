@@ -1,10 +1,32 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Tabi no Kiroku — Journey Log</title>
-    <meta name="theme-color" content="#f8f4f1" />
+    <meta name="theme-color" content="#242424" />
+    <script>
+      try {
+        const storedThemePreference = window.localStorage.getItem("gameTracker.themePreference");
+        const themePreference = storedThemePreference === "light" || storedThemePreference === "dark" || storedThemePreference === "system"
+          ? storedThemePreference
+          : "dark";
+        const isDark = themePreference === "dark"
+          || (themePreference === "system" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
+
+        if (themePreference === "system") {
+          document.documentElement.removeAttribute("data-theme");
+        } else {
+          document.documentElement.setAttribute("data-theme", themePreference);
+        }
+
+        document
+          .querySelector('meta[name="theme-color"]')
+          ?.setAttribute("content", isDark ? "#242424" : "#f8f4f1");
+      } catch (error) {
+        document.documentElement.setAttribute("data-theme", "dark");
+      }
+    </script>
     <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20260328a" />
     <link rel="stylesheet" href="./styles/tokens.css?v=20260329f" />
     <link rel="stylesheet" href="./styles/base.css?v=20260329f" />
