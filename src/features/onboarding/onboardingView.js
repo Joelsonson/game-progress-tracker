@@ -9,9 +9,12 @@ import {
   onboardingSpotlightFrame,
 } from "../../core/dom.js";
 import { escapeAttribute, escapeHtml } from "../../core/formatters.js";
+import { initializeJourneySpritePreviews } from "../journey/journeyView.js";
 
 const SPOTLIGHT_PADDING_PX = 14;
 const SPOTLIGHT_MARGIN_PX = 8;
+const DEFAULT_CARD_PLACEMENT = "bottom";
+const CARD_CLEARANCE_GAP_PX = 28;
 
 export function renderOnboardingStep(viewModel) {
   if (!onboardingOverlay || !onboardingCardRoot) {
@@ -22,6 +25,11 @@ export function renderOnboardingStep(viewModel) {
   onboardingOverlay.dataset.stepKind = viewModel.kind;
   onboardingOverlay.dataset.stepId = viewModel.stepId;
   onboardingCardRoot.innerHTML = buildOnboardingCardMarkup(viewModel);
+  initializeJourneySpritePreviews(onboardingCardRoot);
+  updateOnboardingCardLayout(viewModel);
+  window.requestAnimationFrame(() => {
+    updateOnboardingCardLayout(viewModel);
+  });
 
   if (viewModel.kind === "spotlight" && viewModel.targetRect) {
     renderSpotlight(viewModel.targetRect);
@@ -49,6 +57,7 @@ export function clearOnboardingStep() {
     onboardingBackdrop.hidden = true;
   }
 
+  document.documentElement.style.removeProperty("--onboarding-scroll-clearance");
   hideSpotlight();
 }
 
@@ -133,11 +142,18 @@ function buildOnboardingCardMarkup(viewModel) {
     >
       <div class="onboarding-card-media">
         <div class="onboarding-guide-shell">
-          <img
-            class="onboarding-guide-sprite"
-            src="${escapeAttribute(viewModel.spriteSrc)}"
-            alt="${escapeAttribute(viewModel.spriteAlt)}"
-          />
+          <div class="journey-sprite-stage onboarding-guide-stage" aria-hidden="true">
+            <img
+              class="journey-sprite-sheet onboarding-guide-sprite-sheet"
+              src="${escapeAttribute(viewModel.spriteSrc)}"
+              data-journey-sprite-sheet
+              data-frame-count="${viewModel.spriteFrameCount}"
+              data-frame-duration="${viewModel.spriteFrameDurationMs}"
+              data-max-width="${viewModel.spriteMaxWidth}"
+              data-max-height="${viewModel.spriteMaxHeight}"
+              alt=""
+            />
+          </div>
         </div>
       </div>
 
@@ -180,6 +196,34 @@ function buildOnboardingCardMarkup(viewModel) {
       </div>
     </article>
   `;
+}
+
+function updateOnboardingCardLayout(viewModel) {
+  if (!onboardingCardRoot) {
+    return;
+  }
+
+  const card = onboardingCardRoot.querySelector(".onboarding-card");
+  if (!(card instanceof HTMLElement)) {
+    return;
+  }
+
+  const placement = viewModel.cardPlacement || DEFAULT_CARD_PLACEMENT;
+  onboardingCardRoot.dataset.placement = placement;
+
+  if (placement === "top") {
+    document.documentElement.style.removeProperty("--onboarding-scroll-clearance");
+    return;
+  }
+
+  const clearance =
+    viewModel.kind === "spotlight"
+      ? Math.ceil(card.getBoundingClientRect().height + CARD_CLEARANCE_GAP_PX)
+      : 0;
+  document.documentElement.style.setProperty(
+    "--onboarding-scroll-clearance",
+    `${Math.max(0, clearance)}px`
+  );
 }
 
 function renderSpotlight(targetRect) {

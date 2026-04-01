@@ -71,7 +71,7 @@ select {
   width: min(100%, 480px);
   max-width: 100%;
   margin: 0 auto;
-  padding: 20px 0 32px;
+  padding: 20px 0 calc(32px + var(--onboarding-scroll-clearance, 0px));
 }
 
 .hero {

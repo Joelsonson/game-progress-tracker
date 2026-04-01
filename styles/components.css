@@ -2586,14 +2586,18 @@
 .onboarding-scrim {
   position: fixed;
   background:
-    linear-gradient(180deg, rgba(19, 27, 39, 0.76), rgba(9, 14, 23, 0.82)),
-    rgba(12, 18, 28, 0.72);
+    linear-gradient(180deg, rgba(19, 27, 39, 0.46), rgba(9, 14, 23, 0.56)),
+    rgba(12, 18, 28, 0.42);
   backdrop-filter: blur(8px);
-  pointer-events: auto;
 }
 
 .onboarding-backdrop {
   inset: 0;
+  pointer-events: auto;
+}
+
+.onboarding-scrim {
+  pointer-events: none;
 }
 
 .onboarding-spotlight-frame {
@@ -2618,8 +2622,8 @@
 .onboarding-card {
   width: min(100%, 560px);
   display: grid;
-  gap: 18px;
-  padding: 20px;
+  gap: 14px;
+  padding: 16px;
   border-radius: 28px;
   border: 1px solid rgba(var(--ink-rgb), 0.12);
   background:
@@ -2631,6 +2635,8 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.26);
   backdrop-filter: blur(18px);
   pointer-events: auto;
+  max-height: min(320px, calc(100dvh - 24px));
+  overflow: auto;
 }
 
 .onboarding-card-copy h2,
@@ -2726,8 +2732,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 112px;
-  height: 112px;
+  width: 96px;
+  height: 96px;
   border-radius: 26px;
   border: 1px solid rgba(193, 145, 98, 0.2);
   background:
@@ -2737,11 +2743,19 @@
   overflow: hidden;
 }
 
-.onboarding-guide-sprite {
-  width: 92px;
-  height: 92px;
-  object-fit: contain;
-  image-rendering: pixelated;
+.onboarding-guide-stage {
+  --journey-sprite-display-width: 84px;
+  --journey-sprite-display-height: 84px;
+  border-radius: 20px;
+  border-color: rgba(193, 145, 98, 0.18);
+  background:
+    radial-gradient(circle at top, rgba(250, 204, 21, 0.16), transparent 56%),
+    rgba(31, 41, 55, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(250, 204, 21, 0.08);
+}
+
+.onboarding-card-root[data-placement="top"] {
+  inset: max(12px, calc(env(safe-area-inset-top) + 8px)) 12px auto;
 }
 
 @media (min-width: 560px) {

@@ -2,7 +2,10 @@ import { ONBOARDING_VERSION, SESSIONS_TABS } from "../../core/constants.js";
 
 const ONBOARDING_SPRITE = {
   src: "./assets/journey/sprites/Walking.png",
-  alt: "Journey guide sprite",
+  frameCount: 12,
+  frameDurationMs: 100,
+  maxDisplayWidth: 84,
+  maxDisplayHeight: 84,
 };
 
 export const ONBOARDING_STATUS = {

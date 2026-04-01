@@ -358,7 +358,10 @@ function syncOnboardingStep(shouldFocus = false) {
       total: ONBOARDING_STEPS.length,
     }),
     spriteSrc: currentStep.sprite?.src,
-    spriteAlt: t("onboarding.guideAlt"),
+    spriteFrameCount: currentStep.sprite?.frameCount || 1,
+    spriteFrameDurationMs: currentStep.sprite?.frameDurationMs || 1000,
+    spriteMaxWidth: currentStep.sprite?.maxDisplayWidth || 84,
+    spriteMaxHeight: currentStep.sprite?.maxDisplayHeight || 84,
     showBack: onboardingRuntime.stepIndex > 0,
     backLabel: t("onboarding.actions.back"),
     skipLabel: t("onboarding.actions.skip"),
@@ -366,6 +369,7 @@ function syncOnboardingStep(shouldFocus = false) {
     primaryDisabled: Boolean(currentStep.requirement && !requirementState.satisfied),
     targetRect,
     requirementSatisfied: requirementState.satisfied,
+    cardPlacement: currentStep.cardPlacement || "bottom",
   };
 
   renderOnboardingStep(viewModel);
@@ -376,44 +380,7 @@ function syncOnboardingStep(shouldFocus = false) {
 }
 
 function focusOnboardingEntry(step, viewModel) {
-  if (step.requirement && !viewModel.requirementSatisfied) {
-    const interactiveTarget = resolveTargetFocusElement(step);
-    if (interactiveTarget) {
-      interactiveTarget.focus({ preventScroll: true });
-      return;
-    }
-  }
-
   focusOnboardingPrimaryAction();
-}
-
-function resolveTargetFocusElement(step) {
-  if (!step.target) {
-    return null;
-  }
-
-  const target = document.querySelector(`[data-onboarding-target="${step.target}"]`);
-  if (!(target instanceof HTMLElement)) {
-    return null;
-  }
-
-  const preferredElement =
-    step.focusSelector && target.querySelector(step.focusSelector);
-  if (
-    preferredElement instanceof HTMLElement &&
-    !preferredElement.hasAttribute("disabled")
-  ) {
-    return preferredElement;
-  }
-
-  const fallbackElement = target.querySelector(
-    "input, select, textarea, button"
-  );
-
-  return fallbackElement instanceof HTMLElement &&
-    !fallbackElement.hasAttribute("disabled")
-    ? fallbackElement
-    : null;
 }
 
 function getRequirementState(step) {
