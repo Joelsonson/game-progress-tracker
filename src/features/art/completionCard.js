@@ -28,7 +28,7 @@ export async function downloadCompletionCard(game) {
   const canvas = await buildCompletionCardCanvas(game, stats);
   const blob = await canvasToBlob(canvas, "image/png");
 
-  downloadBlob(blob, createSafeFilename(`${game.title} completion card.png`));
+  downloadBlob(blob, createSafeFilename(`${game.title} goal card.png`));
 }
 
 export function canvasToBlob(canvas, type) {
@@ -169,10 +169,10 @@ export async function buildCompletionCardCanvas(game, stats) {
 
   ctx.fillStyle = "#b7f7de";
   ctx.font = "600 24px Inter, Arial, sans-serif";
-  const platformFinishText = `${game.platform || "Unspecified"} • Finished ${formatDate(
+  const contextFinishText = `${game.platform || "Unspecified"} • Completed ${formatDate(
     game.completedAt || game.updatedAt
   )}`;
-  ctx.fillText(platformFinishText, textStartX, 556);
+  ctx.fillText(contextFinishText, textStartX, 556);
 
   ctx.fillStyle = "#cbd5e1";
   ctx.font = "500 22px Inter, Arial, sans-serif";
@@ -190,10 +190,10 @@ export async function buildCompletionCardCanvas(game, stats) {
   const statBoxW = (width - padding * 2 - 24) / 2;
   const statBoxH = 104;
   const statRows = [
-    ["Total play time", formatMinutes(stats.totalMinutes)],
+    ["Total time", formatMinutes(stats.totalMinutes)],
     ["Sessions", String(stats.sessionCount)],
     ["Meaningful sessions", String(stats.meaningfulCount)],
-    ["Quest XP", String(totalQuestXp)],
+    ["Goal XP", String(totalQuestXp)],
   ];
 
   statRows.forEach(([label, value], index) => {
@@ -220,7 +220,7 @@ export async function buildCompletionCardCanvas(game, stats) {
   const noteText =
     getGameObjectiveText(game) ||
     stats.latestSession?.note?.trim() ||
-    "That finish counts. Keep the completed shelf growing one game at a time.";
+    "That completion counts. Keep building your completed goals one by one.";
 
   const noteBoxY = 890;
   roundedRect(
@@ -239,7 +239,7 @@ export async function buildCompletionCardCanvas(game, stats) {
 
   ctx.fillStyle = tierMeta.accentText;
   ctx.font = "700 20px Inter, Arial, sans-serif";
-  ctx.fillText("Completion note", padding + 24, noteBoxY + 42);
+  ctx.fillText("Goal note", padding + 24, noteBoxY + 42);
 
   ctx.fillStyle = "#dbeafe";
   ctx.font = "500 24px Inter, Arial, sans-serif";
@@ -255,7 +255,7 @@ export async function buildCompletionCardCanvas(game, stats) {
 
   ctx.fillStyle = "rgba(255,255,255,0.7)";
   ctx.font = "600 18px Inter, Arial, sans-serif";
-  ctx.fillText("Game Progress Tracker • Finish Card", padding, height - 54);
+  ctx.fillText("Goal Tracker • Completion Card", padding, height - 54);
   ctx.textAlign = "right";
   ctx.fillText(formatDate(new Date().toISOString()), width - padding, height - 54);
   ctx.textAlign = "left";

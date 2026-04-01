@@ -115,7 +115,6 @@ export async function handleAddGame(event) {
   }
 
   try {
-    const existingGames = await getAllGames(appState.db);
     const coverImage = await optimizeUploadedImage(
       coverImageInput.files?.[0],
       "cover"
@@ -125,10 +124,6 @@ export async function handleAddGame(event) {
       "banner"
     );
 
-    const normalizedGames = enforceMainGameRules(
-      existingGames.map((game) => normalizeGameRecord(game))
-    );
-    const hasMainGame = normalizedGames.some((game) => game.isMain);
     const now = new Date().toISOString();
 
     const newGame = normalizeGameRecord({
@@ -142,7 +137,7 @@ export async function handleAddGame(event) {
       bannerImage,
       artUpdatedAt: coverImage || bannerImage ? now : null,
       status,
-      isMain: isMainEligibleStatus(status) && !hasMainGame,
+      isMain: false,
       completedAt: status === GAME_STATUSES.COMPLETED ? now : null,
       pausedAt: status === GAME_STATUSES.PAUSED ? now : null,
       droppedAt: status === GAME_STATUSES.DROPPED ? now : null,
@@ -164,8 +159,6 @@ export async function handleAddGame(event) {
           rewardXp: getGameCompletionXp(newGame),
         })
       );
-    } else if (newGame.isMain) {
-      showMessage(formMessage, t("games.add.addedMain", { title }));
     } else {
       showMessage(
         formMessage,

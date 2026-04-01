@@ -92,7 +92,7 @@
                 <p class="eyebrow" data-i18n="journey.eyebrow">Idle journey</p>
                 <h2 data-i18n="journey.title">Another world, day by day</h2>
                 <p class="muted-text" data-i18n="journey.description">
-                  Your character journeys on ahead. The more progress you make in games, the more he will push forward in his own journey.
+                  Your character journeys on ahead. The more progress you make in your goals, the more he will push forward in his own journey.
                 </p>
               </div>
             </div>
@@ -111,8 +111,8 @@
           <section class="panel tracker-shell-panel">
             <div class="section-header">
               <div>
-                <h2 data-i18n="tracker.title">Your tracker</h2>
-                <p id="listSummary" class="muted-text">No games saved yet.</p>
+                <h2 data-i18n="tracker.title">Your goals</h2>
+                <p id="listSummary" class="muted-text">No goals saved yet.</p>
               </div>
             </div>
 
@@ -140,7 +140,7 @@
                 aria-selected="false"
                 tabindex="-1"
               >
-                <span data-i18n="sessions.tabs.newGame">New Game +</span>
+                <span data-i18n="sessions.tabs.newGame">New Goal +</span>
               </button>
               <button
                 type="button"
@@ -156,20 +156,20 @@
           </section>
 
           <section class="panel sessions-panel" data-sessions-panel="log-session">
-            <h2 data-i18n="sessions.logTitle">Log a play session</h2>
+            <h2 data-i18n="sessions.logTitle">Log a progress session</h2>
             <p class="muted-text compact-note" data-i18n="sessions.logBody">
-              Session logging is for in-progress games and completed replays.
-              Backlog, paused, and dropped games should be moved first.
+              Session logging is for in-progress goals and completed goals you are revisiting.
+              Backlog, paused, and dropped goals should be moved first.
             </p>
 
             <form id="sessionForm" class="stack-form">
               <div class="field">
-                <label for="sessionGame" data-i18n="sessions.gameLabel">Game</label>
+                <label for="sessionGame" data-i18n="sessions.gameLabel">Goal</label>
                 <select id="sessionGame" name="sessionGame"></select>
               </div>
 
               <div class="field">
-                <label for="sessionMinutes" data-i18n="sessions.minutesLabel">Minutes played</label>
+                <label for="sessionMinutes" data-i18n="sessions.minutesLabel">Minutes spent</label>
                 <input
                   id="sessionMinutes"
                   name="sessionMinutes"
@@ -199,7 +199,7 @@
                   id="sessionObjective"
                   name="sessionObjective"
                   rows="2"
-                  placeholder="Optional: update what you want to do next in this game"
+                  placeholder="Optional: update what you want to do next with this goal"
                   data-i18n-placeholder="sessions.objectivePlaceholder"
                 ></textarea>
               </div>
@@ -221,32 +221,32 @@
           <section class="panel sessions-panel" data-sessions-panel="new-game" hidden>
             <div class="section-header">
               <div>
-                <h2 data-i18n="sessions.addGameSummary">Add a game</h2>
+                <h2 data-i18n="sessions.addGameSummary">Add a goal</h2>
                 <p class="muted-text" data-i18n="sessions.addGameBody">
-                  Choose whether this game has a finish line, then set it up for tracking.
+                  Choose whether this goal has a finish line, then set it up for tracking.
                 </p>
               </div>
             </div>
             <form id="gameForm" class="stack-form">
               <div class="field">
-                <label for="title" data-i18n="games.add.titleLabel">Game title</label>
+                <label for="title" data-i18n="games.add.titleLabel">Goal title</label>
                 <input
                   id="title"
                   name="title"
                   type="text"
-                  placeholder="Elden Ring"
+                  placeholder="Finish Elden Ring"
                   data-i18n-placeholder="games.add.titlePlaceholder"
                   required
                 />
               </div>
 
               <div class="field">
-                <label for="platform" data-i18n="games.add.platformLabel">Platform</label>
+                <label for="platform" data-i18n="games.add.platformLabel">Category or context</label>
                 <input
                   id="platform"
                   name="platform"
                   type="text"
-                  placeholder="PC, PS5, Switch..."
+                  placeholder="Gaming, Fitness, Work, Reading..."
                   data-i18n-placeholder="games.add.platformPlaceholder"
                 />
               </div>
@@ -265,13 +265,13 @@
               <fieldset class="field difficulty-fieldset">
                 <legend data-i18n="games.add.difficultyLabel">Completion difficulty</legend>
                 <p class="field-hint" data-i18n="games.add.difficultyHint">
-                  Pick how demanding the full clear feels. Harder clears pay out more when completed.
+                  Pick how demanding the finish line feels. Harder completions pay out more when you mark them done.
                 </p>
                 <div id="gameDifficultySelector" class="difficulty-selector" role="radiogroup">
                   <input id="gameDifficultyNotApplicable" type="radio" name="gameDifficulty" value="not-applicable" />
                   <label class="difficulty-option" for="gameDifficultyNotApplicable">
-                    <span data-i18n="difficulty.notApplicable">N/A</span>
-                    <strong data-i18n="games.add.noClearReward">No clear XP</strong>
+                    <span data-i18n="difficulty.notApplicable">No finish line</span>
+                    <strong data-i18n="games.add.noClearReward">No finish line</strong>
                   </label>
 
                   <input id="gameDifficultyVeryEasy" type="radio" name="gameDifficulty" value="very-easy" />
@@ -326,7 +326,7 @@
 
               <div class="art-upload-grid">
                 <div class="field">
-                  <label for="coverImage" data-i18n="games.add.coverLabel">Cover art</label>
+                  <label for="coverImage" data-i18n="games.add.coverLabel">Card image</label>
                   <input
                     id="coverImage"
                     name="coverImage"
@@ -334,13 +334,13 @@
                     accept="image/*"
                   />
                   <p class="field-hint" data-i18n="games.add.coverHint">
-                    Portrait art looks best. Recommended upload: 900×1200 or larger.
+                    Portrait images look best. Recommended upload: 900×1200 or larger.
                     The app crops it to a 3:4 card frame after upload.
                   </p>
                 </div>
 
                 <div class="field">
-                  <label for="bannerImage" data-i18n="games.add.bannerLabel">Banner art</label>
+                  <label for="bannerImage" data-i18n="games.add.bannerLabel">Banner image</label>
                   <input
                     id="bannerImage"
                     name="bannerImage"
@@ -348,13 +348,13 @@
                     accept="image/*"
                   />
                   <p class="field-hint" data-i18n="games.add.bannerHint">
-                    Wide artwork works best. Recommended upload: 1600×900 or larger.
+                    Wide images work best. Recommended upload: 1600×900 or larger.
                     The app crops it to a 16:9 hero frame after upload.
                   </p>
                 </div>
               </div>
 
-              <button type="submit" class="primary-button" data-i18n="games.add.submit">Add game</button>
+              <button type="submit" class="primary-button" data-i18n="games.add.submit">Add goal</button>
               <p id="formMessage" class="form-message"></p>
             </form>
           </section>
@@ -408,7 +408,7 @@
             <p class="eyebrow" data-i18n="common.settings">Settings</p>
             <h2 id="settingsModalTitle" data-i18n="settings.summary">Settings &amp; data</h2>
             <p class="muted-text" data-i18n="settings.modalBody">
-              Theme, language, backups, and local data tools all live here now.
+              Theme, language, focus rules, backups, and local data tools all live here now.
             </p>
           </div>
           <button
@@ -456,10 +456,25 @@
             </article>
 
             <article class="settings-card">
+              <p class="eyebrow" data-i18n="settings.focusedGoalsEyebrow">Focus mode</p>
+              <h3 data-i18n="settings.focusedGoalsTitle">Choose how focused goals behave</h3>
+              <p class="muted-text" data-i18n="settings.focusedGoalsBody">
+                Turn this on if you want a Focus Goal to also apply focus-tax penalties when you log sessions against other goals. Turn it off if you still want the label without the punishment.
+              </p>
+              <div class="field">
+                <label for="focusedGoalsPreference" data-i18n="settings.focusedGoalsLabel">Focused goals</label>
+                <select id="focusedGoalsPreference" name="focusedGoalsPreference">
+                  <option value="on" data-i18n="settings.focusedGoalsOn">On</option>
+                  <option value="off" data-i18n="settings.focusedGoalsOff">Off</option>
+                </select>
+              </div>
+            </article>
+
+            <article class="settings-card">
               <p class="eyebrow" data-i18n="settings.backupEyebrow">Local backup</p>
-              <h3 data-i18n="settings.backupTitle">Move your tracker to another device</h3>
+              <h3 data-i18n="settings.backupTitle">Move your goal tracker to another device</h3>
               <p class="muted-text" data-i18n="settings.backupBody">
-                Export saves your games, sessions, XP progress, artwork, and idle journey into
+                Export saves your goals, sessions, XP progress, artwork, focus settings, and idle journey into
                 one JSON backup. Import replaces the current local tracker with the
                 backup you choose.
               </p>
@@ -699,8 +714,8 @@
 
         <div class="mobile-action-sheet-header">
           <div>
-            <p class="eyebrow">Tracker actions</p>
-            <h2 id="gameActionsTitle">Manage game</h2>
+            <p class="eyebrow" data-i18n="tracker.actionSheetEyebrow">Tracker actions</p>
+            <h2 id="gameActionsTitle">Manage goal</h2>
             <p id="gameActionsMeta" class="muted-text">
               Choose what to do next.
             </p>
@@ -710,6 +725,7 @@
             type="button"
             class="secondary-button"
             data-close-game-actions
+            data-i18n="tracker.actionSheetDone"
           >
             Done
           </button>

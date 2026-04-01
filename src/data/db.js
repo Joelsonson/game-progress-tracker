@@ -47,7 +47,7 @@ export function normalizeGameRecord(game = {}) {
   return {
     ...game,
     id: typeof game.id === "string" && game.id ? game.id : crypto.randomUUID(),
-    title: typeof game.title === "string" ? game.title.trim() : "Untitled Game",
+    title: typeof game.title === "string" ? game.title.trim() : "Untitled Goal",
     platform: game.platform?.trim() || "Unspecified",
     difficulty: VALID_GAME_DIFFICULTIES.has(game.difficulty)
       ? game.difficulty

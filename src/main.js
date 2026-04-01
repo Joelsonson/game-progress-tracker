@@ -1,6 +1,6 @@
 import { openDB, normalizeGameRecord, normalizeSessionRecord } from "./data/db.js";
 import { getAllGames } from "./data/gamesRepo.js";
-import { getMeta } from "./data/metaRepo.js";
+import { getMeta, setMeta } from "./data/metaRepo.js";
 import { getAllSessions } from "./data/sessionsRepo.js";
 import {
   bannerArtPickerInput,
@@ -32,6 +32,7 @@ import {
   journeyHistoryCloseButton,
   journeyHistoryModal,
   languagePreferenceInput,
+  focusedGoalsPreferenceInput,
   journeyOutcomeCloseButton,
   journeyOutcomeModal,
   mobileQuickSwitchEl,
@@ -44,7 +45,11 @@ import {
   themePreferenceInput,
   artCropModal,
 } from "./core/dom.js";
-import { IDLE_JOURNEY_META_KEY } from "./core/constants.js";
+import {
+  DEFAULT_FOCUSED_GOALS_ENABLED,
+  FOCUSED_GOALS_META_KEY,
+  IDLE_JOURNEY_META_KEY,
+} from "./core/constants.js";
 import { buildSessionStats, buildXpSummary, enforceMainGameRules, sortGames } from "./core/formatters.js";
 import { applyStaticTranslations, normalizeLocale, setActiveLocale, t } from "./core/i18n.js";
 import { appState } from "./core/state.js";
@@ -124,6 +129,7 @@ function bindEvents() {
   importDataInput?.addEventListener("change", handleImportData);
   themePreferenceInput?.addEventListener("change", handleThemePreferenceChange);
   languagePreferenceInput?.addEventListener("change", handleLanguagePreferenceChange);
+  focusedGoalsPreferenceInput?.addEventListener("change", handleFocusedGoalsPreferenceChange);
   openSettingsButton?.addEventListener("click", openSettingsModal);
   settingsModal?.addEventListener("click", handleSettingsModalClick);
   settingsModalCloseButton?.addEventListener("click", closeSettingsModal);
@@ -258,12 +264,14 @@ function syncQuickSwitchChrome() {
 }
 
 export async function renderApp() {
-  const [gamesRaw, sessionsRaw, idleJourneyRaw] = await Promise.all([
+  const [gamesRaw, sessionsRaw, idleJourneyRaw, focusedGoalsRaw] = await Promise.all([
     getAllGames(appState.db),
     getAllSessions(appState.db),
     getMeta(appState.db, IDLE_JOURNEY_META_KEY),
+    getMeta(appState.db, FOCUSED_GOALS_META_KEY),
   ]);
 
+  appState.focusedGoalsEnabled = normalizeFocusedGoalsPreference(focusedGoalsRaw);
   const sessions = sessionsRaw.map((session) => normalizeSessionRecord(session));
   const games = enforceMainGameRules(gamesRaw.map((game) => normalizeGameRecord(game)));
   const sortedGames = sortGames(games);
@@ -285,6 +293,7 @@ export async function renderApp() {
   syncSessionsTabUi();
   syncThemePreferenceInput();
   syncLanguagePreferenceInput();
+  syncFocusedGoalsPreferenceInput();
   syncGameDifficultyPresentation();
 }
 
@@ -339,6 +348,24 @@ async function handleLanguagePreferenceChange(event) {
   await renderApp();
 }
 
+async function handleFocusedGoalsPreferenceChange(event) {
+  const nextValue = event.target instanceof HTMLSelectElement
+    ? event.target.value
+    : DEFAULT_FOCUSED_GOALS_ENABLED;
+  const nextPreference = normalizeFocusedGoalsPreference(nextValue);
+
+  appState.focusedGoalsEnabled = nextPreference;
+  syncFocusedGoalsPreferenceInput();
+
+  try {
+    await setMeta(appState.db, FOCUSED_GOALS_META_KEY, nextPreference);
+  } catch (error) {
+    console.error("Failed to save focused goals preference:", error);
+  }
+
+  await renderApp();
+}
+
 function getStoredThemePreference() {
   try {
     const storedPreference = window.localStorage.getItem("gameTracker.themePreference");
@@ -362,6 +389,13 @@ function getStoredLocalePreference() {
 
 function normalizeThemePreference(value) {
   return value === "light" || value === "dark" ? value : "system";
+}
+
+function normalizeFocusedGoalsPreference(value) {
+  if (typeof value === "boolean") return value;
+  if (value === "on") return true;
+  if (value === "off") return false;
+  return DEFAULT_FOCUSED_GOALS_ENABLED;
 }
 
 function applyThemePreference(preference) {
@@ -397,4 +431,9 @@ function syncThemePreferenceInput() {
 function syncLanguagePreferenceInput() {
   if (!languagePreferenceInput) return;
   languagePreferenceInput.value = appState.locale;
+}
+
+function syncFocusedGoalsPreferenceInput() {
+  if (!focusedGoalsPreferenceInput) return;
+  focusedGoalsPreferenceInput.value = appState.focusedGoalsEnabled ? "on" : "off";
 }

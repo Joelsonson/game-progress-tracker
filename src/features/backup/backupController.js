@@ -3,7 +3,13 @@ import { getAllGames } from "../../data/gamesRepo.js";
 import { clearAllData, getMeta, replaceAllData, setMeta } from "../../data/metaRepo.js";
 import { getAllSessions } from "../../data/sessionsRepo.js";
 import { gameForm, meaningfulProgressInput, sessionForm, settingsMessage } from "../../core/dom.js";
-import { IDLE_JOURNEY_META_KEY, IMPORT_FILE_ACCEPT, IMPORT_SCHEMA_VERSION } from "../../core/constants.js";
+import {
+  DEFAULT_FOCUSED_GOALS_ENABLED,
+  FOCUSED_GOALS_META_KEY,
+  IDLE_JOURNEY_META_KEY,
+  IMPORT_FILE_ACCEPT,
+  IMPORT_SCHEMA_VERSION,
+} from "../../core/constants.js";
 import { enforceMainGameRules, getErrorMessage } from "../../core/formatters.js";
 import { t } from "../../core/i18n.js";
 import { appState } from "../../core/state.js";
@@ -14,20 +20,25 @@ import { normalizeJourneyState } from "../journey/journeyEngine.js";
 
 export async function handleExportData() {
   try {
-    const [games, sessions, idleJourney] = await Promise.all([
+    const [games, sessions, idleJourney, focusedGoalsEnabled] = await Promise.all([
       getAllGames(appState.db),
       getAllSessions(appState.db),
       getMeta(appState.db, IDLE_JOURNEY_META_KEY),
+      getMeta(appState.db, FOCUSED_GOALS_META_KEY),
     ]);
 
     const payload = {
-      app: "game-progress-tracker",
+      app: "goal-progress-tracker",
       schemaVersion: IMPORT_SCHEMA_VERSION,
       exportedAt: new Date().toISOString(),
       games: games.map((game) => normalizeGameRecord(game)),
       sessions: sessions.map((session) => normalizeSessionRecord(session)),
       meta: {
         [IDLE_JOURNEY_META_KEY]: normalizeJourneyState(idleJourney),
+        [FOCUSED_GOALS_META_KEY]:
+          typeof focusedGoalsEnabled === "boolean"
+            ? focusedGoalsEnabled
+            : DEFAULT_FOCUSED_GOALS_ENABLED,
       },
     };
 
@@ -58,7 +69,7 @@ function createBackupFilename(isoDate) {
     .replaceAll(":", "-")
     .replaceAll(".", "-");
 
-  return createSafeFilename(`game progress backup ${safeDate}.json`);
+  return createSafeFilename(`goal tracker backup ${safeDate}.json`);
 }
 
 export async function handleImportData(event) {
@@ -152,7 +163,7 @@ export function prepareImportPayload(parsed) {
     !Array.isArray(parsed.games) ||
     !Array.isArray(parsed.sessions)
   ) {
-    throw new Error("That file does not look like a valid tracker export.");
+    throw new Error("That file does not look like a valid goal tracker export.");
   }
 
   const normalizedGames = enforceMainGameRules(
@@ -168,12 +179,17 @@ export function prepareImportPayload(parsed) {
   const idleJourney = normalizeJourneyState(
     parsed.meta?.[IDLE_JOURNEY_META_KEY] || parsed.idleJourney || null
   );
+  const focusedGoalsEnabled =
+    typeof parsed.meta?.[FOCUSED_GOALS_META_KEY] === "boolean"
+      ? parsed.meta[FOCUSED_GOALS_META_KEY]
+      : DEFAULT_FOCUSED_GOALS_ENABLED;
 
   return {
     games: normalizedGames,
     sessions: normalizedSessions,
     meta: {
       [IDLE_JOURNEY_META_KEY]: idleJourney,
+      [FOCUSED_GOALS_META_KEY]: focusedGoalsEnabled,
     },
   };
 }

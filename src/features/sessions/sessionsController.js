@@ -78,6 +78,7 @@ export async function handleAddSession(event) {
       allGames: games,
       meaningfulProgress,
       minutes,
+      focusedGoalsEnabled: appState.focusedGoalsEnabled,
     });
 
     const now = new Date().toISOString();
@@ -138,7 +139,7 @@ export async function handleAddSession(event) {
     showToast(
       `Logged ${formatMinutes(minutes)} for ${selectedGame.title}. ${xpBreakdown.totalText}.`,
       {
-        title: "Session logged",
+        title: "Progress logged",
       }
     );
 
@@ -166,5 +167,5 @@ function buildLevelUpToast(previousLevel, nextLevel) {
   const levelGain = Math.max(1, nextLevel - previousLevel);
   const pointLabel = levelGain === 1 ? "point" : "points";
 
-  return `Reached tracker level ${nextLevel}. ${levelGain} skill ${pointLabel} ready to spend.`;
+  return `Reached goal tracker level ${nextLevel}. ${levelGain} skill ${pointLabel} ready to spend.`;
 }

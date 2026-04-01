@@ -1,5 +1,6 @@
 import { isMainEligibleStatus, normalizeGameRecord } from "../data/db.js";
 import {
+  DEFAULT_FOCUSED_GOALS_ENABLED,
   FOCUS_TAX_META,
   GAME_DIFFICULTIES,
   GAME_DIFFICULTY_META,
@@ -310,7 +311,7 @@ export function renderCoverVisual(game, className) {
   if (game.coverImage) {
     return `<img class="${className}" src="${escapeAttribute(
       game.coverImage
-    )}" alt="${escapeAttribute(game.title)} cover art" />`;
+    )}" alt="${escapeAttribute(game.title)} card image" />`;
   }
 
   const initials = getInitials(game.title);
@@ -416,7 +417,7 @@ export function escapeAttribute(value) {
 }
 
 export function getInitials(title) {
-  return String(title || "Game")
+  return String(title || "Goal")
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
@@ -514,7 +515,17 @@ export function getCompletedStateText(game, date) {
       });
 }
 
-export function rollFocusPenalty({ selectedGame, allGames, meaningfulProgress, minutes }) {
+export function rollFocusPenalty({
+  selectedGame,
+  allGames,
+  meaningfulProgress,
+  minutes,
+  focusedGoalsEnabled = DEFAULT_FOCUSED_GOALS_ENABLED,
+}) {
+  if (!focusedGoalsEnabled) {
+    return { penaltyXp: 0, reason: "" };
+  }
+
   const mainGame = allGames.find((game) => game.isMain);
 
   if (!mainGame || mainGame.id === selectedGame.id) {

@@ -65,6 +65,9 @@ export const importDataInput = document.querySelector("#importDataInput");
 export const settingsMessage = document.querySelector("#settingsMessage");
 export const themePreferenceInput = document.querySelector("#themePreference");
 export const languagePreferenceInput = document.querySelector("#languagePreference");
+export const focusedGoalsPreferenceInput = document.querySelector(
+  "#focusedGoalsPreference"
+);
 export const openSettingsButton = document.querySelector("#openSettingsButton");
 export const settingsModal = document.querySelector("#settingsModal");
 export const settingsModalCloseButton = document.querySelector(

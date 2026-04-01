@@ -113,7 +113,7 @@ function renderSessionCards(sessions, gameMap) {
   return sessions
     .map((session) => {
       const relatedGame = gameMap.get(session.gameId);
-      const gameTitle = escapeHtml(relatedGame?.title || "Unknown game");
+      const gameTitle = escapeHtml(relatedGame?.title || t("sessions.card.unknownGoal"));
       const safeNote = escapeHtml(session.note || "");
       const progressBadge = session.meaningfulProgress
         ? `<span class="badge badge-progress">${escapeHtml(
@@ -129,7 +129,7 @@ function renderSessionCards(sessions, gameMap) {
           : "badge session-xp session-xp-negative";
       const focusTaxNote = session.focusPenaltyXp
         ? `<p class="focus-tax-note">${escapeHtml(
-            session.focusPenaltyReason || "Focus tax"
+            session.focusPenaltyReason || t("sessions.card.focusTax")
           )} • ${xpBreakdown.focusPenalty}</p>`
         : "";
 

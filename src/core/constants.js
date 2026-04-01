@@ -74,7 +74,7 @@ export const IMAGE_PRESET = {
     width: 480,
     height: 640,
     quality: 0.88,
-    label: "cover art",
+    label: "card image",
     ratioLabel: "3:4 portrait",
     recommendedSize: "900×1200 or larger",
   },
@@ -82,7 +82,7 @@ export const IMAGE_PRESET = {
     width: 1280,
     height: 720,
     quality: 0.86,
-    label: "banner art",
+    label: "banner image",
     ratioLabel: "16:9 widescreen",
     recommendedSize: "1600×900 or larger",
   },
@@ -95,7 +95,7 @@ export const CARD_TIER_META = {
     accentA: "#c19162",
     accentB: "#8b5e34",
     accentText: "#f5d0b5",
-    subtitle: "A clean clear. Momentum matters.",
+    subtitle: "A solid completion. Momentum matters.",
   },
   silver: {
     label: "Silver Finish",
@@ -103,7 +103,7 @@ export const CARD_TIER_META = {
     accentA: "#e2e8f0",
     accentB: "#64748b",
     accentText: "#f8fafc",
-    subtitle: "Strong consistency. A proper run.",
+    subtitle: "Strong consistency. A proper push.",
   },
   gold: {
     label: "Gold Finish",
@@ -111,7 +111,7 @@ export const CARD_TIER_META = {
     accentA: "#facc15",
     accentB: "#ca8a04",
     accentText: "#fef3c7",
-    subtitle: "High-value clear with serious effort.",
+    subtitle: "High-value completion with serious effort.",
   },
   prismatic: {
     label: "Prismatic Finish",
@@ -119,7 +119,7 @@ export const CARD_TIER_META = {
     accentA: "#c084fc",
     accentB: "#7c3aed",
     accentText: "#f3e8ff",
-    subtitle: "Standout finish. This one shines.",
+    subtitle: "Standout completion. This one shines.",
   },
   legendary: {
     label: "Legendary Finish",
@@ -127,7 +127,7 @@ export const CARD_TIER_META = {
     accentA: "#34d399",
     accentB: "#059669",
     accentText: "#d1fae5",
-    subtitle: "Elite finish. Card-worthy with no notes.",
+    subtitle: "Elite completion. Card-worthy with no notes.",
   },
 };
 
@@ -168,9 +168,11 @@ export const STATUS_META = {
 };
 
 export const IMPORT_FILE_ACCEPT = ["application/json", "text/json", ""];
-export const IMPORT_SCHEMA_VERSION = 2;
+export const IMPORT_SCHEMA_VERSION = 3;
 
 export const IDLE_JOURNEY_META_KEY = "idleJourney";
+export const FOCUSED_GOALS_META_KEY = "focusedGoalsEnabled";
+export const DEFAULT_FOCUSED_GOALS_ENABLED = true;
 export const JOURNEY_BOSS_DISTANCE = 100;
 export const JOURNEY_TICK_MS = 1000 * 60 * 30;
 export const JOURNEY_LOG_LIMIT = 7;
@@ -185,12 +187,12 @@ export const JOURNEY_FLAG_KEYS = ["foundWeapon", "boarDefeated", "slimeSapped"];
 
 export const FOCUS_TAX_META = {
   sideQuest: {
-    label: "Side-quest drift",
+    label: "Focus drift",
     min: 6,
     max: 18,
   },
   replay: {
-    label: "Replay distraction",
+    label: "Revisit drift",
     min: 10,
     max: 24,
   },
