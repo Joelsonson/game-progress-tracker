@@ -93,6 +93,13 @@ const JOURNEY_PORTRAIT_SPRITE = {
   maxDisplayHeight: 220,
 };
 
+const JOURNEY_BATTLE_ART = {
+  0: {
+    src: "./assets/journey/images/Boarimage.png",
+    alt: "Cornered Forest Boar",
+  },
+};
+
 const JOURNEY_LOCALIZED_META = {
   ja: {
     classes: {
@@ -638,9 +645,7 @@ export function openJourneyEventModal(eventEntry) {
   journeyEventTitleEl.textContent = getJourneyEventTitle(eventEntry.title);
   journeyEventMetaEl.textContent = `${formatDateTime(eventEntry.createdAt)} • ${eventEntry.teaser}`;
   journeyEventBodyEl.innerHTML = `
-    <div class="journey-event-panel">
-      <p>${escapeHtml(eventEntry.detail)}</p>
-    </div>
+    ${renderJourneyEventPanel(eventEntry)}
 
     <div class="journey-event-choice-list">
       ${eventEntry.choices
@@ -901,6 +906,191 @@ export function handleJourneyHistoryModalClick(event) {
   if (event.target.closest("[data-close-journey-history]")) {
     closeJourneyHistoryModal();
   }
+}
+
+function renderJourneyEventPanel(eventEntry) {
+  if (eventEntry?.kind === "boss" && eventEntry.battle) {
+    return renderJourneyBossBattlePanel(eventEntry);
+  }
+
+  return `
+    <div class="journey-event-panel">
+      <p>${escapeHtml(eventEntry?.detail || "")}</p>
+    </div>
+  `;
+}
+
+function renderJourneyBossBattlePanel(eventEntry) {
+  const battle = eventEntry?.battle;
+  if (!battle) {
+    return `
+      <div class="journey-event-panel">
+        <p>${escapeHtml(eventEntry?.detail || "")}</p>
+      </div>
+    `;
+  }
+
+  const bossArt = getJourneyBossBattleArt(battle);
+  const loadoutLabel = battle.weaponLabel || "Unarmed";
+
+  return `
+    <div class="journey-event-panel journey-battle-panel">
+      <div class="journey-battle-overview">
+        ${renderJourneyBossBattleArt(battle, bossArt)}
+        <div class="journey-battle-status">
+          <div class="journey-battle-chip-row">
+            <span class="journey-chip is-active">Turn ${battle.turn} / ${battle.maxTurns}</span>
+            <span class="journey-chip">${escapeHtml(loadoutLabel)}</span>
+          </div>
+          ${renderJourneyBossBattleHealthCard({
+            label: "Boss",
+            name: battle.bossName,
+            current: battle.bossHp,
+            max: battle.bossMaxHp,
+            tone: "boss",
+            lastDamage: battle.lastBossDamage,
+            damageLabel: "You hit for",
+          })}
+          ${renderJourneyBossBattleHealthCard({
+            label: "You",
+            name: "Your health",
+            current: battle.heroHp,
+            max: battle.heroMaxHp,
+            tone: "hero",
+            lastDamage: battle.lastHeroDamage,
+            damageLabel: "You took",
+          })}
+        </div>
+      </div>
+      <div class="journey-battle-copy">
+        <p>${escapeHtml(eventEntry.detail)}</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderJourneyBossBattleArt(battle, art) {
+  if (art?.src) {
+    return `
+      <div class="journey-battle-art">
+        <img
+          class="journey-battle-art-image"
+          src="${art.src}"
+          alt="${escapeAttribute(art.alt || battle.bossName)}"
+        />
+      </div>
+    `;
+  }
+
+  return `
+    <div class="journey-battle-art is-placeholder">
+      <div class="journey-battle-art-placeholder" aria-hidden="true">
+        <span class="journey-battle-art-monogram">${escapeHtml(
+          getJourneyBattleMonogram(battle.bossName)
+        )}</span>
+      </div>
+      <div class="journey-battle-art-copy">
+        <strong>${escapeHtml(battle.bossName)}</strong>
+        <span>Boss art placeholder</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderJourneyBossBattleHealthCard({
+  label,
+  name,
+  current,
+  max,
+  tone,
+  lastDamage,
+  damageLabel,
+}) {
+  const safeCurrent = Math.max(0, Math.round(Number(current) || 0));
+  const safeMax = Math.max(1, Math.round(Number(max) || 1));
+  const safeLastDamage = Math.max(0, Math.round(Number(lastDamage) || 0));
+  const percent = Math.round(clamp((safeCurrent / safeMax) * 100, 0, 100));
+  const previousPercent = Math.round(
+    clamp(((safeCurrent + safeLastDamage) / safeMax) * 100, 0, 100)
+  );
+  const lossPercent = Math.max(0, previousPercent - percent);
+  const damageBurst = renderJourneyBossBattleDamageBurst(
+    safeLastDamage,
+    safeMax,
+    tone,
+    damageLabel
+  );
+
+  return `
+    <section class="journey-battle-health-card is-${escapeAttribute(tone)}">
+      <div class="journey-battle-health-head">
+        <div>
+          <span class="journey-battle-health-label">${escapeHtml(label)}</span>
+          <strong>${escapeHtml(name)}</strong>
+        </div>
+        <span class="journey-battle-health-value">${safeCurrent} / ${safeMax}</span>
+      </div>
+      <div class="journey-battle-health-track">
+        <div
+          class="journey-battle-health-fill is-${escapeAttribute(tone)}"
+          style="width: ${percent}%"
+        ></div>
+        ${
+          lossPercent > 0
+            ? `
+              <div
+                class="journey-battle-health-loss is-${escapeAttribute(tone)}"
+                style="left: ${percent}%; width: ${lossPercent}%"
+              ></div>
+            `
+            : ""
+        }
+      </div>
+      <div class="journey-battle-health-meta">
+        <span>${percent}%</span>
+        ${damageBurst}
+      </div>
+    </section>
+  `;
+}
+
+function renderJourneyBossBattleDamageBurst(damage, max, tone, damageLabel) {
+  if (!damage) {
+    return `<span class="journey-battle-damage-pill is-muted">No damage last exchange</span>`;
+  }
+
+  const chevrons = new Array(getJourneyBattleChevronCount(damage, max)).fill("›").join("");
+
+  return `
+    <span class="journey-battle-damage-pill is-${escapeAttribute(tone)}">
+      <span class="journey-battle-damage-chevrons" aria-hidden="true">${escapeHtml(
+        chevrons
+      )}</span>
+      <span>${escapeHtml(damageLabel)} ${damage}</span>
+    </span>
+  `;
+}
+
+function getJourneyBattleChevronCount(damage, max) {
+  const safeMax = Math.max(1, Number(max) || 1);
+  const ratio = clamp((Number(damage) || 0) / safeMax, 0, 1);
+
+  if (ratio >= 0.34) return 3;
+  if (ratio >= 0.18) return 2;
+  return 1;
+}
+
+function getJourneyBossBattleArt(battle) {
+  return JOURNEY_BATTLE_ART[Math.max(0, Math.floor(Number(battle?.bossIndex) || 0))] || null;
+}
+
+function getJourneyBattleMonogram(name) {
+  return String(name || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("");
 }
 
 export function renderIdleJourney(state, games, sessions, xpSummary) {

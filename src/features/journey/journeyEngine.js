@@ -1612,7 +1612,7 @@ export function resolveJourneyBossBattleTurn(
   const atDate = new Date(atIso);
   const battle = eventEntry?.battle;
   const boss = getJourneyBoss(state.bossIndex);
-  const profile = getJourneyBossBattleProfile(state.bossIndex, boss);
+  const profile = getJourneyBossBattleProfile(state.bossIndex, boss, journeyStats);
   const currentTurn = getJourneyBossBattleTurnProfile(profile, battle?.turn);
   const move = currentTurn?.moves.find((entry) => entry.key === choice?.id);
 
@@ -1656,6 +1656,12 @@ export function resolveJourneyBossBattleTurn(
     0,
     journeyStats.maxHunger
   );
+  battle.heroHp = Math.round(state.currentHp);
+  battle.heroMaxHp = Math.round(journeyStats.maxHp);
+  battle.lastBossDamage = Math.round(bossHpBefore - battle.bossHp);
+  battle.lastHeroDamage = Math.round(hpBefore - state.currentHp);
+  battle.weaponLabel = journeyStats?.equippedWeaponMeta?.label || "";
+  battle.heroBattleNote = buildJourneyBossBattleLoadoutNote(state.bossIndex, journeyStats);
 
   const bossHpPercent = getJourneyBossBattlePercent(battle.bossHp, battle.bossMaxHp);
   const heroHpPercent = getJourneyBossBattlePercent(
@@ -1721,6 +1727,10 @@ export function resolveJourneyBossBattleTurn(
       {
         label: `Damage dealt ${Math.round(bossHpBefore - battle.bossHp)}`,
         className: "is-positive",
+      },
+      {
+        label: `Damage taken ${Math.round(hpBefore - state.currentHp)}`,
+        className: "is-negative",
       },
     ],
   };
@@ -1824,7 +1834,7 @@ function buildJourneyStretchBossBattleEvent(
   existingBattle = null
 ) {
   const boss = getJourneyBoss(state.bossIndex);
-  const profile = getJourneyBossBattleProfile(state.bossIndex, boss);
+  const profile = getJourneyBossBattleProfile(state.bossIndex, boss, journeyStats);
   if (!profile) return null;
 
   const battle = existingBattle
@@ -1835,6 +1845,12 @@ function buildJourneyStretchBossBattleEvent(
           0,
           existingBattle.bossMaxHp || JOURNEY_BOSS_BATTLE_MAX_HP
         ),
+        heroHp: Math.round(state.currentHp),
+        heroMaxHp: Math.round(journeyStats.maxHp),
+        lastBossDamage: Math.max(0, Math.round(Number(existingBattle.lastBossDamage) || 0)),
+        lastHeroDamage: Math.max(0, Math.round(Number(existingBattle.lastHeroDamage) || 0)),
+        weaponLabel: journeyStats?.equippedWeaponMeta?.label || "",
+        heroBattleNote: buildJourneyBossBattleLoadoutNote(state.bossIndex, journeyStats),
       }
     : {
         bossIndex: state.bossIndex,
@@ -1843,13 +1859,24 @@ function buildJourneyStretchBossBattleEvent(
         maxTurns: JOURNEY_BOSS_BATTLE_TURN_LIMIT,
         bossHp: JOURNEY_BOSS_BATTLE_MAX_HP,
         bossMaxHp: JOURNEY_BOSS_BATTLE_MAX_HP,
+        heroHp: Math.round(state.currentHp),
+        heroMaxHp: Math.round(journeyStats.maxHp),
+        lastBossDamage: 0,
+        lastHeroDamage: 0,
+        weaponLabel: journeyStats?.equippedWeaponMeta?.label || "",
+        heroBattleNote: buildJourneyBossBattleLoadoutNote(state.bossIndex, journeyStats),
         intro: profile.intro,
         opening: profile.opening,
         lastExchange: "",
       };
   const currentTurn = getJourneyBossBattleTurnProfile(profile, battle.turn);
   if (!currentTurn) return null;
-  const detail = buildJourneyBossBattleDetail(battle, profile, state, journeyStats);
+  const detail = buildJourneyBossBattleDetail(battle, profile);
+  const bossHpPercent = getJourneyBossBattlePercent(battle.bossHp, battle.bossMaxHp);
+  const heroHpPercent = getJourneyBossBattlePercent(
+    battle.heroHp ?? state.currentHp,
+    battle.heroMaxHp ?? journeyStats.maxHp
+  );
 
   return normalizeJourneyEvent(
     {
@@ -1858,10 +1885,7 @@ function buildJourneyStretchBossBattleEvent(
       kind: "boss",
       repeatable: false,
       title: boss.name,
-      teaser: `Turn ${battle.turn}/${battle.maxTurns} • ${describeJourneyBattleCondition(
-        getJourneyBossBattlePercent(battle.bossHp, battle.bossMaxHp),
-        "enemy"
-      )}`,
+      teaser: `Turn ${battle.turn}/${battle.maxTurns} • Boss ${bossHpPercent}% HP • You ${heroHpPercent}% HP`,
       detail,
       createdAt: existingEvent?.createdAt || atDate.toISOString(),
       battle,
@@ -1885,22 +1909,17 @@ function buildJourneyStretchBossBattleEvent(
   );
 }
 
-function buildJourneyBossBattleDetail(battle, profile, state, journeyStats) {
+function buildJourneyBossBattleDetail(battle, profile) {
   const currentTurn = getJourneyBossBattleTurnProfile(profile, battle.turn);
   if (!currentTurn) {
     return `${battle.bossName} is still blocking the road.`;
   }
-  const bossHpPercent = getJourneyBossBattlePercent(battle.bossHp, battle.bossMaxHp);
-  const heroHpPercent = getJourneyBossBattlePercent(state.currentHp, journeyStats.maxHp);
   const leadText =
     battle.turn === 1
       ? `${battle.intro} ${battle.opening} ${currentTurn.scene}`
       : `${battle.lastExchange || profile.opening} ${currentTurn.scene}`;
 
-  return `${leadText} ${currentTurn.prompt} Right now ${battle.bossName} looks ${describeJourneyBattleCondition(
-    bossHpPercent,
-    "enemy"
-  )}, and you look ${describeJourneyBattleCondition(heroHpPercent, "hero")}.`;
+  return [leadText, currentTurn.prompt, battle.heroBattleNote].filter(Boolean).join(" ");
 }
 
 function buildJourneyBossBattleStatusText(battle, state, journeyStats) {
@@ -1908,23 +1927,34 @@ function buildJourneyBossBattleStatusText(battle, state, journeyStats) {
   const heroHpPercent = getJourneyBossBattlePercent(state.currentHp, journeyStats.maxHp);
 
   if (battle.bossHp <= 0) {
-    return `${battle.bossName} drops before it can recover.`;
+    return `${battle.bossName} crashes down before it can recover.`;
   }
 
   if (state.currentHp <= 0) {
-    return `You hit the ground before the stretch can break in your favor.`;
+    return `The hit drops you before the road breaks your way.`;
   }
 
   if (battle.turn >= battle.maxTurns) {
     return heroHpPercent > bossHpPercent
-      ? `${battle.bossName} looks worse than you do and finally gives ground.`
-      : `${battle.bossName} still looks stronger than you in this moment.`;
+      ? `${battle.bossName} finally gives ground.`
+      : `${battle.bossName} is still winning this exchange.`;
   }
 
-  return `The fight is still live, with ${battle.bossName} looking ${describeJourneyBattleCondition(
-    bossHpPercent,
-    "enemy"
-  )} and you looking ${describeJourneyBattleCondition(heroHpPercent, "hero")}.`;
+  return `Both of you are still in it, and the next clean hit could swing the road.`;
+}
+
+function buildJourneyBossBattleLoadoutNote(bossIndex, journeyStats) {
+  const weaponLabel = String(journeyStats?.equippedWeaponMeta?.label || "").trim();
+
+  if (weaponLabel) {
+    return bossIndex === 0
+      ? `You keep ${weaponLabel} ready and wait for one clean opening.`
+      : `You keep ${weaponLabel} ready and look for the next opening.`;
+  }
+
+  return bossIndex === 0
+    ? "You have no proper weapon, so every opening has to come from timing, footing, and nerve."
+    : "You are fighting without a proper weapon, so space and timing matter more than ever.";
 }
 
 function resolveJourneyBossBattleVictory(
@@ -1960,11 +1990,11 @@ function resolveJourneyBossBattleVictory(
 
   const victoryText =
     finalOutcome === "defeated"
-      ? `You bring ${boss.name} down and clear the stretch. By the end, you still look ${describeJourneyBattleCondition(
+      ? `You bring ${boss.name} down and clear the stretch. You finish the fight ${describeJourneyBattleCondition(
           getJourneyBossBattlePercent(state.currentHp, journeyStats.maxHp),
           "hero"
         )}. Rewards: ${rewardText}.`
-      : `You outlast ${boss.name} and force it to back off, leaving it in worse shape than you. By the end, you still look ${describeJourneyBattleCondition(
+      : `You outlast ${boss.name} and force it to back off. You finish the fight ${describeJourneyBattleCondition(
           getJourneyBossBattlePercent(state.currentHp, journeyStats.maxHp),
           "hero"
         )}. Rewards: ${rewardText}.`;
@@ -2001,7 +2031,9 @@ function resolveJourneyBossBattleLoss(state, journeyStats, atDate, boss) {
   return `${defeatText} You are forced into recovery before you can try again.`;
 }
 
-function getJourneyBossBattleProfile(bossIndex, boss) {
+function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
+  const hasWeapon = Boolean(journeyStats?.equippedWeaponMeta);
+
   if (bossIndex === 0) {
     return {
       intro:
@@ -2010,8 +2042,8 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
         "There is no more road beyond this point until one of you gives way.",
       turnPressure: 1.5,
       turnHungerCost: 2,
-      counterText: (_turn, bossConditionText, heroConditionText) =>
-        `The next clash comes fast. The boar now looks ${bossConditionText}, and you look ${heroConditionText}.`,
+      counterText: () =>
+        "The boar wheels hard in the mud and comes again before the trail settles.",
       turns: [
         {
           scene:
@@ -2021,9 +2053,11 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
           moves: [
             {
               key: "boar:shoulder-cut",
-              label: "Slide wide and cut behind the shoulder",
+              label: hasWeapon
+                ? "Slide wide and cut behind the shoulder"
+                : "Slide wide and smash into its shoulder",
               preview: "Use footwork and timing to punish the charge.",
-              highlightWord: "cut",
+              highlightWord: hasWeapon ? "cut" : "smash",
               statKey: "finesse",
               chanceBase: 0.38,
               chancePerStat: 0.05,
@@ -2032,13 +2066,19 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
               bossDamage: { successBase: 27, successPerStat: 2.3, failBase: 10, failPerStat: 0.8 },
               selfDamage: { successBase: 8, failBase: 16, reductionPerStat: 0.55 },
               successText:
-                "You turn just outside the tusks and rake a deep line behind the shoulder before the boar can twist back into you.",
+                hasWeapon
+                  ? "You slip outside the tusks and cut deep behind the shoulder before the boar can turn."
+                  : "You slip outside the tusks and hammer into its shoulder before the boar can turn.",
               failureText:
-                "You almost make the angle, but the boar clips you on the way past and forces a messy, shallow strike.",
+                hasWeapon
+                  ? "You almost clear the tusks, but the boar clips you and your hit lands shallow."
+                  : "You almost clear the tusks, but the boar clips you and your hit glances off.",
             },
             {
               key: "boar:brace-thrust",
-              label: "Brace low and drive straight into the charge",
+              label: hasWeapon
+                ? "Brace low and drive straight into the charge"
+                : "Brace low and crash into the charge",
               preview: "Meet force with force and try to stop it cold.",
               highlightWord: "Brace",
               statKey: "might",
@@ -2049,13 +2089,19 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
               bossDamage: { successBase: 31, successPerStat: 2.5, failBase: 12, failPerStat: 1 },
               selfDamage: { successBase: 10, failBase: 18, reductionPerStat: 0.48 },
               successText:
-                "You plant your feet, catch the rush head-on, and shove your weapon in hard enough to make the boar scream past you.",
+                hasWeapon
+                  ? "You plant your feet and drive your weapon in hard enough to send the boar screaming past."
+                  : "You plant your feet and slam into the rush hard enough to throw the boar off line.",
               failureText:
-                "The impact lands uglier than planned. You hurt it, but the charge folds straight through your guard.",
+                hasWeapon
+                  ? "The impact lands uglier than planned. You hurt it, but the charge tears through your guard."
+                  : "The impact lands uglier than planned. You check the rush, but it tears through your guard anyway.",
             },
             {
               key: "boar:root-feint",
-              label: "Bait it across the roots and strike when it stumbles",
+              label: hasWeapon
+                ? "Bait it across the roots and strike when it stumbles"
+                : "Bait it across the roots and hit when it stumbles",
               preview: "Keep your nerve and make the ground fight for you.",
               highlightWord: "Bait",
               statKey: "resolve",
@@ -2066,9 +2112,11 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
               bossDamage: { successBase: 24, successPerStat: 2.1, failBase: 9, failPerStat: 0.7 },
               selfDamage: { successBase: 7, failBase: 14, reductionPerStat: 0.58 },
               successText:
-                "You hold just long enough for the boar to hit the roots wrong, then carve into the opening while it scrabbles for footing.",
+                hasWeapon
+                  ? "You hold your nerve, the boar hits the roots wrong, and you strike as it loses its footing."
+                  : "You hold your nerve, the boar hits the roots wrong, and you crash into it as it loses its footing.",
               failureText:
-                "You wait a heartbeat too long and the boar barrels through the trap before you can turn it cleanly.",
+                "You wait a beat too long and the boar blows through the trap before you can turn it.",
             },
           ],
         },
@@ -2080,9 +2128,11 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
           moves: [
             {
               key: "boar:eye-dust",
-              label: "Kick dirt high and stab through the blink",
+              label: hasWeapon
+                ? "Kick dirt high and strike through the opening"
+                : "Kick dirt high and drive in while it blinks",
               preview: "Create a split-second blind spot and use it.",
-              highlightWord: "blink",
+              highlightWord: hasWeapon ? "strike" : "blinks",
               statKey: "finesse",
               chanceBase: 0.36,
               chancePerStat: 0.05,
@@ -2091,9 +2141,11 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
               bossDamage: { successBase: 25, successPerStat: 2.2, failBase: 10, failPerStat: 0.8 },
               selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.55 },
               successText:
-                "Dirt flashes up into the boar's face and your weapon is already inside that brief, furious blink.",
+                hasWeapon
+                  ? "Dirt flashes into its face and your strike lands in the opening."
+                  : "Dirt flashes into its face and you drive in before it can recover.",
               failureText:
-                "The dirt buys less than you hoped, and you only scrape it before the boar shoulders you backward.",
+                "The dirt buys less than you hoped, and the boar shoulders you backward.",
             },
             {
               key: "boar:jaw-hook",
@@ -2108,9 +2160,9 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
               bossDamage: { successBase: 30, successPerStat: 2.4, failBase: 11, failPerStat: 0.9 },
               selfDamage: { successBase: 11, failBase: 18, reductionPerStat: 0.46 },
               successText:
-                "You catch the tusk line at just the right instant and wrench the boar off its own charge hard enough to spill blood and footing together.",
+                "You catch the tusk line at the right instant and wrench the boar hard off its own charge.",
               failureText:
-                "You get hands on it, but not enough leverage. The boar rips free and drags you through the exchange.",
+                "You get hands on it, but not enough leverage. The boar rips free and drags you with it.",
             },
             {
               key: "boar:tree-line",
@@ -2125,9 +2177,9 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
               bossDamage: { successBase: 23, successPerStat: 2, failBase: 9, failPerStat: 0.7 },
               selfDamage: { successBase: 7, failBase: 14, reductionPerStat: 0.58 },
               successText:
-                "You give it just enough lane to overcommit into the trees, then hammer the rebound while it fights its own turn.",
+                "You give it just enough lane to overcommit into the trees, then hammer the rebound.",
               failureText:
-                "You try to sell the retreat, but the boar keeps better footing than expected and crashes into you before the trap closes.",
+                "You sell the retreat, but the boar keeps its footing and crashes into you before the trap closes.",
             },
           ],
         },
@@ -2139,9 +2191,11 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
           moves: [
             {
               key: "boar:hamstring-finish",
-              label: "Cut low and leave it no leg to push from",
+              label: hasWeapon
+                ? "Cut low and take its drive away"
+                : "Sweep low and take its drive away",
               preview: "A technical finish aimed at ending the charge for good.",
-              highlightWord: "finish",
+              highlightWord: hasWeapon ? "Cut" : "Sweep",
               statKey: "finesse",
               chanceBase: 0.37,
               chancePerStat: 0.05,
@@ -2150,9 +2204,11 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
               bossDamage: { successBase: 29, successPerStat: 2.3, failBase: 11, failPerStat: 0.8 },
               selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.56 },
               successText:
-                "You go low at exactly the right moment and take the drive out of its back leg, leaving the beast stumbling where it wanted to kill.",
+                hasWeapon
+                  ? "You go low at the right moment and tear the drive out of its back leg."
+                  : "You go low at the right moment and smash through its leg, stealing the rush.",
               failureText:
-                "You get low, but not low enough. The boar clips you hard before you can finish the cut.",
+                "You go low, but not low enough. The boar clips you hard on the way through.",
             },
             {
               key: "boar:front-on-break",
@@ -2167,9 +2223,9 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
               bossDamage: { successBase: 32, successPerStat: 2.5, failBase: 12, failPerStat: 0.9 },
               selfDamage: { successBase: 10, failBase: 18, reductionPerStat: 0.48 },
               successText:
-                "You absorb the last rush without folding, drive through the shock, and leave the boar unable to keep pressing the road.",
+                "You absorb the last rush without folding and hit back hard enough to break its momentum for good.",
               failureText:
-                "You stand into it, but the final rush lands like a falling tree and the answer costs you more than planned.",
+                "You stand into it, but the final rush lands like a falling tree and costs you more than planned.",
             },
             {
               key: "boar:blood-scent",
@@ -2184,9 +2240,9 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
               bossDamage: { successBase: 24, successPerStat: 2.1, failBase: 10, failPerStat: 0.8 },
               selfDamage: { successBase: 7, failBase: 14, reductionPerStat: 0.6 },
               successText:
-                "You refuse to flinch and the boar feels it. When it finally commits, the opening is smaller but far more final.",
+                "You refuse to flinch. When the boar finally commits, the opening is small but enough.",
               failureText:
-                "You hold, but the boar reads only blood and weakness in the moment, forcing a harsher collision than you wanted.",
+                "You hold, but the boar reads weakness in the moment and the collision gets ugly.",
             },
           ],
         },
@@ -2202,8 +2258,8 @@ function getJourneyBossBattleProfile(bossIndex, boss) {
         "This stretch becomes a three-turn contest of space, nerve, and who gets to decide the shape of the pack.",
       turnPressure: 1.8,
       turnHungerCost: 2,
-      counterText: (_turn, bossConditionText, heroConditionText) =>
-        `The pack keeps shifting around you. The alpha now looks ${bossConditionText}, and you look ${heroConditionText}.`,
+      counterText: () =>
+        "The pack shifts again around the alpha, testing whether you are finally ready to break.",
       turns: [
         {
           scene:
@@ -2404,8 +2460,8 @@ function describeJourneyBattleCondition(percent, role = "enemy") {
     if (safePercent <= 30) return "barely standing";
     if (safePercent <= 50) return "badly hurt";
     if (safePercent <= 70) return "somewhat injured";
-    if (safePercent <= 90) return "still steady";
-    return "fresh";
+    if (safePercent <= 90) return "steady";
+    return "in control";
   }
 
   if (safePercent <= 0) return "down";
@@ -2413,8 +2469,8 @@ function describeJourneyBattleCondition(percent, role = "enemy") {
   if (safePercent <= 30) return "barely standing";
   if (safePercent <= 50) return "badly wounded";
   if (safePercent <= 70) return "clearly hurt";
-  if (safePercent <= 90) return "still dangerous";
-  return "fresh";
+  if (safePercent <= 90) return "dangerous";
+  return "strong";
 }
 
 function getJourneyBossBattlePercent(current, max) {
