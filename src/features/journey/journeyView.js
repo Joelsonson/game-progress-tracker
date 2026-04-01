@@ -1030,9 +1030,6 @@ function renderJourneyBossOutcomePanel(resolution, beforeState, afterState) {
 
   const outcomeTone = getJourneyBossOutcomeTone(resolution.outcomeMeta);
   const outcomeTitle = resolution.outcomeMeta || "Battle resolved";
-  const checkText = `${resolution.statLabel} check ${
-    resolution.success ? "succeeded" : "failed"
-  }`;
   const summaryCards = buildJourneyBossOutcomeCards(beforeState, afterState, resolution);
 
   return `
@@ -1041,9 +1038,6 @@ function renderJourneyBossOutcomePanel(resolution, beforeState, afterState) {
       <span class="journey-outcome-result ${escapeAttribute(outcomeTone)}">
         ${escapeHtml(outcomeTitle)}
       </span>
-      <p class="journey-boss-outcome-kicker">
-        ${escapeHtml(`This is the battle outcome. The deciding ${checkText.toLowerCase()}.`)}
-      </p>
     </div>
     <p class="journey-boss-outcome-copy">${escapeHtml(
       resolution.resultText || t("journeyUi.modals.roadAnswered")
