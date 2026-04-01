@@ -1685,6 +1685,22 @@ export function resolveJourneyBossBattleTurn(
     pendingEvents: [],
     debugHistory: [],
   });
+  const battleSnapshot = {
+    ...battle,
+    turn: battle.turn,
+    maxTurns: battle.maxTurns,
+    bossHp: battle.bossHp,
+    bossMaxHp: battle.bossMaxHp,
+    heroHp: Math.round(state.currentHp),
+    heroMaxHp: Math.round(journeyStats.maxHp),
+    lastBossDamage: Math.round(bossHpBefore - battle.bossHp),
+    lastHeroDamage: Math.round(hpBefore - state.currentHp),
+    weaponLabel: journeyStats?.equippedWeaponMeta?.label || "",
+    heroBattleNote: buildJourneyBossBattleLoadoutNote(state.bossIndex, journeyStats),
+    lastCheckLabel: JOURNEY_STAT_META[statKey].label,
+    lastCheckSuccess: success,
+    lastExchange: exchangeText,
+  };
 
   let finalOutcome = "continue";
   let battleResultText = `${exchangeText} ${buildJourneyBossBattleStatusText(
@@ -1711,6 +1727,7 @@ export function resolveJourneyBossBattleTurn(
     successRoll,
     resultText: battleResultText,
     exchangeText,
+    battleSnapshot,
     showRollSummary: true,
     extraOutcomeItems: [
       {

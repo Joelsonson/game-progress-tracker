@@ -761,8 +761,20 @@ export function openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeI
     : choice?.label
       ? t("journeyUi.modals.youChose", { label: choice.label })
       : t("journeyUi.modals.roadAnswered");
+  const outcomeBattlePanel =
+    eventEntry?.kind === "boss" && resolution?.battleSnapshot
+      ? renderJourneyBossBattlePanel({
+          ...eventEntry,
+          detail: resolution.exchangeText || eventEntry.detail,
+          battle: resolution.battleSnapshot,
+        })
+      : "";
+  const outcomeEyebrow = eventEntry?.kind === "boss" ? "Battle result" : "";
   journeyOutcomeBodyEl.innerHTML = `
+    ${outcomeBattlePanel}
+
     <div class="journey-event-panel journey-outcome-panel">
+      ${outcomeEyebrow ? `<p class="journey-overline">${escapeHtml(outcomeEyebrow)}</p>` : ""}
       ${
         resolution && showRollSummary
           ? `
@@ -794,15 +806,6 @@ export function openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeI
                 choice
               )}</span>
             </p>
-          `
-          : ""
-      }
-      ${
-        resolution?.exchangeText
-          ? `
-            <p class="journey-outcome-exchange-copy">${escapeHtml(
-              resolution.exchangeText
-            )}</p>
           `
           : ""
       }
