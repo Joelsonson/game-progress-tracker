@@ -746,7 +746,7 @@ export async function resolveJourneyEventChoice(eventId, choiceId) {
 
     await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
     closeJourneyEventModal();
-    openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeItems);
+    openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeItems, beforeState, state);
     showJourneyFeedback(resolution.resultText);
     await appState.renderApp();
   } catch (error) {

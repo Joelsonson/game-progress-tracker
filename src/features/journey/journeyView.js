@@ -736,7 +736,14 @@ function renderJourneyChoiceLabel(choice) {
   )}</span>${escapeHtml(label.slice(highlightEnd))}`;
 }
 
-export function openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeItems) {
+export function openJourneyOutcomeModal(
+  eventEntry,
+  choice,
+  resolution,
+  outcomeItems,
+  beforeState = null,
+  afterState = null
+) {
   if (
     !journeyOutcomeModal ||
     !journeyOutcomeBodyEl ||
@@ -769,65 +776,75 @@ export function openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeI
           battle: resolution.battleSnapshot,
         })
       : "";
-  const outcomeEyebrow = eventEntry?.kind === "boss" ? "Battle result" : "";
+  const bossOutcomePanel =
+    eventEntry?.kind === "boss"
+      ? renderJourneyBossOutcomePanel(resolution, beforeState, afterState)
+      : "";
+  const outcomeEyebrow = eventEntry?.kind === "boss" ? "" : "";
   journeyOutcomeBodyEl.innerHTML = `
     ${outcomeBattlePanel}
 
     <div class="journey-event-panel journey-outcome-panel">
-      ${outcomeEyebrow ? `<p class="journey-overline">${escapeHtml(outcomeEyebrow)}</p>` : ""}
       ${
-        resolution && showRollSummary
-          ? `
-            <div class="journey-outcome-summary">
-              <span class="journey-outcome-result ${escapeAttribute(
-                resolution.success ? "is-success" : "is-failure"
-              )}">
-                ${escapeHtml(
-                  resolution.success
-                    ? t("journeyUi.modals.succeeded")
-                    : t("journeyUi.modals.failed")
-                )}
-              </span>
-              <p class="journey-outcome-meta-copy">
-                ${escapeHtml(
-                  `Used ${resolution.statLabel} ${resolution.statValue} against a ${resolution.successPercent}% chance.`
-                )}
-              </p>
-            </div>
-          `
-          : ""
-      }
-      ${
-        choice && showRollSummary
-          ? `
-            <p class="journey-outcome-choice-copy">
-              ${escapeHtml(t("journeyUi.modals.triedPrefix"))}
-              <span class="journey-outcome-choice-text">${renderJourneyChoiceLabel(
-                choice
-              )}</span>
-            </p>
-          `
-          : ""
-      }
-      <p>${escapeHtml(resolution?.resultText || t("journeyUi.modals.roadAnswered"))}</p>
-      ${
-        outcomeItems.length
-          ? `
-            <div class="journey-outcome-pill-row">
-              ${outcomeItems
-                .map(
-                  (item) => `
-                    <span class="journey-outcome-pill ${escapeAttribute(
-                      item.className
-                    )}">${escapeHtml(item.label)}</span>
+        bossOutcomePanel
+          ? bossOutcomePanel
+          : `
+              ${outcomeEyebrow ? `<p class="journey-overline">${escapeHtml(outcomeEyebrow)}</p>` : ""}
+              ${
+                resolution && showRollSummary
+                  ? `
+                    <div class="journey-outcome-summary">
+                      <span class="journey-outcome-result ${escapeAttribute(
+                        resolution.success ? "is-success" : "is-failure"
+                      )}">
+                        ${escapeHtml(
+                          resolution.success
+                            ? t("journeyUi.modals.succeeded")
+                            : t("journeyUi.modals.failed")
+                        )}
+                      </span>
+                      <p class="journey-outcome-meta-copy">
+                        ${escapeHtml(
+                          `Used ${resolution.statLabel} ${resolution.statValue} against a ${resolution.successPercent}% chance.`
+                        )}
+                      </p>
+                    </div>
                   `
-                )
-                .join("")}
-            </div>
-          `
-          : `<p class="muted-text">${escapeHtml(
-              t("journeyUi.modals.noVisibleChange")
-            )}</p>`
+                  : ""
+              }
+              ${
+                choice && showRollSummary
+                  ? `
+                    <p class="journey-outcome-choice-copy">
+                      ${escapeHtml(t("journeyUi.modals.triedPrefix"))}
+                      <span class="journey-outcome-choice-text">${renderJourneyChoiceLabel(
+                        choice
+                      )}</span>
+                    </p>
+                  `
+                  : ""
+              }
+              <p>${escapeHtml(resolution?.resultText || t("journeyUi.modals.roadAnswered"))}</p>
+              ${
+                outcomeItems.length
+                  ? `
+                    <div class="journey-outcome-pill-row">
+                      ${outcomeItems
+                        .map(
+                          (item) => `
+                            <span class="journey-outcome-pill ${escapeAttribute(
+                              item.className
+                            )}">${escapeHtml(item.label)}</span>
+                          `
+                        )
+                        .join("")}
+                    </div>
+                  `
+                  : `<p class="muted-text">${escapeHtml(
+                      t("journeyUi.modals.noVisibleChange")
+                    )}</p>`
+              }
+            `
       }
     </div>
   `;
@@ -1006,6 +1023,129 @@ function renderJourneyBossBattleExchangeSummary(battle) {
       )}.</span>
     </div>
   `;
+}
+
+function renderJourneyBossOutcomePanel(resolution, beforeState, afterState) {
+  if (!resolution) return "";
+
+  const outcomeTone = getJourneyBossOutcomeTone(resolution.outcomeMeta);
+  const outcomeTitle = resolution.outcomeMeta || "Battle resolved";
+  const checkText = `${resolution.statLabel} check ${
+    resolution.success ? "succeeded" : "failed"
+  }`;
+  const checkMeta = `${resolution.statLabel} ${resolution.statValue} against a ${resolution.successPercent}% chance.`;
+  const summaryCards = buildJourneyBossOutcomeCards(beforeState, afterState, resolution);
+
+  return `
+    <p class="journey-overline">Battle result</p>
+    <div class="journey-boss-outcome-head">
+      <span class="journey-outcome-result ${escapeAttribute(outcomeTone)}">
+        ${escapeHtml(outcomeTitle)}
+      </span>
+      <p class="journey-boss-outcome-kicker">
+        ${escapeHtml(`This is the battle outcome. The deciding ${checkText.toLowerCase()}.`)}
+      </p>
+    </div>
+    <div class="journey-boss-outcome-check">
+      <strong>${escapeHtml(checkText)}</strong>
+      <span>${escapeHtml(checkMeta)}</span>
+    </div>
+    <p class="journey-boss-outcome-copy">${escapeHtml(
+      resolution.resultText || t("journeyUi.modals.roadAnswered")
+    )}</p>
+    ${
+      summaryCards.length
+        ? `
+          <div class="journey-boss-outcome-grid">
+            ${summaryCards
+              .map(
+                (card) => `
+                  <article class="journey-boss-outcome-card">
+                    <span>${escapeHtml(card.label)}</span>
+                    <strong>${escapeHtml(card.primary)}</strong>
+                    ${card.secondary ? `<small>${escapeHtml(card.secondary)}</small>` : ""}
+                  </article>
+                `
+              )
+              .join("")}
+          </div>
+        `
+        : ""
+    }
+  `;
+}
+
+function getJourneyBossOutcomeTone(outcomeMeta) {
+  if (outcomeMeta === "Boss defeated" || outcomeMeta === "Boss driven off") {
+    return "is-success";
+  }
+
+  if (outcomeMeta === "Forced to retreat") {
+    return "is-failure";
+  }
+
+  return "is-neutral";
+}
+
+function buildJourneyBossOutcomeCards(beforeState, afterState, resolution) {
+  if (!beforeState || !afterState || !resolution) {
+    return [];
+  }
+
+  const damageDealt = Math.max(
+    0,
+    Math.round(Number(resolution?.battleSnapshot?.lastBossDamage) || 0)
+  );
+  const damageTaken = Math.max(
+    0,
+    Math.round(Number(resolution?.battleSnapshot?.lastHeroDamage) || 0)
+  );
+  const hpDelta = Math.round(afterState.currentHp - beforeState.currentHp);
+  const hungerDelta = Math.round(afterState.currentHunger - beforeState.currentHunger);
+  const travelDelta = Math.round(afterState.totalDistance - beforeState.totalDistance);
+  const storyXpDelta = Math.round(afterState.storyXp - beforeState.storyXp);
+  const statusChanged = beforeState.status !== afterState.status;
+
+  const cards = [
+    {
+      label: "Exchange",
+      primary: `${damageDealt} dealt`,
+      secondary: `${damageTaken} taken`,
+    },
+    {
+      label: "Condition",
+      primary: `Health ${formatJourneyDelta(hpDelta)}`,
+      secondary: hungerDelta ? `Hunger ${formatJourneyDelta(hungerDelta)}` : "",
+    },
+  ];
+
+  if (statusChanged || travelDelta || storyXpDelta) {
+    cards.push({
+      label: "Aftermath",
+      primary: statusChanged
+        ? `Status ${getJourneyStatusLabel(afterState.status)}`
+        : storyXpDelta
+          ? `Story XP ${formatJourneyDelta(storyXpDelta)}`
+          : `Travel ${formatJourneyDelta(travelDelta)}`,
+      secondary:
+        statusChanged && travelDelta
+          ? `Travel ${formatJourneyDelta(travelDelta)}`
+          : storyXpDelta && travelDelta
+            ? `Travel ${formatJourneyDelta(travelDelta)}`
+            : statusChanged && storyXpDelta
+              ? `Story XP ${formatJourneyDelta(storyXpDelta)}`
+              : storyXpDelta
+                ? `Story XP ${formatJourneyDelta(storyXpDelta)}`
+                : "",
+    });
+  }
+
+  return cards;
+}
+
+function formatJourneyDelta(value) {
+  const safeValue = Math.round(Number(value) || 0);
+  return safeValue > 0 ? `+${safeValue}` : `${safeValue}`;
 }
 
 function renderJourneyBossBattleArt(battle, art) {
