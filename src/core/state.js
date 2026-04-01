@@ -16,5 +16,11 @@ export const appState = {
   themePreference: "system",
   locale: "en",
   focusedGoalsEnabled: DEFAULT_FOCUSED_GOALS_ENABLED,
+  onboarding: {
+    active: false,
+    lockBodyScroll: false,
+    stepId: "",
+    mode: "idle",
+  },
   renderApp: async () => {},
 };

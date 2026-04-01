@@ -22,6 +22,7 @@ import {
 import { t } from "../../core/i18n.js";
 import { appState } from "../../core/state.js";
 import { showMessage, showToast } from "../../core/ui.js";
+import { notifyOnboardingSessionSaved } from "../onboarding/onboardingController.js";
 
 export async function handleAddSession(event) {
   event.preventDefault();
@@ -135,6 +136,7 @@ export async function handleAddSession(event) {
     );
 
     await appState.renderApp();
+    await notifyOnboardingSessionSaved();
     sessionGameSelect.value = gameId;
     showToast(
       `Logged ${formatMinutes(minutes)} for ${selectedGame.title}. ${xpBreakdown.totalText}.`,

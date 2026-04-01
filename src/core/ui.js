@@ -90,6 +90,7 @@ export function closeSettingsModal() {
 
 export function syncBodyScrollLock() {
   document.body.style.overflow =
+    (appState.onboarding?.active && appState.onboarding?.lockBodyScroll) ||
     appState.cropSession ||
     characterSkillModalRoot?.firstElementChild ||
     (settingsModal && !settingsModal.hidden) ||

@@ -172,6 +172,8 @@ export const IMPORT_SCHEMA_VERSION = 3;
 
 export const IDLE_JOURNEY_META_KEY = "idleJourney";
 export const FOCUSED_GOALS_META_KEY = "focusedGoalsEnabled";
+export const ONBOARDING_META_KEY = "onboarding";
+export const ONBOARDING_VERSION = "hybrid-first-run-v1";
 export const DEFAULT_FOCUSED_GOALS_ENABLED = true;
 export const JOURNEY_BOSS_DISTANCE = 100;
 export const JOURNEY_TICK_MS = 1000 * 60 * 30;

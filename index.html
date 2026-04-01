@@ -78,7 +78,11 @@
 
       <div class="mobile-screen-group">
         <section id="screenHome" class="mobile-screen is-active" data-screen="home">
-          <section id="homeJourneyPanel" class="panel journey-panel home-journey-panel">
+          <section
+            id="homeJourneyPanel"
+            class="panel journey-panel home-journey-panel"
+            data-onboarding-target="home-journey-panel"
+          >
             <div id="homeJourneyContent" class="journey-home-shell"></div>
           </section>
 
@@ -108,7 +112,7 @@
         </section>
 
         <section id="screenTracker" class="mobile-screen" data-screen="tracker">
-          <section class="panel tracker-shell-panel">
+          <section class="panel tracker-shell-panel" data-onboarding-target="tracker-panel">
             <div class="section-header">
               <div>
                 <h2 data-i18n="tracker.title">Your goals</h2>
@@ -127,6 +131,7 @@
                 type="button"
                 class="sessions-tab-button is-active"
                 data-sessions-tab="log-session"
+                data-onboarding-target="sessions-tab-log-session"
                 role="tab"
                 aria-selected="true"
               >
@@ -136,6 +141,7 @@
                 type="button"
                 class="sessions-tab-button"
                 data-sessions-tab="new-game"
+                data-onboarding-target="sessions-tab-new-goal"
                 role="tab"
                 aria-selected="false"
                 tabindex="-1"
@@ -146,6 +152,7 @@
                 type="button"
                 class="sessions-tab-button"
                 data-sessions-tab="session-history"
+                data-onboarding-target="sessions-tab-history"
                 role="tab"
                 aria-selected="false"
                 tabindex="-1"
@@ -155,7 +162,11 @@
             </div>
           </section>
 
-          <section class="panel sessions-panel" data-sessions-panel="log-session">
+          <section
+            class="panel sessions-panel"
+            data-sessions-panel="log-session"
+            data-onboarding-target="log-session-panel"
+          >
             <h2 data-i18n="sessions.logTitle">Log a progress session</h2>
             <p class="muted-text compact-note" data-i18n="sessions.logBody">
               Session logging is for in-progress goals and completed goals you are revisiting.
@@ -218,7 +229,12 @@
             </form>
           </section>
 
-          <section class="panel sessions-panel" data-sessions-panel="new-game" hidden>
+          <section
+            class="panel sessions-panel"
+            data-sessions-panel="new-game"
+            data-onboarding-target="new-goal-panel"
+            hidden
+          >
             <div class="section-header">
               <div>
                 <h2 data-i18n="sessions.addGameSummary">Add a goal</h2>
@@ -467,6 +483,25 @@
                   <option value="on" data-i18n="settings.focusedGoalsOn">On</option>
                   <option value="off" data-i18n="settings.focusedGoalsOff">Off</option>
                 </select>
+              </div>
+            </article>
+
+            <article class="settings-card">
+              <p class="eyebrow" data-i18n="settings.onboardingEyebrow">Onboarding</p>
+              <h3 data-i18n="settings.onboardingTitle">Walk through the app again</h3>
+              <p class="muted-text" data-i18n="settings.onboardingBody">
+                Replay the guided setup to review the main loop or check onboarding changes.
+              </p>
+
+              <div class="settings-actions">
+                <button
+                  id="replayOnboardingButton"
+                  type="button"
+                  class="secondary-button"
+                  data-i18n="settings.replayOnboarding"
+                >
+                  Show onboarding again
+                </button>
               </div>
             </article>
 
@@ -736,6 +771,15 @@
     </div>
 
     <div id="characterSkillModalRoot"></div>
+    <div id="onboardingOverlay" class="onboarding-overlay" hidden>
+      <div id="onboardingBackdrop" class="onboarding-backdrop"></div>
+      <div id="onboardingScrimTop" class="onboarding-scrim" hidden></div>
+      <div id="onboardingScrimLeft" class="onboarding-scrim" hidden></div>
+      <div id="onboardingScrimRight" class="onboarding-scrim" hidden></div>
+      <div id="onboardingScrimBottom" class="onboarding-scrim" hidden></div>
+      <div id="onboardingSpotlightFrame" class="onboarding-spotlight-frame" hidden></div>
+      <div id="onboardingCardRoot" class="onboarding-card-root"></div>
+    </div>
     <div id="toastViewport" class="toast-viewport" aria-live="polite" aria-atomic="true"></div>
 
     <script type="module" src="./src/main.js?v=20260329f"></script>

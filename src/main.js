@@ -36,7 +36,9 @@ import {
   journeyOutcomeCloseButton,
   journeyOutcomeModal,
   mobileQuickSwitchEl,
+  onboardingOverlay,
   openSettingsButton,
+  replayOnboardingButton,
   screenNavButtons,
   sessionsTabButtons,
   settingsModal,
@@ -77,6 +79,14 @@ import {
   renderIdleJourney,
 } from "./features/journey/journeyView.js";
 import { getPreferredScreenId, handleScreenNavClick, handleViewportResize, setActiveScreen } from "./features/navigation/navigation.js";
+import {
+  handleOnboardingAppRendered,
+  handleOnboardingKeydown,
+  handleOnboardingOverlayClick,
+  maybeAutoStartOnboarding,
+  startOnboardingReplay,
+  syncOnboardingLayout,
+} from "./features/onboarding/onboardingController.js";
 import { handleAddSession } from "./features/sessions/sessionsController.js";
 import {
   handleSessionsTabClick,
@@ -103,6 +113,7 @@ async function init() {
     bindEvents();
     setActiveScreen(getPreferredScreenId());
     await renderApp();
+    await maybeAutoStartOnboarding();
   } catch (error) {
     console.error("Failed to initialize app:", error);
     showMessage(formMessage, t("messages.initError"), true);
@@ -131,8 +142,14 @@ function bindEvents() {
   languagePreferenceInput?.addEventListener("change", handleLanguagePreferenceChange);
   focusedGoalsPreferenceInput?.addEventListener("change", handleFocusedGoalsPreferenceChange);
   openSettingsButton?.addEventListener("click", openSettingsModal);
+  replayOnboardingButton?.addEventListener("click", () => {
+    void startOnboardingReplay();
+  });
   settingsModal?.addEventListener("click", handleSettingsModalClick);
   settingsModalCloseButton?.addEventListener("click", closeSettingsModal);
+  onboardingOverlay?.addEventListener("click", (event) => {
+    void handleOnboardingOverlayClick(event);
+  });
   document
     .querySelector("#gameDifficultySelector")
     ?.addEventListener("change", syncGameDifficultyPresentation);
@@ -163,12 +180,16 @@ function bindEvents() {
     button.addEventListener("click", handleSessionsTabClick);
   }
 
-  window.addEventListener("resize", handleViewportResize);
+  window.addEventListener("resize", handleWindowResize);
   window.addEventListener("scroll", handleWindowScroll, { passive: true });
   syncQuickSwitchChrome();
 }
 
 function handleGlobalKeyDown(event) {
+  if (handleOnboardingKeydown(event)) {
+    return;
+  }
+
   if (event.key === "Escape" && settingsModal && !settingsModal.hidden) {
     closeSettingsModal();
     return;
@@ -205,6 +226,11 @@ function handleGlobalKeyDown(event) {
   }
 }
 
+function handleWindowResize() {
+  handleViewportResize();
+  syncOnboardingLayout();
+}
+
 function handleSettingsModalClick(event) {
   if (!(event.target instanceof HTMLElement)) return;
   if (event.target.closest("[data-close-settings-modal]")) {
@@ -236,6 +262,7 @@ function handleWindowScroll() {
   window.requestAnimationFrame(() => {
     quickSwitchFramePending = false;
     syncQuickSwitchChrome();
+    syncOnboardingLayout();
   });
 }
 
@@ -295,6 +322,10 @@ export async function renderApp() {
   syncLanguagePreferenceInput();
   syncFocusedGoalsPreferenceInput();
   syncGameDifficultyPresentation();
+  handleOnboardingAppRendered({
+    games: sortedGames,
+    sessions,
+  });
 }
 
 function handleThemePreferenceChange(event) {

@@ -9,6 +9,7 @@ import {
   IDLE_JOURNEY_META_KEY,
   IMPORT_FILE_ACCEPT,
   IMPORT_SCHEMA_VERSION,
+  ONBOARDING_META_KEY,
 } from "../../core/constants.js";
 import { enforceMainGameRules, getErrorMessage } from "../../core/formatters.js";
 import { t } from "../../core/i18n.js";
@@ -16,16 +17,19 @@ import { appState } from "../../core/state.js";
 import { showMessage } from "../../core/ui.js";
 import { createSafeFilename, downloadBlob } from "../art/completionCard.js";
 import { readFileAsText } from "../art/imageCropper.js";
+import { normalizeOnboardingMeta } from "../onboarding/onboardingService.js";
 import { normalizeJourneyState } from "../journey/journeyEngine.js";
 
 export async function handleExportData() {
   try {
-    const [games, sessions, idleJourney, focusedGoalsEnabled] = await Promise.all([
+    const [games, sessions, idleJourney, focusedGoalsEnabled, onboardingMeta] = await Promise.all([
       getAllGames(appState.db),
       getAllSessions(appState.db),
       getMeta(appState.db, IDLE_JOURNEY_META_KEY),
       getMeta(appState.db, FOCUSED_GOALS_META_KEY),
+      getMeta(appState.db, ONBOARDING_META_KEY),
     ]);
+    const normalizedOnboardingMeta = normalizeOnboardingMeta(onboardingMeta);
 
     const payload = {
       app: "goal-progress-tracker",
@@ -39,6 +43,9 @@ export async function handleExportData() {
           typeof focusedGoalsEnabled === "boolean"
             ? focusedGoalsEnabled
             : DEFAULT_FOCUSED_GOALS_ENABLED,
+        ...(normalizedOnboardingMeta
+          ? { [ONBOARDING_META_KEY]: normalizedOnboardingMeta }
+          : {}),
       },
     };
 
@@ -183,6 +190,9 @@ export function prepareImportPayload(parsed) {
     typeof parsed.meta?.[FOCUSED_GOALS_META_KEY] === "boolean"
       ? parsed.meta[FOCUSED_GOALS_META_KEY]
       : DEFAULT_FOCUSED_GOALS_ENABLED;
+  const onboarding = normalizeOnboardingMeta(
+    parsed.meta?.[ONBOARDING_META_KEY] || parsed.onboarding || null
+  );
 
   return {
     games: normalizedGames,
@@ -190,6 +200,7 @@ export function prepareImportPayload(parsed) {
     meta: {
       [IDLE_JOURNEY_META_KEY]: idleJourney,
       [FOCUSED_GOALS_META_KEY]: focusedGoalsEnabled,
+      ...(onboarding ? { [ONBOARDING_META_KEY]: onboarding } : {}),
     },
   };
 }

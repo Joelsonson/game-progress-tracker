@@ -490,6 +490,71 @@ const translations = {
           "Some earlier retreats predate the detailed log, so only newer ones will appear here.",
       },
     },
+    onboarding: {
+      guideAlt: "Walking guide sprite",
+      progress: ({ current, total }) => `Step ${current} of ${total}`,
+      actions: {
+        startSetup: "Start setup",
+        continue: "Continue",
+        next: "Next",
+        finish: "Finish onboarding",
+        back: "Back",
+        skip: "Skip for now",
+        waitingGoal: "Waiting for goal save",
+        waitingSession: "Waiting for session save",
+      },
+      status: {
+        goalWaiting:
+          "Save a goal here. Set Starting status to In Progress so logging is ready right away.",
+        goalReady: "You already have a real goal here. Continue when you are ready.",
+        sessionWaiting: "Log one real session here to move the journey forward.",
+        sessionReady: "You already have session history. Continue when you are ready.",
+        sessionNeedsActiveGoal:
+          "If this form is empty, move one goal to In Progress first so it can accept sessions.",
+      },
+      steps: {
+        welcome: {
+          eyebrow: "A quick guided start",
+          title: "Set up the loop that matters first",
+          body:
+            "This app works best when you create one real goal, log sessions against it, and watch both journeys move together.",
+          detail:
+            "We will walk through the main screens once. You can replay this later from Settings.",
+        },
+        newGoal: {
+          eyebrow: "Step 1",
+          title: "Add a goal you actually want to move",
+          body:
+            "A title is enough to start. Keep artwork optional for now and set Starting status to In Progress so you can log right away.",
+          detail:
+            "Save any real goal here. The guide will continue as soon as it exists.",
+        },
+        logSession: {
+          eyebrow: "Step 2",
+          title: "Log one real progress session",
+          body:
+            "Capture time spent, leave a short note, and update the next objective if it helps. This is the habit loop the app revolves around.",
+          detail:
+            "As soon as a session is saved, the guide will take you to the payoff.",
+        },
+        homeJourney: {
+          eyebrow: "Your payoff",
+          title: "Real progress moves the other journey too",
+          body:
+            "Home turns your effort into momentum. Tracker XP, streaks, and the isekai travel state all start to feel connected here.",
+          detail:
+            "This is the emotional payoff screen after you keep logging.",
+        },
+        tracker: {
+          eyebrow: "Keep the run organized",
+          title: "Manage the goals behind the scenes",
+          body:
+            "Tracker is where you review goals, change status, and tidy the list once the main loop is underway.",
+          detail:
+            "If you want to review this flow again, open Settings and launch the onboarding anytime.",
+        },
+      },
+    },
     settings: {
       summary: "Settings & data",
       modalBody: "Theme, language, focus rules, backups, and local data tools all live here now.",
@@ -521,10 +586,15 @@ const translations = {
       focusedGoalsLabel: "Focused goals",
       focusedGoalsOn: "On",
       focusedGoalsOff: "Off",
+      onboardingEyebrow: "Onboarding",
+      onboardingTitle: "Walk through the app again",
+      onboardingBody:
+        "Replay the guided setup to review the main loop or check onboarding changes.",
+      replayOnboarding: "Show onboarding again",
       backupEyebrow: "Local backup",
       backupTitle: "Move your goal tracker to another device",
       backupBody:
-        "Export saves your goals, sessions, XP progress, artwork, focus settings, and idle journey into one JSON backup. Import replaces the current local tracker with the backup you choose.",
+        "Export saves your goals, sessions, XP progress, artwork, focus settings, onboarding progress, and idle journey into one JSON backup. Import replaces the current local tracker with the backup you choose.",
       export: "Export progress",
       import: "Import progress",
       resetJourney: "Reset journey only",
@@ -1048,6 +1118,71 @@ const translations = {
           "古い撤退は詳細ログ以前のものなので、ここには新しい撤退記録だけが表示されます。",
       },
     },
+    onboarding: {
+      guideAlt: "歩くガイドのスプライト",
+      progress: ({ current, total }) => `ステップ ${current} / ${total}`,
+      actions: {
+        startSetup: "セットアップ開始",
+        continue: "続ける",
+        next: "次へ",
+        finish: "オンボーディング完了",
+        back: "戻る",
+        skip: "いまはスキップ",
+        waitingGoal: "目標保存待ち",
+        waitingSession: "セッション保存待ち",
+      },
+      status: {
+        goalWaiting:
+          "ここで目標を保存すると次へ進めます。すぐ記録したいなら開始状態は「進行中」がおすすめです。",
+        goalReady: "すでに実際の目標があります。準備ができたら続けてください。",
+        sessionWaiting: "ここで実際のセッションを1件記録すると旅が動き出します。",
+        sessionReady: "すでにセッション履歴があります。準備ができたら続けてください。",
+        sessionNeedsActiveGoal:
+          "このフォームが空なら、先に目標を1件「進行中」にしてから記録してください。",
+      },
+      steps: {
+        welcome: {
+          eyebrow: "まずは短い案内から",
+          title: "最初に大事な流れだけ整えましょう",
+          body:
+            "このアプリは、実際の目標を1つ作り、そこへセッションを記録し、現実と異世界の旅が一緒に進む感覚をつかむと使いやすくなります。",
+          detail:
+            "主要な画面を一度だけ案内します。あとで設定からいつでも再表示できます。",
+        },
+        newGoal: {
+          eyebrow: "ステップ1",
+          title: "本当に進めたい目標を追加する",
+          body:
+            "最初はタイトルだけでも十分です。画像はあと回しで大丈夫。すぐ記録できるよう、開始状態は「進行中」にしておくのがおすすめです。",
+          detail:
+            "ここで実際の目標を1件保存すると、ガイドが次へ進みます。",
+        },
+        logSession: {
+          eyebrow: "ステップ2",
+          title: "実際の進捗セッションを1件記録する",
+          body:
+            "使った時間、短いメモ、必要なら次の目標を残します。この記録の積み重ねがアプリの中心です。",
+          detail:
+            "セッションが保存されると、次に進捗の見返りが見える画面へ移動します。",
+        },
+        homeJourney: {
+          eyebrow: "見返りの画面",
+          title: "現実の進捗がもう一つの旅も動かします",
+          body:
+            "ホームでは、トラッカーXP、連続記録、そして異世界側の旅路がひとつの流れとしてつながって見えるようになります。",
+          detail:
+            "記録を続けたくなる理由を一番感じやすい場所です。",
+        },
+        tracker: {
+          eyebrow: "整理する場所",
+          title: "目標一覧を裏側から整える",
+          body:
+            "トラッカーでは、目標の見直し、状態変更、一覧の整理をまとめて行えます。主なループに慣れたあとで使う場所です。",
+          detail:
+            "この流れをまた見たくなったら、設定からいつでもオンボーディングを開けます。",
+        },
+      },
+    },
     settings: {
       summary: "設定とデータ",
       modalBody: "テーマ、言語、フォーカス設定、バックアップ、ローカルデータ操作をここにまとめました。",
@@ -1078,10 +1213,15 @@ const translations = {
       focusedGoalsLabel: "フォーカス目標",
       focusedGoalsOn: "オン",
       focusedGoalsOff: "オフ",
+      onboardingEyebrow: "オンボーディング",
+      onboardingTitle: "もう一度アプリを案内する",
+      onboardingBody:
+        "メインの流れを見直したいときや、オンボーディングの変更を確認したいときに再生できます。",
+      replayOnboarding: "オンボーディングを再表示",
       backupEyebrow: "ローカルバックアップ",
       backupTitle: "別の端末へ移行",
       backupBody:
-        "エクスポートすると、目標・セッション・XP進行・画像・フォーカス設定・放置旅路を1つのJSONに保存します。インポートすると現在のローカルデータをそのバックアップで置き換えます。",
+        "エクスポートすると、目標・セッション・XP進行・画像・フォーカス設定・オンボーディング進捗・放置旅路を1つのJSONに保存します。インポートすると現在のローカルデータをそのバックアップで置き換えます。",
       export: "進捗を書き出す",
       import: "進捗を読み込む",
       resetJourney: "旅路だけリセット",

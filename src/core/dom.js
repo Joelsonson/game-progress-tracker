@@ -68,6 +68,7 @@ export const languagePreferenceInput = document.querySelector("#languagePreferen
 export const focusedGoalsPreferenceInput = document.querySelector(
   "#focusedGoalsPreference"
 );
+export const replayOnboardingButton = document.querySelector("#replayOnboardingButton");
 export const openSettingsButton = document.querySelector("#openSettingsButton");
 export const settingsModal = document.querySelector("#settingsModal");
 export const settingsModalCloseButton = document.querySelector(
@@ -110,6 +111,14 @@ export const journeyHistoryCloseButton = document.querySelector(
 export const characterSkillModalRoot = document.querySelector(
   "#characterSkillModalRoot"
 );
+export const onboardingOverlay = document.querySelector("#onboardingOverlay");
+export const onboardingBackdrop = document.querySelector("#onboardingBackdrop");
+export const onboardingScrimTop = document.querySelector("#onboardingScrimTop");
+export const onboardingScrimLeft = document.querySelector("#onboardingScrimLeft");
+export const onboardingScrimRight = document.querySelector("#onboardingScrimRight");
+export const onboardingScrimBottom = document.querySelector("#onboardingScrimBottom");
+export const onboardingSpotlightFrame = document.querySelector("#onboardingSpotlightFrame");
+export const onboardingCardRoot = document.querySelector("#onboardingCardRoot");
 export const gameActionsModal = document.querySelector("#gameActionsModal");
 export const gameActionsTitleEl = document.querySelector("#gameActionsTitle");
 export const gameActionsMetaEl = document.querySelector("#gameActionsMeta");

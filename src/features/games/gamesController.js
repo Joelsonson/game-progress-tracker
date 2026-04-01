@@ -45,6 +45,7 @@ import { appState } from "../../core/state.js";
 import { openFilePicker, scrollDeck, showMessage } from "../../core/ui.js";
 import { downloadCompletionCard } from "../art/completionCard.js";
 import { optimizeUploadedImage } from "../art/imageCropper.js";
+import { notifyOnboardingGoalSaved } from "../onboarding/onboardingController.js";
 import { renderGameActionSheet } from "./gamesView.js";
 
 export function openGameActionsSheet(game) {
@@ -170,6 +171,7 @@ export async function handleAddGame(event) {
     }
 
     await appState.renderApp();
+    await notifyOnboardingGoalSaved();
   } catch (error) {
     if (isCropCancelError(error)) {
       showMessage(formMessage, t("games.add.cropCancelled"), true);
