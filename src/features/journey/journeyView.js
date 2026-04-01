@@ -98,6 +98,10 @@ const JOURNEY_BATTLE_ART = {
     src: "./assets/journey/images/Boarimage.png",
     alt: "Cornered Forest Boar",
   },
+  1: {
+    src: "./assets/journey/images/MossbackSnapjawPlaceholder.svg",
+    alt: "Placeholder silhouette for Mossback Snapjaw",
+  },
 };
 
 const JOURNEY_LOCALIZED_META = {
@@ -246,7 +250,7 @@ const JOURNEY_LOCALIZED_META = {
       "Ashen Switchback": "灰の九十九折り",
       "Ruined Gate Approach": "廃門前街道",
       "Cornered Forest Boar": "追い詰められた森猪",
-      "Hungry Wolf Pack": "飢えた狼の群れ",
+      "Mossback Snapjaw": "苔背の噛み顎",
       "Bridge Ambusher": "橋の伏兵",
       "Marshfang Lurker": "沼牙の潜伏者",
       "Hill Band Captain": "丘賊の頭目",

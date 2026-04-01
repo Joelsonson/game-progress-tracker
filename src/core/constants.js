@@ -377,7 +377,7 @@ export const JOURNEY_ZONE_NAMES = [
 
 export const JOURNEY_BOSS_NAMES = [
   "Cornered Forest Boar",
-  "Hungry Wolf Pack",
+  "Mossback Snapjaw",
   "Bridge Ambusher",
   "Marshfang Lurker",
   "Hill Band Captain",

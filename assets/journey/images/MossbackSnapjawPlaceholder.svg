@@ -1,0 +1,57 @@
+<svg width="960" height="1200" viewBox="0 0 960 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="140" y1="88" x2="760" y2="1110" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#213833"/>
+      <stop offset="1" stop-color="#0D1617"/>
+    </linearGradient>
+    <linearGradient id="water" x1="128" y1="720" x2="816" y2="1028" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5EA79A"/>
+      <stop offset="1" stop-color="#234C4B"/>
+    </linearGradient>
+    <linearGradient id="jaw" x1="318" y1="300" x2="760" y2="720" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7EBE86"/>
+      <stop offset="1" stop-color="#3F6851"/>
+    </linearGradient>
+    <filter id="shadow" x="120" y="168" width="720" height="744" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="24"/>
+      <feGaussianBlur stdDeviation="28"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.027451 0 0 0 0 0.0627451 0 0 0 0 0.0627451 0 0 0 0.46 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_1"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_1" result="shape"/>
+    </filter>
+  </defs>
+  <rect width="960" height="1200" rx="52" fill="url(#bg)"/>
+  <rect x="64" y="64" width="832" height="1072" rx="36" stroke="#F4EAD4" stroke-opacity="0.28" stroke-width="2"/>
+  <path d="M120 874C246 802 358 766 504 766C656 766 772 810 840 890V1080H120V874Z" fill="url(#water)" fill-opacity="0.88"/>
+  <path d="M154 874C246 832 360 808 510 808C660 808 766 840 832 910" stroke="#B6E4DA" stroke-opacity="0.3" stroke-width="10" stroke-linecap="round"/>
+  <g opacity="0.74">
+    <path d="M174 1084V740" stroke="#93B478" stroke-width="12" stroke-linecap="round"/>
+    <path d="M204 1084V694" stroke="#7FA86B" stroke-width="10" stroke-linecap="round"/>
+    <path d="M236 1084V728" stroke="#A4C184" stroke-width="8" stroke-linecap="round"/>
+    <path d="M768 1084V714" stroke="#A4C184" stroke-width="12" stroke-linecap="round"/>
+    <path d="M734 1084V672" stroke="#7FA86B" stroke-width="10" stroke-linecap="round"/>
+    <path d="M702 1084V736" stroke="#93B478" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <g filter="url(#shadow)">
+    <path d="M250 620C250 506 332 388 470 332L610 274C686 244 766 292 766 366C766 420 730 466 678 486L618 510L714 560C756 582 782 624 782 670C782 750 706 806 624 788L464 754C336 728 250 684 250 620Z" fill="url(#jaw)"/>
+    <path d="M480 340C592 314 682 328 728 382" stroke="#D4F2C5" stroke-opacity="0.4" stroke-width="12" stroke-linecap="round"/>
+    <path d="M420 504L690 572" stroke="#16322C" stroke-width="18" stroke-linecap="round"/>
+    <path d="M430 532L646 720" stroke="#16322C" stroke-width="120" stroke-linecap="round"/>
+    <path d="M386 548L720 476" stroke="#16322C" stroke-width="112" stroke-linecap="round"/>
+    <path d="M388 548L704 474" stroke="#6C8F74" stroke-width="88" stroke-linecap="round"/>
+    <path d="M462 486L726 564" stroke="#D6EACC" stroke-opacity="0.42" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="656" cy="416" r="20" fill="#F4EAD4"/>
+    <circle cx="656" cy="416" r="8" fill="#182728"/>
+    <path d="M396 548L692 468" stroke="#E8F0D8" stroke-width="6" stroke-linecap="round" stroke-dasharray="2 24"/>
+    <path d="M458 590L668 740" stroke="#E8F0D8" stroke-width="6" stroke-linecap="round" stroke-dasharray="2 24"/>
+  </g>
+  <circle cx="756" cy="250" r="76" fill="#F1D38A" fill-opacity="0.1"/>
+  <circle cx="756" cy="250" r="40" fill="#F1D38A" fill-opacity="0.18"/>
+  <text x="120" y="128" fill="#F4EAD4" font-family="Georgia, serif" font-size="42" letter-spacing="2.4">CREEKSIDE THICKET</text>
+  <text x="120" y="176" fill="#C9D5C4" font-family="Arial, sans-serif" font-size="28" letter-spacing="3.2">MOSSBACK SNAPJAW</text>
+  <text x="120" y="1048" fill="#F4EAD4" font-family="Arial, sans-serif" font-size="24" letter-spacing="2.6">PLACEHOLDER BOSS ART</text>
+  <text x="120" y="1086" fill="#C9D5C4" font-family="Arial, sans-serif" font-size="22" letter-spacing="1.2">Swap this image when the final boss art is ready.</text>
+</svg>

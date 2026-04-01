@@ -57,7 +57,7 @@ const JOURNEY_ZONE_NAMES_JA = [
 ];
 const JOURNEY_BOSS_NAMES_JA = [
   "追い詰められた森猪",
-  "飢えた狼の群れ",
+  "苔背の噛み顎",
   "橋の伏兵",
   "沼牙の潜伏者",
   "丘賊の頭目",
@@ -772,18 +772,19 @@ export function getJourneyGoalMeta(state, boss, progress, journeyStats, supplies
     if (state.bossIndex === 1) {
       if (progress.percent < 58) {
         return {
-          goalTitle: "狼より先に動く",
-          goalAction: "狼より先に動く",
-          innerThoughtAction: "狼より先に動くこと",
+          goalTitle: "小川の癖を読む",
+          goalAction: "小川の癖を読む",
+          innerThoughtAction: "小川の癖を読むこと",
           horizonLabel: "この先",
-          horizonValue: "群れはもう無視できない距離にいる。",
+          horizonValue:
+            "折れた葦と這い跡が、重い何かがこの岸を縄張りにしていると告げている。",
         };
       }
 
       return {
-        goalTitle: "より安全な地まで抜ける",
-        goalAction: "より安全な地まで抜ける",
-        innerThoughtAction: "より安全な地まで抜けること",
+        goalTitle: "潜み場から引きずり出す",
+        goalAction: "潜み場から引きずり出す",
+        innerThoughtAction: "潜み場から引きずり出すこと",
         horizonLabel: "区間終点",
         horizonValue: boss.name,
       };
@@ -1007,16 +1008,17 @@ export function getJourneyGoalMeta(state, boss, progress, journeyStats, supplies
   if (state.bossIndex === 1) {
     if (progress.percent < 58) {
       return {
-        goalTitle: "Stay ahead of the wolves",
-        goalAction: "staying ahead of the wolves",
+        goalTitle: "Read the creek before it bites",
+        goalAction: "reading the creek before it bites",
         horizonLabel: "Up ahead",
-        horizonValue: "The pack is somewhere close enough to matter.",
+        horizonValue:
+          "Broken reeds and slide marks keep warning you that something heavy owns this bank.",
       };
     }
 
     return {
-      goalTitle: "Break through to safer ground",
-      goalAction: "breaking through to safer ground",
+      goalTitle: "Drag the Mossback out of cover",
+      goalAction: "dragging the Mossback out of cover",
       horizonLabel: "Stretch end",
       horizonValue: boss.name,
     };
@@ -2326,101 +2328,111 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
   if (bossIndex === 1) {
     return {
       intro:
-        "The wolves do not rush all at once. They fan out, testing the edges of the path until the alpha steps into view.",
+        "The creek goes still for half a breath, then something long, moss-dark, and all jaw erupts from the reeds beside the bank.",
       opening:
-        "This stretch becomes a three-turn contest of space, nerve, and who gets to decide the shape of the pack.",
+        "The Creekside Thicket becomes a three-turn fight for footing, because the thing in the water wants the whole bank to belong to its mouth.",
       turnPressure: 1.8,
       turnHungerCost: 2,
       counterText: () =>
-        "The pack shifts again around the alpha, testing whether you are finally ready to break.",
+        "The Mossback thrashes through reeds and black water, hunting for another angle off the creek.",
       turns: [
         {
           scene:
-            "They start wide, paws silent in the undergrowth, every pair of eyes waiting to see if you give them an easy opening.",
+            "It bursts from the shallows in a spray of mud and creek water, jaws already snapping where your leg was a heartbeat ago.",
           prompt:
-            "This first clash is about stopping the surround before the pack shapes the whole fight.",
+            "This first clash is about surviving the ambush and forcing the beast to show more of itself than it wants.",
           moves: [
             {
-              key: "wolves:break-alpha",
-              label: "Hit the alpha before the pack closes",
-              preview: "A hard opening can shake the rest of them loose.",
-              highlightWord: "alpha",
-              statKey: "might",
-              chanceBase: 0.33,
-              chancePerStat: 0.05,
-              minChance: 0.22,
-              maxChance: 0.8,
-              bossDamage: { successBase: 30, successPerStat: 2.4, failBase: 11, failPerStat: 0.8 },
-              selfDamage: { successBase: 11, failBase: 18, reductionPerStat: 0.44 },
-              successText:
-                "You hammer into the lead wolf before the rest can commit, forcing the alpha to yelp and recoil instead of leading the crush.",
-              failureText:
-                "You reach the alpha, but not cleanly enough. The rest of the pack crashes into the exchange before you can reset.",
-            },
-            {
-              key: "wolves:high-ground",
-              label: "Take the stones and cut their angles away",
-              preview: "Use positioning to keep the pack from owning the lane.",
-              highlightWord: "angles",
+              key: "snapjaw:root-step",
+              label: hasWeapon
+                ? "Step the roots and cut behind the jaw"
+                : "Step the roots and strike behind the jaw",
+              preview: "Beat the burst with footwork and punish the lunge.",
+              highlightWord: "roots",
               statKey: "finesse",
               chanceBase: 0.39,
               chancePerStat: 0.05,
               minChance: 0.28,
               maxChance: 0.86,
-              bossDamage: { successBase: 25, successPerStat: 2.2, failBase: 10, failPerStat: 0.7 },
+              bossDamage: { successBase: 26, successPerStat: 2.2, failBase: 10, failPerStat: 0.7 },
               selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.58 },
               successText:
-                "You hop the stones, steal the better footing, and cut every lunge into a narrower, bloodier approach than the pack wanted.",
+                hasWeapon
+                  ? "You skip across the roots, let the jaws close on nothing, and cut deep along the hinge before it can turn."
+                  : "You skip across the roots, let the jaws close on nothing, and hammer the hinge before it can turn.",
               failureText:
-                "You almost find the high line, but loose rock gives under you and the wolves get a bite at your flank before you recover.",
+                "The roots help, but not enough. The snap clips you on the retreat and your answer lands shallow.",
             },
             {
-              key: "wolves:fire-line",
-              label: "Use flame and noise to split the charge",
-              preview: "Break their rhythm before they decide yours.",
-              highlightWord: "split",
-              statKey: "arcana",
-              chanceBase: 0.36,
+              key: "snapjaw:jaw-brace",
+              label: hasWeapon
+                ? "Brace the snap and drive it off the bank"
+                : "Brace the snap and shove it off the bank",
+              preview: "Meet the bite with force before it owns the shoreline.",
+              highlightWord: "Brace",
+              statKey: "might",
+              chanceBase: 0.34,
               chancePerStat: 0.05,
-              minChance: 0.24,
-              maxChance: 0.84,
-              bossDamage: { successBase: 26, successPerStat: 2.3, failBase: 9, failPerStat: 0.8 },
-              selfDamage: { successBase: 9, failBase: 16, reductionPerStat: 0.5 },
+              minChance: 0.23,
+              maxChance: 0.81,
+              bossDamage: { successBase: 31, successPerStat: 2.4, failBase: 11, failPerStat: 0.8 },
+              selfDamage: { successBase: 11, failBase: 18, reductionPerStat: 0.45 },
               successText:
-                "Light, sparks, and a hard shout hit together. The pack splits at the wrong moment and the alpha takes the worst of it.",
+                hasWeapon
+                  ? "You jam the bite short, drive your weight through the bind, and send the Mossback skidding sideways through the reeds."
+                  : "You slam the lower jaw aside with both hands and shoulder the whole beast off the clean line.",
               failureText:
-                "The flare goes wide and only startles them for a breath. It still buys a cut, but not the clean break you needed.",
+                "You meet the rush too square. The impact still hurts it, but the bank gives under you and the recoil costs blood.",
+            },
+            {
+              key: "snapjaw:ripple-read",
+              label: "Read the ripple and move before it breaks the water",
+              preview: "Patience can steal the ambusher's first bite.",
+              highlightWord: "ripple",
+              statKey: "resolve",
+              chanceBase: 0.4,
+              chancePerStat: 0.045,
+              minChance: 0.3,
+              maxChance: 0.85,
+              bossDamage: { successBase: 24, successPerStat: 2.1, failBase: 9, failPerStat: 0.7 },
+              selfDamage: { successBase: 7, failBase: 14, reductionPerStat: 0.6 },
+              successText:
+                "You hold until the water tells the truth, step clear at the last instant, and rake the exposed neck as it overshoots.",
+              failureText:
+                "You read the ripple a beat too late. The dodge is ugly, and your counter is more survival than punishment.",
             },
           ],
         },
         {
           scene:
-            "The alpha stops testing now and starts directing, trying to herd you toward the softer ground where the others can commit together.",
+            "Now it keeps half its body in the creek, tail threshing the shallows while it tries to drag the fight into mud where your footing dies.",
           prompt:
-            "Now you need to break their coordination before the full circle closes around you.",
+            "The middle exchange is about denying the waterline. If it owns the bank, the whole road goes with it.",
           moves: [
             {
-              key: "wolves:callout",
-              label: "Roar back and challenge the alpha's lead",
-              preview: "Make the pack hesitate for one precious beat.",
-              highlightWord: "challenge",
-              statKey: "resolve",
-              chanceBase: 0.38,
-              chancePerStat: 0.045,
-              minChance: 0.28,
-              maxChance: 0.84,
-              bossDamage: { successBase: 24, successPerStat: 2.1, failBase: 9, failPerStat: 0.7 },
-              selfDamage: { successBase: 8, failBase: 14, reductionPerStat: 0.58 },
+              key: "snapjaw:tail-through",
+              label: "Wade through the tail sweep and keep it ashore",
+              preview: "Endure the thrashing long enough to ruin its retreat.",
+              highlightWord: "ashore",
+              statKey: "vitality",
+              chanceBase: 0.35,
+              chancePerStat: 0.05,
+              minChance: 0.24,
+              maxChance: 0.82,
+              bossDamage: { successBase: 29, successPerStat: 2.4, failBase: 10, failPerStat: 0.8 },
+              selfDamage: { successBase: 10, failBase: 17, reductionPerStat: 0.48 },
               successText:
-                "You answer the alpha with enough force that the whole pack hesitates, and that single beat gives you a bloody opening.",
+                "You eat the worst of the tail wash, keep your feet anyway, and batter the Mossback high enough onto the bank that it finally hates the open air.",
               failureText:
-                "You try to seize the sound of the fight, but the pack hears only strain and surges harder into you.",
+                "You stay in it longer than most people could, but the tail still catches you hard and sends you stumbling into the mud.",
             },
             {
-              key: "wolves:tree-pivot",
-              label: "Use the trees to force them into single-file lunges",
-              preview: "Turn the brush into a choke point.",
-              highlightWord: "single-file",
+              key: "snapjaw:root-line",
+              label: hasWeapon
+                ? "Run the root line and cut from its blind side"
+                : "Run the root line and strike from its blind side",
+              preview: "Use the bank's exposed roots to stay off the jaw line.",
+              highlightWord: "blind",
               statKey: "finesse",
               chanceBase: 0.4,
               chancePerStat: 0.05,
@@ -2429,40 +2441,44 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 26, successPerStat: 2.2, failBase: 10, failPerStat: 0.8 },
               selfDamage: { successBase: 7, failBase: 14, reductionPerStat: 0.6 },
               successText:
-                "You pivot through the trees and turn the pack's numbers against itself, cutting the front lunges before the rear can join them.",
+                hasWeapon
+                  ? "You dance the exposed roots, slip outside the head turn, and cut a red line where its eye cannot follow."
+                  : "You dance the exposed roots, slip outside the head turn, and hammer the blind side before it can whip back.",
               failureText:
-                "You try to thread the trunks, but one wolf beats you to the turn and the rest pile pressure in behind it.",
+                "One wet root rolls under you at the wrong instant, and the beast's head swing nearly takes you into the creek with it.",
             },
             {
-              key: "wolves:hard-kick",
-              label: "Cripple the nearest wolf and break their spacing",
-              preview: "A brutal answer meant to reopen the lane.",
-              highlightWord: "break",
-              statKey: "might",
-              chanceBase: 0.34,
+              key: "snapjaw:glare-flash",
+              label: "Flash the waterline and strike on the recoil",
+              preview: "Turn light, spray, and surprise into one clean opening.",
+              highlightWord: "Flash",
+              statKey: "arcana",
+              chanceBase: 0.37,
               chancePerStat: 0.05,
-              minChance: 0.23,
-              maxChance: 0.81,
-              bossDamage: { successBase: 29, successPerStat: 2.4, failBase: 11, failPerStat: 0.8 },
-              selfDamage: { successBase: 10, failBase: 17, reductionPerStat: 0.46 },
+              minChance: 0.26,
+              maxChance: 0.84,
+              bossDamage: { successBase: 27, successPerStat: 2.3, failBase: 10, failPerStat: 0.8 },
+              selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.54 },
               successText:
-                "You smash the nearest wolf out of the line hard enough to ruin the pack's spacing and draw the alpha into a worse angle.",
+                "A hard glare skips across the water at the exact wrong moment for the Mossback, and your follow-up lands before it can hide behind the spray again.",
               failureText:
-                "You hit one of them hard, but not hard enough to stop the rest from folding into the gap around you.",
+                "The shimmer buys a flinch, not a freeze. You still tag it, but the answer comes back through the water with force.",
             },
           ],
         },
         {
           scene:
-            "The alpha is showing blood now, but it keeps circling for one last clean opening while the rest look ready to follow or bolt on its lead.",
+            "Mud, blood, and creek water sheet off its back now. The Mossback is slower on the turn, but every last lunge still looks strong enough to break bone.",
           prompt:
-            "This is the deciding moment. End the alpha, scare it off, or it will keep the stretch closed.",
+            "This is the deciding moment. Break the jaw, turn the head, or make the creek teach it to leave the road alone.",
           moves: [
             {
-              key: "wolves:finish-alpha",
-              label: "Sprint the alpha and end the lead outright",
-              preview: "A direct finish before the pack can reset behind it.",
-              highlightWord: "end",
+              key: "snapjaw:jaw-pin",
+              label: hasWeapon
+                ? "Pin the lower jaw and finish the rush"
+                : "Pin the lower jaw and break the rush",
+              preview: "A brutal end that risks everything on one clean stop.",
+              highlightWord: "Pin",
               statKey: "might",
               chanceBase: 0.34,
               chancePerStat: 0.05,
@@ -2471,15 +2487,17 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 31, successPerStat: 2.5, failBase: 11, failPerStat: 0.9 },
               selfDamage: { successBase: 11, failBase: 18, reductionPerStat: 0.45 },
               successText:
-                "You explode straight through the thin space around the alpha and turn the whole pack's attention into a losing scramble.",
+                hasWeapon
+                  ? "You catch the lower jaw against stone, drive through the bind, and end the last clean line of the charge."
+                  : "You pin the lower jaw against the bank with everything you have and break the rush before it can snap shut again.",
               failureText:
-                "You commit to the finish, but the pack sees it and the answer comes from three bodies at once.",
+                "You commit too early and the head bucks free. The answer comes back ugly and close enough to smell.",
             },
             {
-              key: "wolves:scar-line",
-              label: "Cut a long scar across the leader and stand firm",
-              preview: "Make the alpha feel that you can still win the trade.",
-              highlightWord: "firm",
+              key: "snapjaw:stone-feint",
+              label: "Stand through the feint and turn its head to stone",
+              preview: "Nerve matters if the last lunge is only bait.",
+              highlightWord: "Stand",
               statKey: "resolve",
               chanceBase: 0.4,
               chancePerStat: 0.045,
@@ -2488,26 +2506,30 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 25, successPerStat: 2.1, failBase: 10, failPerStat: 0.8 },
               selfDamage: { successBase: 8, failBase: 14, reductionPerStat: 0.6 },
               successText:
-                "You mark the alpha deep and refuse to yield a single step, forcing the whole pack to read the cost of one more rush.",
+                "You do not bite on the first twitch. When the real lunge comes, you turn the whole skull into the stones and steal the road with patience.",
               failureText:
-                "You land the cut, but the stand costs you and the wolves keep pressing like they still own the ground.",
+                "You hold for the real move, but the feint still steals enough of your timing to make the exchange hurt.",
             },
             {
-              key: "wolves:flare-finish",
-              label: "Throw the last flare into their retreat line",
-              preview: "Blind, split, and make the choice to stay feel wrong.",
-              highlightWord: "split",
-              statKey: "arcana",
-              chanceBase: 0.37,
+              key: "snapjaw:spine-run",
+              label: hasWeapon
+                ? "Ride the spine and cut the final line"
+                : "Ride the spine and hammer the final line",
+              preview: "A technical finish if you can stay above the jaws.",
+              highlightWord: "spine",
+              statKey: "finesse",
+              chanceBase: 0.38,
               chancePerStat: 0.05,
-              minChance: 0.26,
-              maxChance: 0.84,
-              bossDamage: { successBase: 27, successPerStat: 2.3, failBase: 10, failPerStat: 0.8 },
-              selfDamage: { successBase: 9, failBase: 15, reductionPerStat: 0.52 },
+              minChance: 0.27,
+              maxChance: 0.85,
+              bossDamage: { successBase: 28, successPerStat: 2.3, failBase: 10, failPerStat: 0.8 },
+              selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.56 },
               successText:
-                "The last flare bursts exactly where the pack wants to wheel, and the panic that follows leaves the alpha exposed and unsure.",
+                hasWeapon
+                  ? "You climb the roll of its back, stay ahead of the snap, and cut the final line before it can throw you clear."
+                  : "You scramble across its back, stay ahead of the snap, and hammer the weak line hard enough to finish the road.",
               failureText:
-                "The flare lands close, but not close enough. The wolves flinch, then come on through the light anyway.",
+                "You almost stay above the turn, but the thrash throws you off early and the landing costs you.",
             },
           ],
         },
@@ -5236,7 +5258,7 @@ export function getJourneyActivityText(
     if (state.bossIndex === 1) {
       return `${getJourneyZoneName(
         state.bossIndex
-      )}を進みながら、狼を警戒し、ようやく少しだけ知恵をつけた獲物のように動こうとしている。`;
+      )}を慎重に進み、水際と葦の揺れを睨みながら、この小川の主に先手を取られないようにしている。`;
     }
 
     if (state.bossIndex === 2) {
@@ -5299,7 +5321,7 @@ export function getJourneyActivityText(
   if (state.bossIndex === 1) {
     return `You are keeping to ${getJourneyZoneName(
       state.bossIndex
-    )}, watching for wolves and trying to move like prey that has finally learned a few tricks.`;
+    )}, watching the reeds and waterline so whatever owns this creek does not get the first bite.`;
   }
 
   if (state.bossIndex === 2) {
