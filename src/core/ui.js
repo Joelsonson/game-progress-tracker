@@ -42,6 +42,7 @@ export function showToast(message, options = {}) {
     tone = "success",
     duration = 3200,
     placement = "bottom",
+    replace = false,
   } = options;
 
   const toast = document.createElement("article");
@@ -62,6 +63,19 @@ export function showToast(message, options = {}) {
   messageEl.className = "app-toast-message";
   messageEl.textContent = safeMessage;
   toast.append(messageEl);
+
+  if (replace) {
+    const existingToasts = [...toastViewport.children];
+    for (const existingToast of existingToasts) {
+      if (!(existingToast instanceof HTMLElement)) continue;
+      const existingPlacement = existingToast.classList.contains("is-top")
+        ? "top"
+        : "bottom";
+      if (existingPlacement === placement) {
+        existingToast.remove();
+      }
+    }
+  }
 
   toastViewport.append(toast);
 

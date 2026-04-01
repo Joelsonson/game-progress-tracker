@@ -6,6 +6,7 @@ import {
   JOURNEY_AMBIENT_INTERACTIONS,
   JOURNEY_BAG_META,
   JOURNEY_BASE_CLASS,
+  JOURNEY_BASE_STAT_SCORE,
   JOURNEY_BOSS_DISTANCE,
   JOURNEY_BOSS_NAMES,
   JOURNEY_CLASS_META,
@@ -14,6 +15,7 @@ import {
   JOURNEY_LOG_LIMIT,
   JOURNEY_PENDING_EVENT_LIMIT,
   JOURNEY_RECENT_EVENT_LIMIT,
+  JOURNEY_STARTING_SKILL_POINTS,
   JOURNEY_STARTER_ITEMS,
   JOURNEY_STAT_KEYS,
   JOURNEY_STAT_META,
@@ -496,6 +498,10 @@ export function pushJourneyDebugSnapshot(state) {
   );
 }
 
+export function getJourneyRollModifier(score) {
+  return Math.floor((Math.round(Number(score) || 0) - 10) / 2);
+}
+
 export function buildJourneyDerived(state, journeyLevel) {
   const classMeta =
     JOURNEY_CLASS_META[state.classType] || JOURNEY_CLASS_META[JOURNEY_BASE_CLASS];
@@ -511,9 +517,10 @@ export function buildJourneyDerived(state, journeyLevel) {
     modifierSourcesByStat[bonus.statKey].push(bonus);
   }
   const statBreakdown = {};
+  const rollModifiers = {};
   const stats = JOURNEY_STAT_KEYS.reduce((accumulator, key) => {
     const breakdown = {
-      base: 2,
+      base: JOURNEY_BASE_STAT_SCORE,
       classBonus: classBonuses[key] || 0,
       weaponBonus: weaponBonuses[key] || 0,
       modifier: Math.round(Number(state.statModifiers?.[key]) || 0),
@@ -526,25 +533,34 @@ export function buildJourneyDerived(state, journeyLevel) {
       breakdown.weaponBonus +
       breakdown.modifier +
       breakdown.allocated;
+    rollModifiers[key] = getJourneyRollModifier(accumulator[key]);
     statBreakdown[key] = {
       ...breakdown,
       total: accumulator[key],
+      rollModifier: rollModifiers[key],
     };
     return accumulator;
   }, {});
 
-  const maxHp = Math.round(44 + journeyLevel * 7 + stats.vitality * 10);
-  const maxHunger = Math.round(58 + journeyLevel * 4 + stats.resolve * 6);
+  const maxHp = Math.round(75 + journeyLevel * 6 + rollModifiers.vitality * 10);
+  const maxHunger = Math.round(77 + journeyLevel * 4 + rollModifiers.resolve * 7);
   const power =
-    stats.might * 2.4 +
-    stats.finesse * 1.8 +
-    stats.arcana * 2.7 +
-    stats.vitality * 0.9 +
-    stats.resolve * 1 +
+    41 +
+    rollModifiers.might * 6 +
+    rollModifiers.finesse * 5 +
+    rollModifiers.arcana * 7 +
+    rollModifiers.vitality * 3 +
+    rollModifiers.resolve * 3 +
     journeyLevel * 4;
-  const speedPerHour = 3.2 + stats.finesse * 0.34 + stats.resolve * 0.08;
-  const regenPerHour = 0.8 + stats.vitality * 0.28 + stats.resolve * 0.08;
-  const hungerDrainPerHour = Math.max(1.35, 4.1 - stats.resolve * 0.18);
+  const speedPerHour = Math.max(
+    2.2,
+    4 + rollModifiers.finesse * 0.32 + rollModifiers.resolve * 0.12
+  );
+  const regenPerHour = Math.max(
+    0.35,
+    1.45 + rollModifiers.vitality * 0.24 + rollModifiers.resolve * 0.08
+  );
+  const hungerDrainPerHour = Math.max(1.35, 3.95 - rollModifiers.resolve * 0.18);
 
   return {
     classMeta,
@@ -553,6 +569,7 @@ export function buildJourneyDerived(state, journeyLevel) {
     weaponBonuses,
     statBreakdown,
     stats,
+    rollModifiers,
     level: journeyLevel,
     maxHp,
     maxHunger,
@@ -1299,12 +1316,14 @@ export function buildJourneyOutcomeItems(beforeState, afterState, resolution = n
         className: resolution.success ? "is-positive" : "is-negative",
       });
       items.push({
-        label: `${resolution.statLabel} ${resolution.statValue}`,
+        label: `DC ${resolution.difficultyClass}`,
         className: "is-neutral",
       });
       items.push({
-        label: `Chance ${resolution.successPercent}%`,
-        className: "is-neutral",
+        label: `Roll ${resolution.rollValue} (${formatSignedNumber(
+          resolution.rollModifier
+        )}) = ${resolution.rollTotal}`,
+        className: resolution.success ? "is-positive" : "is-negative",
       });
     }
 
@@ -1622,16 +1641,14 @@ export function resolveJourneyBossBattleTurn(
     return null;
   }
 
-  const statKey = JOURNEY_STAT_META[move.statKey] ? move.statKey : "resolve";
-  const statValue = Math.max(0, Number(journeyStats?.stats?.[statKey]) || 0);
-  const successChance = getJourneyChoiceSuccessChance(choice, journeyStats);
-  const successRoll = Math.random();
-  const success = successRoll <= successChance;
+  const check = resolveJourneyChoiceCheck(choice, journeyStats);
+  const { statKey, rollModifier, success } = check;
   const bossDamage = Math.max(
     success ? 14 : 8,
     Math.round(
       (success ? move.bossDamage.successBase : move.bossDamage.failBase) +
-        statValue * (success ? move.bossDamage.successPerStat : move.bossDamage.failPerStat) +
+        rollModifier *
+          (success ? move.bossDamage.successPerStat : move.bossDamage.failPerStat) +
         randomInt(0, success ? 4 : 2)
     )
   );
@@ -1640,7 +1657,7 @@ export function resolveJourneyBossBattleTurn(
     Math.round(
       (success ? move.selfDamage.successBase : move.selfDamage.failBase) +
         battle.turn * profile.turnPressure -
-        statValue * move.selfDamage.reductionPerStat
+        rollModifier * move.selfDamage.reductionPerStat
     )
   );
   const bossHpBefore = battle.bossHp;
@@ -1667,6 +1684,10 @@ export function resolveJourneyBossBattleTurn(
   battle.heroBattleNote = buildJourneyBossBattleLoadoutNote(state.bossIndex, journeyStats);
   battle.lastCheckLabel = JOURNEY_STAT_META[statKey].label;
   battle.lastCheckSuccess = success;
+  battle.lastCheckDifficultyClass = check.difficultyClass;
+  battle.lastCheckRoll = check.rollValue;
+  battle.lastCheckModifier = check.rollModifier;
+  battle.lastCheckTotal = check.rollTotal;
 
   const bossHpPercent = getJourneyBossBattlePercent(battle.bossHp, battle.bossMaxHp);
   const heroHpPercent = getJourneyBossBattlePercent(
@@ -1709,6 +1730,10 @@ export function resolveJourneyBossBattleTurn(
     heroBattleNote: buildJourneyBossBattleLoadoutNote(state.bossIndex, journeyStats),
     lastCheckLabel: JOURNEY_STAT_META[statKey].label,
     lastCheckSuccess: success,
+    lastCheckDifficultyClass: check.difficultyClass,
+    lastCheckRoll: check.rollValue,
+    lastCheckModifier: check.rollModifier,
+    lastCheckTotal: check.rollTotal,
     lastExchange: exchangeText,
   };
 
@@ -1728,13 +1753,7 @@ export function resolveJourneyBossBattleTurn(
   }
 
   const resolution = {
-    success,
-    statKey,
-    statLabel: JOURNEY_STAT_META[statKey].label,
-    statValue,
-    successChance,
-    successPercent: Math.round(successChance * 100),
-    successRoll,
+    ...check,
     resultText: battleResultText,
     exchangeText,
     battleSnapshot,
@@ -1912,6 +1931,13 @@ function buildJourneyStretchBossBattleEvent(
         heroBattleNote: buildJourneyBossBattleLoadoutNote(state.bossIndex, journeyStats),
         lastCheckLabel: String(existingBattle.lastCheckLabel || "").trim(),
         lastCheckSuccess: Boolean(existingBattle.lastCheckSuccess),
+        lastCheckDifficultyClass: Math.max(
+          0,
+          Math.round(Number(existingBattle.lastCheckDifficultyClass) || 0)
+        ),
+        lastCheckRoll: Math.max(0, Math.round(Number(existingBattle.lastCheckRoll) || 0)),
+        lastCheckModifier: Math.round(Number(existingBattle.lastCheckModifier) || 0),
+        lastCheckTotal: Math.round(Number(existingBattle.lastCheckTotal) || 0),
       }
     : {
         bossIndex: state.bossIndex,
@@ -1931,6 +1957,10 @@ function buildJourneyStretchBossBattleEvent(
         heroBattleNote: buildJourneyBossBattleLoadoutNote(state.bossIndex, journeyStats),
         lastCheckLabel: "",
         lastCheckSuccess: false,
+        lastCheckDifficultyClass: 0,
+        lastCheckRoll: 0,
+        lastCheckModifier: 0,
+        lastCheckTotal: 0,
         intro: profile.intro,
         opening: profile.opening,
         lastExchange: "",
@@ -1961,6 +1991,7 @@ function buildJourneyStretchBossBattleEvent(
         preview: move.preview,
         highlightWord: move.highlightWord,
         statKey: move.statKey,
+        difficultyClass: move.difficultyClass,
         chanceBase: move.chanceBase,
         chancePerStat: move.chancePerStat,
         minChance: move.minChance,
@@ -2885,6 +2916,7 @@ function createJourneyStatChoice({
   preview,
   highlightWord,
   statKey,
+  difficultyClass,
   successText,
   failureText,
   successEffects,
@@ -2899,6 +2931,7 @@ function createJourneyStatChoice({
     preview,
     highlightWord,
     statKey,
+    difficultyClass,
     chanceBase,
     chancePerStat,
     minChance,
@@ -4594,16 +4627,89 @@ export function maybeAddAmbientJourneyLog(state, atDate) {
 }
 
 export function getJourneyChoiceSuccessChance(choice, journeyStats) {
-  if (!choice?.statKey || !JOURNEY_STAT_META[choice.statKey]) {
+  if (!choice?.statKey || !JOURNEY_STAT_META[choice.statKey] || choice.forceSuccess) {
     return 1;
   }
 
-  const statValue = Math.max(0, Number(journeyStats?.stats?.[choice.statKey]) || 0);
-  const rawChance = (Number(choice.chanceBase) || 0.24) + statValue * (Number(choice.chancePerStat) || 0.08);
-  const minChance = Number.isFinite(choice.minChance) ? choice.minChance : 0.14;
-  const maxChance = Number.isFinite(choice.maxChance) ? choice.maxChance : 0.9;
+  const rollModifier = Math.round(
+    Number(journeyStats?.statBreakdown?.[choice.statKey]?.rollModifier) || 0
+  );
+  const difficultyClass = getJourneyChoiceDifficultyClass(choice);
+  const successChance =
+    (21 - (difficultyClass - rollModifier)) / 20;
 
-  return clamp(rawChance, minChance, maxChance);
+  return clamp(successChance, 0.05, 0.95);
+}
+
+export function getJourneyChoiceDifficultyClass(choice) {
+  if (!choice?.statKey || !JOURNEY_STAT_META[choice.statKey] || choice.forceSuccess) {
+    return 0;
+  }
+
+  const explicitDifficultyClass =
+    choice?.difficultyClass === null || choice?.difficultyClass === undefined
+      ? Number.NaN
+      : Number(choice.difficultyClass);
+  if (Number.isFinite(explicitDifficultyClass)) {
+    return clamp(Math.round(explicitDifficultyClass), 5, 25);
+  }
+
+  const baseChance = clamp(
+    Number.isFinite(Number(choice.chanceBase)) ? Number(choice.chanceBase) : 0.24,
+    0.05,
+    0.95
+  );
+
+  return clamp(21 - Math.round(baseChance * 20), 5, 25);
+}
+
+function resolveJourneyChoiceCheck(choice, journeyStats) {
+  const statKey = JOURNEY_STAT_META[choice?.statKey] ? choice.statKey : "resolve";
+  const statLabel = JOURNEY_STAT_META[statKey].label;
+  const statValue = Math.max(1, Math.round(Number(journeyStats?.stats?.[statKey]) || 0));
+  const rollModifier = Math.round(
+    Number(journeyStats?.statBreakdown?.[statKey]?.rollModifier) ||
+      getJourneyRollModifier(statValue)
+  );
+  const difficultyClass = getJourneyChoiceDifficultyClass(choice);
+  const successChance = getJourneyChoiceSuccessChance(choice, journeyStats);
+
+  if (choice?.forceSuccess || !choice?.statKey || !JOURNEY_STAT_META[choice.statKey]) {
+    return {
+      success: true,
+      statKey,
+      statLabel,
+      statValue,
+      rollModifier,
+      difficultyClass,
+      successChance,
+      successPercent: 100,
+      rollValue: 20,
+      rollTotal: 20 + rollModifier,
+    };
+  }
+
+  const rollValue = randomInt(1, 20);
+  const rollTotal = rollValue + rollModifier;
+  const success =
+    rollValue === 20
+      ? true
+      : rollValue === 1
+        ? false
+        : rollTotal >= difficultyClass;
+
+  return {
+    success,
+    statKey,
+    statLabel,
+    statValue,
+    rollModifier,
+    difficultyClass,
+    successChance,
+    successPercent: Math.round(successChance * 100),
+    rollValue,
+    rollTotal,
+  };
 }
 
 function applyJourneyPermanentStatBonus(state, rawBonus) {
@@ -4633,9 +4739,8 @@ function applyJourneyPermanentStatBonus(state, rawBonus) {
 }
 
 export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
-  const successChance = getJourneyChoiceSuccessChance(choice, journeyStats);
-  const successRoll = choice.forceSuccess ? 0 : Math.random();
-  const success = choice.forceSuccess || successRoll <= successChance;
+  const check = resolveJourneyChoiceCheck(choice, journeyStats);
+  const success = check.success;
   const effects = success ? choice.successEffects : choice.failureEffects;
   const notes = [];
   const hpDelta = scaleJourneyEventHpDelta(effects.hp);
@@ -4735,16 +4840,9 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
   const finalText = notes.length
     ? `${resultText} ${notes.join(" ")}`
     : resultText;
-  const statKey = JOURNEY_STAT_META[choice.statKey] ? choice.statKey : "resolve";
 
   return {
-    success,
-    statKey,
-    statLabel: JOURNEY_STAT_META[statKey].label,
-    statValue: Math.max(0, Number(journeyStats?.stats?.[statKey]) || 0),
-    successChance,
-    successPercent: Math.round(successChance * 100),
-    successRoll,
+    ...check,
     resultText: finalText,
     showRollSummary: !choice.forceSuccess,
   };
@@ -5149,7 +5247,11 @@ export function getUnspentSkillPoints(state, journeyLevel) {
   );
   return Math.max(
     0,
-    journeyLevel - 1 + (state.bonusSkillPoints || 0) - spentPoints
+    JOURNEY_STARTING_SKILL_POINTS +
+      journeyLevel -
+      1 +
+      (state.bonusSkillPoints || 0) -
+      spentPoints
   );
 }
 

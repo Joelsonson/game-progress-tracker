@@ -40,6 +40,7 @@ import {
   buildJourneySupplies,
   formatDurationMs,
   formatDurationRangeHours,
+  formatSignedNumber,
   getJourneyActivityText,
   getJourneyBoss,
   getJourneyLevel,
@@ -703,7 +704,80 @@ export function showJourneyEventThinking(choiceLabel, duration = 3200) {
     tone: "info",
     duration,
     placement: "top",
+    replace: true,
   });
+}
+
+export function showJourneyRollToast(resolution) {
+  if (!resolution || resolution.showRollSummary === false) {
+    return;
+  }
+
+  showToast(buildJourneyRollToastMessage(resolution), {
+    title: buildJourneyRollToastTitle(resolution),
+    tone: resolution.success ? "success" : "error",
+    duration: 4200,
+    placement: "top",
+    replace: true,
+  });
+}
+
+function buildJourneyRollToastTitle(resolution) {
+  return resolution.success
+    ? t("journeyUi.modals.checkSucceeded", { label: resolution.statLabel })
+    : t("journeyUi.modals.checkFailed", { label: resolution.statLabel });
+}
+
+function buildJourneyRollToastMessage(resolution) {
+  return `${t("journeyUi.modals.difficultyClass", {
+    value: resolution.difficultyClass,
+  })} • ${t("journeyUi.modals.rollEquation", {
+    roll: resolution.rollValue,
+    modifier: formatSignedNumber(resolution.rollModifier),
+    label: resolution.statLabel,
+    total: resolution.rollTotal,
+  })}`;
+}
+
+function renderJourneyRollSummaryBlock(resolution, options = {}) {
+  if (!resolution || resolution.showRollSummary === false) {
+    return "";
+  }
+
+  const { resultToneClass = "", compact = false } = options;
+
+  return `
+    <div class="journey-outcome-summary ${compact ? "is-compact" : ""}">
+      <span class="journey-outcome-result ${escapeAttribute(
+        resultToneClass ||
+          (resolution.success ? "is-success" : "is-failure")
+      )}">
+        ${escapeHtml(
+          resolution.success
+            ? t("journeyUi.modals.succeeded")
+            : t("journeyUi.modals.failed")
+        )}
+      </span>
+      <p class="journey-outcome-meta-copy">${escapeHtml(
+        buildJourneyRollToastTitle(resolution)
+      )}</p>
+      <div class="journey-roll-chip-row">
+        <span class="journey-chip">${escapeHtml(
+          t("journeyUi.modals.difficultyClass", {
+            value: resolution.difficultyClass,
+          })
+        )}</span>
+        <span class="journey-chip is-active">${escapeHtml(
+          t("journeyUi.modals.rollEquation", {
+            roll: resolution.rollValue,
+            modifier: formatSignedNumber(resolution.rollModifier),
+            label: resolution.statLabel,
+            total: resolution.rollTotal,
+          })
+        )}</span>
+      </div>
+    </div>
+  `;
 }
 
 function renderJourneyChoiceLabel(choice) {
@@ -753,9 +827,12 @@ export function openJourneyOutcomeModal(
     ? resolution.outcomeMeta
       ? resolution.outcomeMeta
       : showRollSummary
-      ? `${resolution.success ? t("journeyUi.modals.succeeded") : t("journeyUi.modals.failed")} • ${resolution.statLabel} • ${t("journeyUi.modals.chance", {
-          value: resolution.successPercent,
-        })}`
+      ? `${buildJourneyRollToastTitle(resolution)} • ${t(
+          "journeyUi.modals.difficultyClass",
+          {
+            value: resolution.difficultyClass,
+          }
+        )}`
       : t("journeyUi.modals.roadAnswered")
     : choice?.label
       ? t("journeyUi.modals.youChose", { label: choice.label })
@@ -784,24 +861,7 @@ export function openJourneyOutcomeModal(
               ${outcomeEyebrow ? `<p class="journey-overline">${escapeHtml(outcomeEyebrow)}</p>` : ""}
               ${
                 resolution && showRollSummary
-                  ? `
-                    <div class="journey-outcome-summary">
-                      <span class="journey-outcome-result ${escapeAttribute(
-                        resolution.success ? "is-success" : "is-failure"
-                      )}">
-                        ${escapeHtml(
-                          resolution.success
-                            ? t("journeyUi.modals.succeeded")
-                            : t("journeyUi.modals.failed")
-                        )}
-                      </span>
-                      <p class="journey-outcome-meta-copy">
-                        ${escapeHtml(
-                          `Used ${resolution.statLabel} ${resolution.statValue} against a ${resolution.successPercent}% chance.`
-                        )}
-                      </p>
-                    </div>
-                  `
+                  ? renderJourneyRollSummaryBlock(resolution)
                   : ""
               }
               ${
@@ -1002,13 +1062,33 @@ function renderJourneyBossBattleExchangeSummary(battle) {
     `;
   }
 
+  const hasRollDetails =
+    Math.round(Number(battle.lastCheckDifficultyClass) || 0) > 0 &&
+    Math.round(Number(battle.lastCheckRoll) || 0) > 0;
+
   return `
     <div class="journey-battle-exchange-summary ${
       battle.lastCheckSuccess ? "is-success" : "is-failure"
     }">
-      <strong>${escapeHtml(battle.lastCheckLabel)} check ${
-        battle.lastCheckSuccess ? "succeeded" : "failed"
-      }</strong>
+      <strong>${escapeHtml(
+        battle.lastCheckSuccess
+          ? t("journeyUi.modals.checkSucceeded", { label: battle.lastCheckLabel })
+          : t("journeyUi.modals.checkFailed", { label: battle.lastCheckLabel })
+      )}</strong>
+      ${
+        hasRollDetails
+          ? `<span>${escapeHtml(
+              `${t("journeyUi.modals.difficultyClass", {
+                value: battle.lastCheckDifficultyClass,
+              })} • ${t("journeyUi.modals.rollEquation", {
+                roll: battle.lastCheckRoll,
+                modifier: formatSignedNumber(battle.lastCheckModifier),
+                label: battle.lastCheckLabel,
+                total: battle.lastCheckTotal,
+              })}`
+            )}</span>`
+          : ""
+      }
       <span>You hit for ${Math.max(0, Math.round(Number(battle.lastBossDamage) || 0))} and took ${Math.max(
         0,
         Math.round(Number(battle.lastHeroDamage) || 0)
@@ -1031,6 +1111,7 @@ function renderJourneyBossOutcomePanel(resolution, beforeState, afterState) {
         ${escapeHtml(outcomeTitle)}
       </span>
     </div>
+    ${renderJourneyRollSummaryBlock(resolution, { compact: true })}
     <p class="journey-boss-outcome-copy">${escapeHtml(
       resolution.resultText || t("journeyUi.modals.roadAnswered")
     )}</p>
@@ -1878,11 +1959,14 @@ function renderJourneyStatCards(viewModel) {
     const breakdown = viewModel.journeyStats.statBreakdown[statKey];
     const hasClassBonus = breakdown.classBonus > 0;
     const hasWeaponBonus = breakdown.weaponBonus > 0;
-    const modifierText = breakdown.modifier
-      ? t("journeyUi.stats.modifier", {
+    const scoreBonusText = breakdown.modifier
+      ? t("journeyUi.stats.scoreBonus", {
           value: `${breakdown.modifier > 0 ? "+" : ""}${breakdown.modifier}`,
         })
       : "";
+    const rollBonusText = t("journeyUi.stats.rollBonus", {
+      value: formatSignedNumber(breakdown.rollModifier),
+    });
     const modifierSourceMarkup = renderJourneyModifierSourceNotes(breakdown);
 
     return `
@@ -1891,11 +1975,17 @@ function renderJourneyStatCards(viewModel) {
       } ${hasWeaponBonus ? "has-weapon-bonus" : ""}">
         <div class="stat-row">
           <h4>${escapeHtml(statMeta.label)}</h4>
-          <strong>${breakdown.total}</strong>
+          <div class="journey-stat-value-block">
+            <strong>${breakdown.total}</strong>
+            <span class="journey-stat-roll-bonus">${escapeHtml(rollBonusText)}</span>
+          </div>
         </div>
         <div class="journey-inline-row stat-source-row">
           <span class="journey-chip">${escapeHtml(
             t("journeyUi.stats.base", { value: breakdown.base })
+          )}</span>
+          <span class="journey-chip">${escapeHtml(
+            t("journeyUi.stats.spent", { value: breakdown.allocated })
           )}</span>
           ${
             hasClassBonus
@@ -1912,8 +2002,8 @@ function renderJourneyStatCards(viewModel) {
               : ""
           }
           ${
-            modifierText
-              ? `<span class="journey-chip">${escapeHtml(modifierText)}</span>`
+            scoreBonusText
+              ? `<span class="journey-chip">${escapeHtml(scoreBonusText)}</span>`
               : ""
           }
         </div>
@@ -2075,6 +2165,15 @@ function renderCharacterSkillModal(viewModel) {
     1,
     viewModel.journeyLevel - Math.max(1, viewModel.unspentSkillPoints)
   );
+  const levelLine =
+    previousLevel < viewModel.journeyLevel
+      ? t("journeyUi.character.levelTransition", {
+          from: previousLevel,
+          to: viewModel.journeyLevel,
+        })
+      : t("journeyUi.character.levelLabel", {
+          level: viewModel.journeyLevel,
+        });
 
   characterSkillModalRoot.innerHTML = `
     <div
@@ -2098,12 +2197,7 @@ function renderCharacterSkillModal(viewModel) {
             <p class="journey-overline">${escapeHtml(t("journeyUi.character.levelUp"))}</p>
             <h4 id="characterSkillModalTitle">${escapeHtml(viewModel.displayName)}</h4>
             <p class="character-skill-level-line">
-              ${escapeHtml(
-                t("journeyUi.character.levelTransition", {
-                  from: previousLevel,
-                  to: viewModel.journeyLevel,
-                })
-              )}
+              ${escapeHtml(levelLine)}
             </p>
             <p class="character-skill-points-line">
               ${escapeHtml(
@@ -2473,7 +2567,8 @@ function renderCharacterRadarLegendItem(entry) {
   const hasBonus =
     Boolean(breakdown?.classBonus) ||
     Boolean(breakdown?.weaponBonus) ||
-    Boolean(breakdown?.modifier);
+    Boolean(breakdown?.modifier) ||
+    Boolean(breakdown?.allocated);
 
   return `
     <details class="character-radar-legend-item ${hasBonus ? "is-boosted" : ""}">
@@ -2504,6 +2599,9 @@ function renderJourneyStatSourcePills(breakdown) {
   const pills = [
     t("journeyUi.stats.base", { value: breakdown.base }),
     t("journeyUi.stats.spent", { value: breakdown.allocated }),
+    t("journeyUi.stats.rollBonus", {
+      value: formatSignedNumber(breakdown.rollModifier),
+    }),
   ];
 
   if (breakdown.classBonus > 0) {
@@ -2514,7 +2612,7 @@ function renderJourneyStatSourcePills(breakdown) {
   }
   if (breakdown.modifier) {
     pills.push(
-      t("journeyUi.stats.modifier", {
+      t("journeyUi.stats.scoreBonus", {
         value: `${breakdown.modifier > 0 ? "+" : ""}${breakdown.modifier}`,
       })
     );

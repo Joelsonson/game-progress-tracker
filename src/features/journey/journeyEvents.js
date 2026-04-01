@@ -53,6 +53,7 @@ export function normalizeJourneyChoice(choice) {
   const chancePerStat = Number(choice.chancePerStat);
   const minChance = Number(choice.minChance);
   const maxChance = Number(choice.maxChance);
+  const difficultyClass = Number(choice.difficultyClass);
 
   return {
     id: String(choice.id || crypto.randomUUID()),
@@ -61,6 +62,10 @@ export function normalizeJourneyChoice(choice) {
     highlightWord:
       typeof choice.highlightWord === "string" ? choice.highlightWord.trim() : "",
     statKey,
+    difficultyClass:
+      hasExplicitOutcomeBranches && Number.isFinite(difficultyClass)
+        ? Math.max(5, Math.min(25, Math.round(difficultyClass)))
+        : undefined,
     chanceBase: hasExplicitOutcomeBranches
       ? (Number.isFinite(chanceBase) ? chanceBase : 0.24)
       : 1,
@@ -113,6 +118,10 @@ function normalizeJourneyBattleState(rawBattle) {
     heroBattleNote: String(rawBattle.heroBattleNote || "").trim(),
     lastCheckLabel: String(rawBattle.lastCheckLabel || "").trim(),
     lastCheckSuccess: Boolean(rawBattle.lastCheckSuccess),
+    lastCheckDifficultyClass: clampBattleValue(rawBattle.lastCheckDifficultyClass, 0, 99, 0),
+    lastCheckRoll: clampBattleValue(rawBattle.lastCheckRoll, 0, 20, 0),
+    lastCheckModifier: clampBattleValue(rawBattle.lastCheckModifier, -20, 20, 0),
+    lastCheckTotal: clampBattleValue(rawBattle.lastCheckTotal, -20, 40, 0),
     intro: String(rawBattle.intro || "").trim(),
     opening: String(rawBattle.opening || "").trim(),
     lastExchange: String(rawBattle.lastExchange || "").trim(),

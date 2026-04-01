@@ -53,6 +53,7 @@ import {
   openJourneyEventModal,
   openJourneyOutcomeModal,
   showJourneyEventThinking,
+  showJourneyRollToast,
 } from "./journeyView.js";
 
 const JOURNEY_EVENT_RESOLVE_DELAY_MS = 3000;
@@ -722,6 +723,7 @@ export async function resolveJourneyEventChoice(eventId, choiceId) {
         } else {
           closeJourneyEventModal();
         }
+        showJourneyRollToast(resolution);
         return;
       }
     } else {
@@ -750,6 +752,7 @@ export async function resolveJourneyEventChoice(eventId, choiceId) {
     await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
     closeJourneyEventModal();
     openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeItems, beforeState, state);
+    showJourneyRollToast(resolution);
     showJourneyFeedback(resolution.resultText);
     await appState.renderApp();
   } catch (error) {
@@ -816,14 +819,15 @@ function buildSupplyToast({ resourceLabel, amount, current, max, suffix = "" }) 
 
 function buildStatIncreaseToast(statKey, journeyStats, statBreakdown) {
   const statLabel = JOURNEY_STAT_META[statKey]?.label || "Stat";
+  const rollBonus = `${statBreakdown.rollModifier >= 0 ? "+" : ""}${statBreakdown.rollModifier}`;
 
   if (statKey === "vitality") {
-    return `${statLabel} increased to ${statBreakdown.total}. Max HP is now ${journeyStats.maxHp}.`;
+    return `${statLabel} increased to ${statBreakdown.total}. Roll bonus is now ${rollBonus}. Max HP is now ${journeyStats.maxHp}.`;
   }
 
   if (statKey === "resolve") {
-    return `${statLabel} increased to ${statBreakdown.total}. Max hunger is now ${journeyStats.maxHunger}.`;
+    return `${statLabel} increased to ${statBreakdown.total}. Roll bonus is now ${rollBonus}. Max hunger is now ${journeyStats.maxHunger}.`;
   }
 
-  return `${statLabel} increased to ${statBreakdown.total}.`;
+  return `${statLabel} increased to ${statBreakdown.total}. Roll bonus is now ${rollBonus}.`;
 }

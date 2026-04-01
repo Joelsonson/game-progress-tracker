@@ -184,6 +184,8 @@ export const JOURNEY_RECENT_EVENT_LIMIT = 4;
 export const JOURNEY_COMPLETED_EVENT_LIMIT = 40;
 export const JOURNEY_STORY_XP_PER_LEVEL = 100;
 export const JOURNEY_BASE_CLASS = "stranded";
+export const JOURNEY_BASE_STAT_SCORE = 8;
+export const JOURNEY_STARTING_SKILL_POINTS = 4;
 export const JOURNEY_STAT_KEYS = ["might", "finesse", "arcana", "vitality", "resolve"];
 export const JOURNEY_FLAG_KEYS = ["foundWeapon", "boarDefeated", "slimeSapped"];
 

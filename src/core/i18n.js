@@ -343,6 +343,11 @@ const translations = {
         succeeded: "Succeeded",
         failed: "Failed",
         chance: ({ value }) => `${value}% chance`,
+        difficultyClass: ({ value }) => `DC ${value}`,
+        rollEquation: ({ roll, modifier, label, total }) =>
+          `${roll} (${modifier} ${label}) = ${total}`,
+        checkSucceeded: ({ label }) => `${label} check succeeded`,
+        checkFailed: ({ label }) => `${label} check failed`,
         youChose: ({ label }) => `You chose: ${label}`,
         triedPrefix: "You tried:",
         roadAnswered: "The road answered your choice.",
@@ -455,6 +460,8 @@ const translations = {
         classBonus: ({ value }) => `Class +${value}`,
         weaponBonus: ({ value }) => `Weapon +${value}`,
         modifier: ({ value }) => `Modifier ${value}`,
+        scoreBonus: ({ value }) => `Score bonus ${value}`,
+        rollBonus: ({ value }) => `Roll bonus ${value}`,
         plusOne: ({ label }) => `+1 ${label}`,
       },
       progress: {
@@ -975,6 +982,11 @@ const translations = {
         succeeded: "成功",
         failed: "失敗",
         chance: ({ value }) => `成功率 ${value}%`,
+        difficultyClass: ({ value }) => `難易度 ${value}`,
+        rollEquation: ({ roll, modifier, label, total }) =>
+          `${roll}（${label} ${modifier}）= ${total}`,
+        checkSucceeded: ({ label }) => `${label}判定に成功`,
+        checkFailed: ({ label }) => `${label}判定に失敗`,
         youChose: ({ label }) => `選択: ${label}`,
         triedPrefix: "試したこと:",
         roadAnswered: "道はあなたの選択に応えた。",
@@ -1087,6 +1099,8 @@ const translations = {
         classBonus: ({ value }) => `クラス +${value}`,
         weaponBonus: ({ value }) => `武器 +${value}`,
         modifier: ({ value }) => `補正 ${value}`,
+        scoreBonus: ({ value }) => `能力補正 ${value}`,
+        rollBonus: ({ value }) => `ロール補正 ${value}`,
         plusOne: ({ label }) => `${label} +1`,
       },
       progress: {
