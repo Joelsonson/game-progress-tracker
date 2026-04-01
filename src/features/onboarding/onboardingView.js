@@ -13,8 +13,6 @@ import { initializeJourneySpritePreviews } from "../journey/journeyView.js";
 
 const SPOTLIGHT_PADDING_PX = 14;
 const SPOTLIGHT_MARGIN_PX = 8;
-const DEFAULT_CARD_PLACEMENT = "bottom";
-const CARD_CLEARANCE_GAP_PX = 28;
 
 export function renderOnboardingStep(viewModel) {
   if (!onboardingOverlay || !onboardingCardRoot) {
@@ -26,10 +24,6 @@ export function renderOnboardingStep(viewModel) {
   onboardingOverlay.dataset.stepId = viewModel.stepId;
   onboardingCardRoot.innerHTML = buildOnboardingCardMarkup(viewModel);
   initializeJourneySpritePreviews(onboardingCardRoot);
-  updateOnboardingCardLayout(viewModel);
-  window.requestAnimationFrame(() => {
-    updateOnboardingCardLayout(viewModel);
-  });
 
   if (viewModel.kind === "spotlight" && viewModel.targetRect) {
     renderSpotlight(viewModel.targetRect);
@@ -57,7 +51,6 @@ export function clearOnboardingStep() {
     onboardingBackdrop.hidden = true;
   }
 
-  document.documentElement.style.removeProperty("--onboarding-scroll-clearance");
   hideSpotlight();
 }
 
@@ -103,6 +96,14 @@ export function measureOnboardingTarget(targetName) {
 }
 
 function buildOnboardingCardMarkup(viewModel) {
+  if (viewModel.kind === "welcome") {
+    return buildWelcomeMarkup(viewModel);
+  }
+
+  return buildSpotlightMarkup(viewModel);
+}
+
+function buildWelcomeMarkup(viewModel) {
   const dotsMarkup = Array.from({ length: viewModel.totalSteps }, (_, index) => {
     const dotClass =
       index === viewModel.stepIndex
@@ -131,31 +132,17 @@ function buildOnboardingCardMarkup(viewModel) {
         </button>
       `
     : "";
+  const spriteMarkup = buildGuideSpriteMarkup(viewModel);
 
   return `
     <article
-      class="onboarding-card onboarding-card-${escapeAttribute(viewModel.kind)}"
+      class="onboarding-card onboarding-welcome-card"
       role="dialog"
       aria-labelledby="onboardingCardTitle"
       aria-describedby="onboardingCardBody"
       tabindex="-1"
     >
-      <div class="onboarding-card-media">
-        <div class="onboarding-guide-shell">
-          <div class="journey-sprite-stage onboarding-guide-stage" aria-hidden="true">
-            <img
-              class="journey-sprite-sheet onboarding-guide-sprite-sheet"
-              src="${escapeAttribute(viewModel.spriteSrc)}"
-              data-journey-sprite-sheet
-              data-frame-count="${viewModel.spriteFrameCount}"
-              data-frame-duration="${viewModel.spriteFrameDurationMs}"
-              data-max-width="${viewModel.spriteMaxWidth}"
-              data-max-height="${viewModel.spriteMaxHeight}"
-              alt=""
-            />
-          </div>
-        </div>
-      </div>
+      <div class="onboarding-card-media">${spriteMarkup}</div>
 
       <div class="onboarding-card-copy">
         <div class="onboarding-progress-row">
@@ -198,32 +185,113 @@ function buildOnboardingCardMarkup(viewModel) {
   `;
 }
 
-function updateOnboardingCardLayout(viewModel) {
-  if (!onboardingCardRoot) {
-    return;
-  }
+function buildSpotlightMarkup(viewModel) {
+  const statusMarkup = viewModel.statusText
+    ? `<p class="onboarding-status-note">${escapeHtml(viewModel.statusText)}</p>`
+    : "";
+  const backButtonMarkup = viewModel.showBack
+    ? `
+        <button
+          type="button"
+          class="secondary-button"
+          data-onboarding-action="back"
+        >
+          ${escapeHtml(viewModel.backLabel)}
+        </button>
+      `
+    : "";
+  const bubbleHiddenAttr = viewModel.bubbleCollapsed ? "hidden" : "";
 
-  const card = onboardingCardRoot.querySelector(".onboarding-card");
-  if (!(card instanceof HTMLElement)) {
-    return;
-  }
+  return `
+    <div class="onboarding-guide-cluster${viewModel.bubbleCollapsed ? " is-collapsed" : ""}">
+      <button
+        type="button"
+        class="onboarding-guide-toggle"
+        data-onboarding-action="toggle-bubble"
+        aria-expanded="${viewModel.bubbleCollapsed ? "false" : "true"}"
+        aria-controls="onboardingGuideBubble"
+        aria-label="${escapeAttribute(viewModel.toggleGuideLabel)}"
+      >
+        ${buildGuideSpriteMarkup(viewModel)}
+        <span class="onboarding-guide-toggle-progress">${escapeHtml(viewModel.progressCompactLabel)}</span>
+      </button>
 
-  const placement = viewModel.cardPlacement || DEFAULT_CARD_PLACEMENT;
-  onboardingCardRoot.dataset.placement = placement;
+      <section
+        id="onboardingGuideBubble"
+        class="onboarding-speech-bubble"
+        role="dialog"
+        aria-labelledby="onboardingCardTitle"
+        aria-describedby="onboardingCardBody"
+        data-onboarding-action="toggle-bubble"
+        ${bubbleHiddenAttr}
+      >
+        <div class="onboarding-speech-header">
+          <button
+            type="button"
+            class="onboarding-speech-header-toggle"
+            data-onboarding-action="toggle-bubble"
+          >
+            <span class="eyebrow">${escapeHtml(viewModel.eyebrow)}</span>
+            <span class="onboarding-progress-label">${escapeHtml(viewModel.progressLabel)}</span>
+          </button>
+          <button
+            type="button"
+            class="secondary-button onboarding-speech-minimize"
+            data-onboarding-action="toggle-bubble"
+          >
+            ${escapeHtml(viewModel.hideGuideLabel)}
+          </button>
+        </div>
 
-  if (placement === "top") {
-    document.documentElement.style.removeProperty("--onboarding-scroll-clearance");
-    return;
-  }
+        <div class="onboarding-speech-copy">
+          <h2 id="onboardingCardTitle">${escapeHtml(viewModel.title)}</h2>
+          <p id="onboardingCardBody" class="onboarding-card-body">${escapeHtml(viewModel.body)}</p>
+          ${statusMarkup}
+        </div>
 
-  const clearance =
-    viewModel.kind === "spotlight"
-      ? Math.ceil(card.getBoundingClientRect().height + CARD_CLEARANCE_GAP_PX)
-      : 0;
-  document.documentElement.style.setProperty(
-    "--onboarding-scroll-clearance",
-    `${Math.max(0, clearance)}px`
-  );
+        <div class="onboarding-card-actions onboarding-speech-actions">
+          <div class="onboarding-card-actions-secondary">
+            ${backButtonMarkup}
+            <button
+              type="button"
+              class="secondary-button"
+              data-onboarding-action="skip"
+            >
+              ${escapeHtml(viewModel.skipLabel)}
+            </button>
+          </div>
+
+          <button
+            type="button"
+            class="primary-button onboarding-primary-button"
+            data-onboarding-action="primary"
+            ${viewModel.primaryDisabled ? "disabled" : ""}
+          >
+            ${escapeHtml(viewModel.primaryLabel)}
+          </button>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+function buildGuideSpriteMarkup(viewModel) {
+  return `
+    <div class="onboarding-guide-shell">
+      <div class="journey-sprite-stage onboarding-guide-stage" aria-hidden="true">
+        <img
+          class="journey-sprite-sheet onboarding-guide-sprite-sheet"
+          src="${escapeAttribute(viewModel.spriteSrc)}"
+          data-journey-sprite-sheet
+          data-frame-count="${viewModel.spriteFrameCount}"
+          data-frame-duration="${viewModel.spriteFrameDurationMs}"
+          data-max-width="${viewModel.spriteMaxWidth}"
+          data-max-height="${viewModel.spriteMaxHeight}"
+          alt=""
+        />
+      </div>
+    </div>
+  `;
 }
 
 function renderSpotlight(targetRect) {

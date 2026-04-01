@@ -173,7 +173,7 @@
               Backlog, paused, and dropped goals should be moved first.
             </p>
 
-            <form id="sessionForm" class="stack-form">
+            <form id="sessionForm" class="stack-form" data-onboarding-target="session-form">
               <div class="field">
                 <label for="sessionGame" data-i18n="sessions.gameLabel">Goal</label>
                 <select id="sessionGame" name="sessionGame"></select>
@@ -250,6 +250,7 @@
                   id="title"
                   name="title"
                   type="text"
+                  data-onboarding-target="new-goal-title-input"
                   placeholder="Finish Elden Ring"
                   data-i18n-placeholder="games.add.titlePlaceholder"
                   required

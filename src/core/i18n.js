@@ -500,17 +500,19 @@ const translations = {
         finish: "Finish onboarding",
         back: "Back",
         skip: "Skip for now",
+        showGuide: "Show guide",
+        hideGuide: "Hide guide",
         waitingGoal: "Waiting for goal save",
         waitingSession: "Waiting for session save",
       },
       status: {
         goalWaiting:
-          "Save a goal here. Set Starting status to In Progress so logging is ready right away.",
-        goalReady: "You already have a real goal here. Continue when you are ready.",
-        sessionWaiting: "Log one real session here to move the journey forward.",
-        sessionReady: "You already have session history. Continue when you are ready.",
+          "Save any real goal here to continue.",
+        goalReady: "Goal saved. Continue when you are ready.",
+        sessionWaiting: "Save one real session here to continue.",
+        sessionReady: "Session saved. Continue when you are ready.",
         sessionNeedsActiveGoal:
-          "If this form is empty, move one goal to In Progress first so it can accept sessions.",
+          "If this form is empty, move one goal to In Progress first.",
       },
       steps: {
         welcome: {
@@ -522,34 +524,34 @@ const translations = {
             "We will walk through the main screens once. You can replay this later from Settings.",
         },
         newGoal: {
-          eyebrow: "Step 1",
-          title: "Add a goal you actually want to move",
+          eyebrow: "Add a goal",
+          title: "Name one real goal",
           body:
-            "A title is enough to start. Keep artwork optional for now and set Starting status to In Progress so you can log right away.",
+            "Start with a title. Leave art for later and set it to In Progress so logging is ready.",
           detail:
             "Save any real goal here. The guide will continue as soon as it exists.",
         },
         logSession: {
-          eyebrow: "Step 2",
-          title: "Log one real progress session",
+          eyebrow: "Log a session",
+          title: "Save your first session",
           body:
-            "Capture time spent, leave a short note, and update the next objective if it helps. This is the habit loop the app revolves around.",
+            "Log the time spent and a short note. One real session is enough to move both journeys.",
           detail:
             "As soon as a session is saved, the guide will take you to the payoff.",
         },
         homeJourney: {
-          eyebrow: "Your payoff",
-          title: "Real progress moves the other journey too",
+          eyebrow: "See the payoff",
+          title: "Your progress moves the traveler",
           body:
-            "Home turns your effort into momentum. Tracker XP, streaks, and the isekai travel state all start to feel connected here.",
+            "Home turns your effort into movement, streaks, and momentum for the return journey.",
           detail:
             "This is the emotional payoff screen after you keep logging.",
         },
         tracker: {
-          eyebrow: "Keep the run organized",
-          title: "Manage the goals behind the scenes",
+          eyebrow: "Keep things tidy",
+          title: "Manage your goals here",
           body:
-            "Tracker is where you review goals, change status, and tidy the list once the main loop is underway.",
+            "Tracker is where you review goals, update status, and keep the run organized.",
           detail:
             "If you want to review this flow again, open Settings and launch the onboarding anytime.",
         },
@@ -1128,17 +1130,19 @@ const translations = {
         finish: "オンボーディング完了",
         back: "戻る",
         skip: "いまはスキップ",
+        showGuide: "ガイドを表示",
+        hideGuide: "ガイドを隠す",
         waitingGoal: "目標保存待ち",
         waitingSession: "セッション保存待ち",
       },
       status: {
         goalWaiting:
-          "ここで目標を保存すると次へ進めます。すぐ記録したいなら開始状態は「進行中」がおすすめです。",
-        goalReady: "すでに実際の目標があります。準備ができたら続けてください。",
-        sessionWaiting: "ここで実際のセッションを1件記録すると旅が動き出します。",
-        sessionReady: "すでにセッション履歴があります。準備ができたら続けてください。",
+          "ここで実際の目標を1件保存すると次へ進めます。",
+        goalReady: "目標を保存できました。準備ができたら続けてください。",
+        sessionWaiting: "ここで実際のセッションを1件保存すると次へ進めます。",
+        sessionReady: "セッションを保存できました。準備ができたら続けてください。",
         sessionNeedsActiveGoal:
-          "このフォームが空なら、先に目標を1件「進行中」にしてから記録してください。",
+          "このフォームが空なら、先に目標を1件「進行中」にしてください。",
       },
       steps: {
         welcome: {
@@ -1150,34 +1154,34 @@ const translations = {
             "主要な画面を一度だけ案内します。あとで設定からいつでも再表示できます。",
         },
         newGoal: {
-          eyebrow: "ステップ1",
-          title: "本当に進めたい目標を追加する",
+          eyebrow: "目標を追加",
+          title: "進めたい目標を1つ決める",
           body:
-            "最初はタイトルだけでも十分です。画像はあと回しで大丈夫。すぐ記録できるよう、開始状態は「進行中」にしておくのがおすすめです。",
+            "最初はタイトルだけで十分です。画像はあと回しで大丈夫。「進行中」にしておくとすぐ記録できます。",
           detail:
             "ここで実際の目標を1件保存すると、ガイドが次へ進みます。",
         },
         logSession: {
-          eyebrow: "ステップ2",
-          title: "実際の進捗セッションを1件記録する",
+          eyebrow: "セッションを記録",
+          title: "最初のセッションを保存する",
           body:
-            "使った時間、短いメモ、必要なら次の目標を残します。この記録の積み重ねがアプリの中心です。",
+            "使った時間と短いメモを残しましょう。実際のセッション1件で両方の旅が動きます。",
           detail:
             "セッションが保存されると、次に進捗の見返りが見える画面へ移動します。",
         },
         homeJourney: {
-          eyebrow: "見返りの画面",
-          title: "現実の進捗がもう一つの旅も動かします",
+          eyebrow: "見返りを見る",
+          title: "あなたの進捗で旅人が進む",
           body:
-            "ホームでは、トラッカーXP、連続記録、そして異世界側の旅路がひとつの流れとしてつながって見えるようになります。",
+            "ホームでは、現実の努力が移動、連続記録、帰還への勢いに変わって見えます。",
           detail:
             "記録を続けたくなる理由を一番感じやすい場所です。",
         },
         tracker: {
           eyebrow: "整理する場所",
-          title: "目標一覧を裏側から整える",
+          title: "目標一覧はここで管理する",
           body:
-            "トラッカーでは、目標の見直し、状態変更、一覧の整理をまとめて行えます。主なループに慣れたあとで使う場所です。",
+            "トラッカーでは、目標の見直し、状態変更、一覧の整理をまとめて行えます。",
           detail:
             "この流れをまた見たくなったら、設定からいつでもオンボーディングを開けます。",
         },

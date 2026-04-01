@@ -34,6 +34,7 @@ const onboardingRuntime = {
   active: false,
   mode: "idle",
   stepIndex: -1,
+  bubbleCollapsed: false,
   previousMeta: null,
   startedAt: null,
   snapshot: {
@@ -74,24 +75,38 @@ export async function handleOnboardingOverlayClick(event) {
     return;
   }
 
-  const actionButton = event.target.closest("[data-onboarding-action]");
-  if (!(actionButton instanceof HTMLButtonElement)) {
+  const actionElement = event.target.closest("[data-onboarding-action]");
+  if (!(actionElement instanceof HTMLElement)) {
     return;
   }
 
-  const action = actionButton.dataset.onboardingAction;
+  const action = actionElement.dataset.onboardingAction;
 
   if (action === "skip") {
+    if (!(actionElement instanceof HTMLButtonElement)) {
+      return;
+    }
     await dismissOnboarding();
     return;
   }
 
+  if (action === "toggle-bubble") {
+    toggleOnboardingBubble();
+    return;
+  }
+
   if (action === "back") {
+    if (!(actionElement instanceof HTMLButtonElement)) {
+      return;
+    }
     await goToStep(onboardingRuntime.stepIndex - 1, { focus: true });
     return;
   }
 
   if (action === "primary") {
+    if (!(actionElement instanceof HTMLButtonElement)) {
+      return;
+    }
     await handlePrimaryAction();
   }
 }
@@ -154,6 +169,7 @@ async function startOnboarding({ mode, previousMeta }) {
   onboardingRuntime.active = true;
   onboardingRuntime.mode = mode;
   onboardingRuntime.stepIndex = startingStepIndex;
+  onboardingRuntime.bubbleCollapsed = false;
   onboardingRuntime.previousMeta = previousMeta;
   onboardingRuntime.startedAt = buildStartedAt(previousMeta, mode);
 
@@ -197,6 +213,7 @@ async function goToStep(nextStepIndex, options = {}) {
   }
 
   onboardingRuntime.stepIndex = nextStepIndex;
+  onboardingRuntime.bubbleCollapsed = false;
   appState.onboarding.stepId = step.id;
   appState.onboarding.lockBodyScroll = Boolean(step.locksBodyScroll);
 
@@ -270,6 +287,7 @@ function resetOnboardingRuntime() {
   onboardingRuntime.active = false;
   onboardingRuntime.mode = "idle";
   onboardingRuntime.stepIndex = -1;
+  onboardingRuntime.bubbleCollapsed = false;
   onboardingRuntime.startedAt = null;
   onboardingRuntime.syncFrameId = 0;
   onboardingRuntime.pendingFocus = false;
@@ -357,6 +375,7 @@ function syncOnboardingStep(shouldFocus = false) {
       current: onboardingRuntime.stepIndex + 1,
       total: ONBOARDING_STEPS.length,
     }),
+    progressCompactLabel: `${onboardingRuntime.stepIndex + 1}/${ONBOARDING_STEPS.length}`,
     spriteSrc: currentStep.sprite?.src,
     spriteFrameCount: currentStep.sprite?.frameCount || 1,
     spriteFrameDurationMs: currentStep.sprite?.frameDurationMs || 1000,
@@ -369,7 +388,13 @@ function syncOnboardingStep(shouldFocus = false) {
     primaryDisabled: Boolean(currentStep.requirement && !requirementState.satisfied),
     targetRect,
     requirementSatisfied: requirementState.satisfied,
-    cardPlacement: currentStep.cardPlacement || "bottom",
+    bubbleCollapsed: onboardingRuntime.bubbleCollapsed,
+    hideGuideLabel: t("onboarding.actions.hideGuide"),
+    toggleGuideLabel: t(
+      onboardingRuntime.bubbleCollapsed
+        ? "onboarding.actions.showGuide"
+        : "onboarding.actions.hideGuide"
+    ),
   };
 
   renderOnboardingStep(viewModel);
@@ -380,7 +405,19 @@ function syncOnboardingStep(shouldFocus = false) {
 }
 
 function focusOnboardingEntry(step, viewModel) {
-  focusOnboardingPrimaryAction();
+  if (step.kind === "welcome") {
+    focusOnboardingPrimaryAction();
+  }
+}
+
+function toggleOnboardingBubble() {
+  const currentStep = getCurrentStep();
+  if (!currentStep || currentStep.kind !== "spotlight") {
+    return;
+  }
+
+  onboardingRuntime.bubbleCollapsed = !onboardingRuntime.bubbleCollapsed;
+  scheduleOnboardingSync();
 }
 
 function getRequirementState(step) {

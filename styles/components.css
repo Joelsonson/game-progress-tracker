@@ -2602,29 +2602,44 @@
 
 .onboarding-spotlight-frame {
   position: fixed;
-  border-radius: 28px;
+  border-radius: 24px;
   border: 2px solid rgba(255, 245, 227, 0.92);
   box-shadow:
     0 0 0 1px rgba(193, 145, 98, 0.32),
-    0 22px 48px rgba(0, 0, 0, 0.28),
+    0 18px 40px rgba(0, 0, 0, 0.24),
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
   pointer-events: none;
 }
 
 .onboarding-card-root {
   position: fixed;
-  inset: auto 12px max(16px, calc(env(safe-area-inset-bottom) + 12px));
-  display: grid;
-  justify-items: center;
+  inset: 0;
   pointer-events: none;
+  padding-inline: max(12px, calc((100vw - 480px) / 2 + 12px));
+}
+
+.onboarding-overlay[data-step-kind="welcome"] .onboarding-card-root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: max(18px, calc(env(safe-area-inset-top) + 14px));
+  padding-bottom: max(20px, calc(env(safe-area-inset-bottom) + 18px));
+}
+
+.onboarding-overlay[data-step-kind="spotlight"] .onboarding-card-root {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding-top: max(10px, calc(env(safe-area-inset-top) + 6px));
+  padding-bottom: max(14px, calc(env(safe-area-inset-bottom) + 10px));
 }
 
 .onboarding-card {
-  width: min(100%, 560px);
+  width: min(100%, 440px);
   display: grid;
-  gap: 14px;
-  padding: 16px;
-  border-radius: 28px;
+  gap: 16px;
+  padding: 22px 18px 18px;
+  border-radius: 30px;
   border: 1px solid rgba(var(--ink-rgb), 0.12);
   background:
     radial-gradient(circle at top left, rgba(250, 204, 21, 0.12), transparent 32%),
@@ -2635,7 +2650,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.26);
   backdrop-filter: blur(18px);
   pointer-events: auto;
-  max-height: min(320px, calc(100dvh - 24px));
+  max-height: min(82dvh, 640px);
   overflow: auto;
 }
 
@@ -2649,6 +2664,11 @@
 .onboarding-card-copy {
   display: grid;
   gap: 12px;
+}
+
+.onboarding-welcome-card .onboarding-card-media {
+  display: flex;
+  justify-content: center;
 }
 
 .onboarding-progress-row {
@@ -2694,6 +2714,7 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  justify-content: flex-start;
 }
 
 .onboarding-progress-dot {
@@ -2723,18 +2744,13 @@
   opacity: 0.76;
 }
 
-.onboarding-card-media {
-  display: flex;
-  justify-content: flex-start;
-}
-
 .onboarding-guide-shell {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 96px;
-  height: 96px;
-  border-radius: 26px;
+  width: 82px;
+  height: 82px;
+  border-radius: 24px;
   border: 1px solid rgba(193, 145, 98, 0.2);
   background:
     radial-gradient(circle at 30% 28%, rgba(250, 204, 21, 0.18), transparent 42%),
@@ -2744,9 +2760,9 @@
 }
 
 .onboarding-guide-stage {
-  --journey-sprite-display-width: 84px;
-  --journey-sprite-display-height: 84px;
-  border-radius: 20px;
+  --journey-sprite-display-width: 72px;
+  --journey-sprite-display-height: 72px;
+  border-radius: 18px;
   border-color: rgba(193, 145, 98, 0.18);
   background:
     radial-gradient(circle at top, rgba(250, 204, 21, 0.16), transparent 56%),
@@ -2754,18 +2770,191 @@
   box-shadow: inset 0 0 0 1px rgba(250, 204, 21, 0.08);
 }
 
-.onboarding-card-root[data-placement="top"] {
-  inset: max(12px, calc(env(safe-area-inset-top) + 8px)) 12px auto;
+.onboarding-guide-cluster {
+  width: min(100%, 456px);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: flex-start;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.onboarding-guide-cluster.is-collapsed {
+  width: auto;
+  grid-template-columns: auto;
+}
+
+.onboarding-guide-toggle {
+  display: inline-grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.onboarding-guide-toggle-progress {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.84);
+  border: 1px solid rgba(193, 145, 98, 0.2);
+  color: rgba(255, 245, 227, 0.9);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.onboarding-speech-bubble[hidden] {
+  display: none;
+}
+
+.onboarding-speech-bubble {
+  position: relative;
+  width: min(272px, calc(100vw - 122px));
+  max-width: 100%;
+  display: grid;
+  gap: 10px;
+  padding: 12px 12px 14px;
+  border-radius: 22px;
+  border: 1px solid rgba(193, 145, 98, 0.24);
+  background:
+    linear-gradient(180deg, rgba(44, 40, 39, 0.95), rgba(36, 33, 33, 0.96)),
+    rgba(27, 25, 25, 0.94);
+  box-shadow:
+    0 16px 30px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.onboarding-speech-bubble::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 22px;
+  width: 16px;
+  height: 16px;
+  transform: rotate(45deg);
+  border-left: 1px solid rgba(193, 145, 98, 0.24);
+  border-bottom: 1px solid rgba(193, 145, 98, 0.24);
+  background: rgba(43, 39, 38, 0.96);
+}
+
+.onboarding-speech-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.onboarding-speech-header-toggle {
+  flex: 1;
+  display: grid;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  min-width: 0;
+}
+
+.onboarding-speech-header-toggle .eyebrow {
+  margin: 0;
+}
+
+.onboarding-speech-minimize {
+  min-height: 32px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.onboarding-speech-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.onboarding-speech-copy h2 {
+  margin: 0;
+  font-size: clamp(1rem, 4vw, 1.28rem);
+  line-height: 1.12;
+}
+
+.onboarding-speech-copy .onboarding-card-body {
+  font-size: 0.91rem;
+  line-height: 1.45;
+}
+
+.onboarding-speech-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.onboarding-speech-actions .onboarding-card-actions-secondary {
+  gap: 8px;
+  flex: 1 1 auto;
+}
+
+.onboarding-speech-actions .onboarding-primary-button {
+  flex: 0 0 auto;
+  min-width: 108px;
+}
+
+.onboarding-overlay[data-step-kind="spotlight"] .onboarding-status-note {
+  padding: 8px 10px;
+  border-radius: 14px;
+  font-size: 0.84rem;
+  line-height: 1.35;
 }
 
 @media (min-width: 560px) {
-  .onboarding-card {
+  .onboarding-welcome-card {
     grid-template-columns: auto minmax(0, 1fr);
     align-items: start;
   }
 
-  .onboarding-card-actions {
+  .onboarding-welcome-card .onboarding-card-actions {
     grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 380px) {
+  .onboarding-guide-cluster {
+    gap: 8px;
+  }
+
+  .onboarding-guide-shell {
+    width: 76px;
+    height: 76px;
+    border-radius: 22px;
+  }
+
+  .onboarding-guide-stage {
+    --journey-sprite-display-width: 66px;
+    --journey-sprite-display-height: 66px;
+    border-radius: 16px;
+  }
+
+  .onboarding-speech-bubble {
+    width: min(248px, calc(100vw - 110px));
+    padding: 11px 11px 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .onboarding-speech-minimize {
+    display: none;
   }
 }
 
