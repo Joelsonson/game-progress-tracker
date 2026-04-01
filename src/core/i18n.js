@@ -496,14 +496,14 @@ const translations = {
       actions: {
         startSetup: "Start setup",
         continue: "Continue",
+        saveGoal: "Save goal",
+        saveSession: "Save session",
         next: "Next",
         finish: "Finish onboarding",
         back: "Back",
         skip: "Skip for now",
         showGuide: "Show guide",
         hideGuide: "Hide guide",
-        waitingGoal: "Waiting for goal save",
-        waitingSession: "Waiting for session save",
       },
       status: {
         goalWaiting:
@@ -519,7 +519,7 @@ const translations = {
           eyebrow: "A quick guided start",
           title: "Set up the loop that matters first",
           body:
-            "This app works best when you create one real goal, log sessions against it, and watch both journeys move together.",
+            "Start by adding one goal and logging time against it. That is the main loop of the app.",
           detail:
             "We will walk through the main screens once. You can replay this later from Settings.",
         },
@@ -527,7 +527,7 @@ const translations = {
           eyebrow: "Add a goal",
           title: "Name one real goal",
           body:
-            "Start with a title. Leave art for later and set it to In Progress so logging is ready.",
+            "Keep it simple. Enter a goal title and save it to start tracking.",
           detail:
             "Save any real goal here. The guide will continue as soon as it exists.",
         },
@@ -535,15 +535,15 @@ const translations = {
           eyebrow: "Log a session",
           title: "Save your first session",
           body:
-            "Log the time spent and a short note. One real session is enough to move both journeys.",
+            "Log time against your goal. Sessions help you track progress and give me XP while I try to escape this world.",
           detail:
             "As soon as a session is saved, the guide will take you to the payoff.",
         },
         homeJourney: {
           eyebrow: "See the payoff",
-          title: "Your progress moves the traveler",
+          title: "Your progress keeps me moving",
           body:
-            "Home turns your effort into movement, streaks, and momentum for the return journey.",
+            "Tracking and logging sessions against your goal keeps me going. Check the Journey and Character tabs to help me progress.",
           detail:
             "This is the emotional payoff screen after you keep logging.",
         },
@@ -1126,14 +1126,14 @@ const translations = {
       actions: {
         startSetup: "セットアップ開始",
         continue: "続ける",
+        saveGoal: "目標を保存",
+        saveSession: "セッションを保存",
         next: "次へ",
         finish: "オンボーディング完了",
         back: "戻る",
         skip: "いまはスキップ",
         showGuide: "ガイドを表示",
         hideGuide: "ガイドを隠す",
-        waitingGoal: "目標保存待ち",
-        waitingSession: "セッション保存待ち",
       },
       status: {
         goalWaiting:
@@ -1149,7 +1149,7 @@ const translations = {
           eyebrow: "まずは短い案内から",
           title: "最初に大事な流れだけ整えましょう",
           body:
-            "このアプリは、実際の目標を1つ作り、そこへセッションを記録し、現実と異世界の旅が一緒に進む感覚をつかむと使いやすくなります。",
+            "最初に目標を1つ作り、そこへ時間を記録していくのがこのアプリの基本の流れです。",
           detail:
             "主要な画面を一度だけ案内します。あとで設定からいつでも再表示できます。",
         },
@@ -1157,7 +1157,7 @@ const translations = {
           eyebrow: "目標を追加",
           title: "進めたい目標を1つ決める",
           body:
-            "最初はタイトルだけで十分です。画像はあと回しで大丈夫。「進行中」にしておくとすぐ記録できます。",
+            "まずはシンプルに、目標のタイトルを入れて保存しましょう。",
           detail:
             "ここで実際の目標を1件保存すると、ガイドが次へ進みます。",
         },
@@ -1165,15 +1165,15 @@ const translations = {
           eyebrow: "セッションを記録",
           title: "最初のセッションを保存する",
           body:
-            "使った時間と短いメモを残しましょう。実際のセッション1件で両方の旅が動きます。",
+            "目標に使った時間を記録しましょう。セッションを積み重ねると進捗を追えますし、私がこの世界から脱出するためのXPにもなります。",
           detail:
             "セッションが保存されると、次に進捗の見返りが見える画面へ移動します。",
         },
         homeJourney: {
           eyebrow: "見返りを見る",
-          title: "あなたの進捗で旅人が進む",
+          title: "あなたの進捗で私が進める",
           body:
-            "ホームでは、現実の努力が移動、連続記録、帰還への勢いに変わって見えます。",
+            "目標を追いかけてセッションを記録すると、私の旅も進みます。Journey と Character タブも見てみてください。",
           detail:
             "記録を続けたくなる理由を一番感じやすい場所です。",
         },

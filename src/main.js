@@ -81,6 +81,7 @@ import {
 import { getPreferredScreenId, handleScreenNavClick, handleViewportResize, setActiveScreen } from "./features/navigation/navigation.js";
 import {
   handleOnboardingAppRendered,
+  handleOnboardingFormInteraction,
   handleOnboardingKeydown,
   handleOnboardingOverlayClick,
   maybeAutoStartOnboarding,
@@ -123,6 +124,10 @@ async function init() {
 function bindEvents() {
   gameForm.addEventListener("submit", handleAddGame);
   sessionForm.addEventListener("submit", handleAddSession);
+  gameForm.addEventListener("input", handleOnboardingFormInteraction);
+  gameForm.addEventListener("change", handleOnboardingFormInteraction);
+  sessionForm.addEventListener("input", handleOnboardingFormInteraction);
+  sessionForm.addEventListener("change", handleOnboardingFormInteraction);
   gamesListEl.addEventListener("click", handleListClick);
   homeOverviewEl?.addEventListener("click", handleListClick);
   homeOverviewEl?.addEventListener("click", handleHomeOverviewClick);

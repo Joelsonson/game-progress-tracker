@@ -2605,8 +2605,10 @@
   border-radius: 24px;
   border: 2px solid rgba(255, 245, 227, 0.92);
   box-shadow:
+    0 0 0 999px rgba(10, 16, 24, 0.24),
     0 0 0 1px rgba(193, 145, 98, 0.32),
-    0 18px 40px rgba(0, 0, 0, 0.24),
+    0 0 52px 18px rgba(10, 16, 24, 0.16),
+    0 18px 40px rgba(0, 0, 0, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
   pointer-events: none;
 }
@@ -2771,20 +2773,21 @@
 }
 
 .onboarding-guide-cluster {
-  width: min(100%, 456px);
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  position: relative;
+  width: min(100%, 360px);
+  min-height: 96px;
+  display: block;
   align-items: flex-start;
-  gap: 10px;
   pointer-events: auto;
 }
 
 .onboarding-guide-cluster.is-collapsed {
   width: auto;
-  grid-template-columns: auto;
+  min-height: 96px;
 }
 
 .onboarding-guide-toggle {
+  position: relative;
   display: inline-grid;
   gap: 6px;
   justify-items: center;
@@ -2810,12 +2813,59 @@
   font-weight: 700;
 }
 
-.onboarding-speech-bubble[hidden] {
-  display: none;
+.onboarding-guide-prompt {
+  position: absolute;
+  top: 2px;
+  right: -4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 7px;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(48, 43, 42, 0.98), rgba(35, 32, 31, 0.96)),
+    rgba(35, 32, 31, 0.94);
+  border: 1px solid rgba(193, 145, 98, 0.28);
+  box-shadow:
+    0 10px 18px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  opacity: 0;
+  transform: translateY(-4px) scale(0.92);
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+  pointer-events: none;
+}
+
+.onboarding-guide-prompt::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  bottom: -4px;
+  width: 10px;
+  height: 10px;
+  transform: rotate(45deg);
+  background: rgba(38, 35, 34, 0.98);
+  border-right: 1px solid rgba(193, 145, 98, 0.28);
+  border-bottom: 1px solid rgba(193, 145, 98, 0.28);
+}
+
+.onboarding-guide-prompt-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 245, 227, 0.92);
+}
+
+.onboarding-guide-cluster.is-collapsed .onboarding-guide-prompt {
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
 
 .onboarding-speech-bubble {
-  position: relative;
+  position: absolute;
+  left: 94px;
+  top: 4px;
   width: min(272px, calc(100vw - 122px));
   max-width: 100%;
   display: grid;
@@ -2831,6 +2881,16 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
   pointer-events: auto;
   cursor: pointer;
+  transform-origin: top left;
+  transition:
+    opacity 0.24s ease,
+    transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.onboarding-speech-bubble.is-collapsed {
+  opacity: 0;
+  transform: translateX(-18px) translateY(4px) scale(0.72);
+  pointer-events: none;
 }
 
 .onboarding-speech-bubble::before {
@@ -2870,11 +2930,12 @@
 }
 
 .onboarding-speech-minimize {
+  min-width: 32px;
   min-height: 32px;
-  padding: 7px 10px;
+  padding: 0;
   border-radius: 999px;
-  font-size: 0.78rem;
-  white-space: nowrap;
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .onboarding-speech-copy {
@@ -2908,7 +2969,18 @@
 
 .onboarding-speech-actions .onboarding-primary-button {
   flex: 0 0 auto;
-  min-width: 108px;
+  min-width: 96px;
+}
+
+.onboarding-inline-button {
+  min-height: 32px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  box-shadow:
+    0 8px 16px rgba(var(--ink-rgb), 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
 .onboarding-overlay[data-step-kind="spotlight"] .onboarding-status-note {
@@ -2930,10 +3002,6 @@
 }
 
 @media (max-width: 380px) {
-  .onboarding-guide-cluster {
-    gap: 8px;
-  }
-
   .onboarding-guide-shell {
     width: 76px;
     height: 76px;
@@ -2947,14 +3015,20 @@
   }
 
   .onboarding-speech-bubble {
-    width: min(248px, calc(100vw - 110px));
+    left: 88px;
+    width: min(248px, calc(100vw - 102px));
     padding: 11px 11px 12px;
   }
 }
 
 @media (max-width: 360px) {
-  .onboarding-speech-minimize {
-    display: none;
+  .onboarding-guide-cluster {
+    width: min(100%, 332px);
+  }
+
+  .onboarding-speech-bubble {
+    left: 82px;
+    width: min(236px, calc(100vw - 94px));
   }
 }
 

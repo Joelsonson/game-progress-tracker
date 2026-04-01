@@ -193,14 +193,13 @@ function buildSpotlightMarkup(viewModel) {
     ? `
         <button
           type="button"
-          class="secondary-button"
+          class="secondary-button onboarding-inline-button"
           data-onboarding-action="back"
         >
           ${escapeHtml(viewModel.backLabel)}
         </button>
       `
     : "";
-  const bubbleHiddenAttr = viewModel.bubbleCollapsed ? "hidden" : "";
 
   return `
     <div class="onboarding-guide-cluster${viewModel.bubbleCollapsed ? " is-collapsed" : ""}">
@@ -214,16 +213,21 @@ function buildSpotlightMarkup(viewModel) {
       >
         ${buildGuideSpriteMarkup(viewModel)}
         <span class="onboarding-guide-toggle-progress">${escapeHtml(viewModel.progressCompactLabel)}</span>
+        <span class="onboarding-guide-prompt" aria-hidden="true">
+          <span class="onboarding-guide-prompt-dot"></span>
+          <span class="onboarding-guide-prompt-dot"></span>
+          <span class="onboarding-guide-prompt-dot"></span>
+        </span>
       </button>
 
       <section
         id="onboardingGuideBubble"
-        class="onboarding-speech-bubble"
+        class="onboarding-speech-bubble${viewModel.bubbleCollapsed ? " is-collapsed" : ""}"
         role="dialog"
         aria-labelledby="onboardingCardTitle"
         aria-describedby="onboardingCardBody"
         data-onboarding-action="toggle-bubble"
-        ${bubbleHiddenAttr}
+        aria-hidden="${viewModel.bubbleCollapsed ? "true" : "false"}"
       >
         <div class="onboarding-speech-header">
           <button
@@ -238,8 +242,9 @@ function buildSpotlightMarkup(viewModel) {
             type="button"
             class="secondary-button onboarding-speech-minimize"
             data-onboarding-action="toggle-bubble"
+            aria-label="${escapeAttribute(viewModel.hideGuideLabel)}"
           >
-            ${escapeHtml(viewModel.hideGuideLabel)}
+            <span aria-hidden="true">&lsaquo;</span>
           </button>
         </div>
 
@@ -254,7 +259,7 @@ function buildSpotlightMarkup(viewModel) {
             ${backButtonMarkup}
             <button
               type="button"
-              class="secondary-button"
+              class="secondary-button onboarding-inline-button"
               data-onboarding-action="skip"
             >
               ${escapeHtml(viewModel.skipLabel)}
@@ -263,7 +268,7 @@ function buildSpotlightMarkup(viewModel) {
 
           <button
             type="button"
-            class="primary-button onboarding-primary-button"
+            class="primary-button onboarding-primary-button onboarding-inline-button"
             data-onboarding-action="primary"
             ${viewModel.primaryDisabled ? "disabled" : ""}
           >
@@ -320,30 +325,10 @@ function renderSpotlight(targetRect) {
     return;
   }
 
-  setScrimStyles(onboardingScrimTop, {
-    top: "0px",
-    left: "0px",
-    width: `${viewportWidth}px`,
-    height: `${top}px`,
-  });
-  setScrimStyles(onboardingScrimLeft, {
-    top: `${top}px`,
-    left: "0px",
-    width: `${left}px`,
-    height: `${spotlightHeight}px`,
-  });
-  setScrimStyles(onboardingScrimRight, {
-    top: `${top}px`,
-    left: `${right}px`,
-    width: `${Math.max(0, viewportWidth - right)}px`,
-    height: `${spotlightHeight}px`,
-  });
-  setScrimStyles(onboardingScrimBottom, {
-    top: `${bottom}px`,
-    left: "0px",
-    width: `${viewportWidth}px`,
-    height: `${Math.max(0, viewportHeight - bottom)}px`,
-  });
+  hideScrim(onboardingScrimTop);
+  hideScrim(onboardingScrimLeft);
+  hideScrim(onboardingScrimRight);
+  hideScrim(onboardingScrimBottom);
 
   if (onboardingSpotlightFrame) {
     onboardingSpotlightFrame.hidden = false;
@@ -368,16 +353,6 @@ function hideSpotlight() {
 function hideScrim(element) {
   if (!element) return;
   element.hidden = true;
-}
-
-function setScrimStyles(element, styles) {
-  if (!element) return;
-
-  element.hidden = false;
-  element.style.top = styles.top;
-  element.style.left = styles.left;
-  element.style.width = styles.width;
-  element.style.height = styles.height;
 }
 
 function clampNumber(value, min, max = Number.POSITIVE_INFINITY) {

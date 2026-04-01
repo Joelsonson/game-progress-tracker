@@ -1,6 +1,10 @@
 import { getMeta, setMeta } from "../../data/metaRepo.js";
 import {
+  gameForm,
   gameStatusInput,
+  sessionForm,
+  sessionGameSelect,
+  sessionMinutesInput,
   titleInput,
 } from "../../core/dom.js";
 import {
@@ -140,6 +144,14 @@ export function syncOnboardingLayout() {
   scheduleOnboardingSync();
 }
 
+export function handleOnboardingFormInteraction() {
+  if (!onboardingRuntime.active || !getCurrentStep()?.requirement) {
+    return;
+  }
+
+  scheduleOnboardingSync();
+}
+
 export async function notifyOnboardingGoalSaved() {
   if (
     !onboardingRuntime.active ||
@@ -194,7 +206,20 @@ async function handlePrimaryAction() {
   const currentStep = getCurrentStep();
   if (!currentStep) return;
 
-  if (currentStep.requirement && !getRequirementState(currentStep).satisfied) {
+  const requirementState = getRequirementState(currentStep);
+
+  if (currentStep.requirement && !requirementState.satisfied) {
+    if (currentStep.requirement === "goal" && canSubmitGoalFromOnboarding()) {
+      gameForm?.requestSubmit();
+    }
+
+    if (
+      currentStep.requirement === "session" &&
+      canSubmitSessionFromOnboarding()
+    ) {
+      sessionForm?.requestSubmit();
+    }
+
     return;
   }
 
@@ -361,6 +386,7 @@ function syncOnboardingStep(shouldFocus = false) {
   const targetRect = currentStep.target
     ? measureOnboardingTarget(currentStep.target)
     : null;
+  const primaryDisabled = getPrimaryDisabled(currentStep, requirementState.satisfied);
   const viewModel = {
     stepId: currentStep.id,
     kind: currentStep.kind,
@@ -385,7 +411,7 @@ function syncOnboardingStep(shouldFocus = false) {
     backLabel: t("onboarding.actions.back"),
     skipLabel: t("onboarding.actions.skip"),
     primaryLabel: getPrimaryLabel(currentStep, requirementState.satisfied),
-    primaryDisabled: Boolean(currentStep.requirement && !requirementState.satisfied),
+    primaryDisabled,
     targetRect,
     requirementSatisfied: requirementState.satisfied,
     bubbleCollapsed: onboardingRuntime.bubbleCollapsed,
@@ -458,16 +484,28 @@ function getPrimaryLabel(step, requirementSatisfied) {
   }
 
   if (step.requirement) {
-    return requirementSatisfied
-      ? t("onboarding.actions.continue")
-      : step.requirement === "goal"
-        ? t("onboarding.actions.waitingGoal")
-        : t("onboarding.actions.waitingSession");
+    if (requirementSatisfied) {
+      return t("onboarding.actions.continue");
+    }
+
+    return step.requirement === "goal"
+      ? t("onboarding.actions.saveGoal")
+      : t("onboarding.actions.saveSession");
   }
 
   return onboardingRuntime.stepIndex >= ONBOARDING_STEPS.length - 1
     ? t("onboarding.actions.finish")
     : t("onboarding.actions.next");
+}
+
+function getPrimaryDisabled(step, requirementSatisfied) {
+  if (!step.requirement || requirementSatisfied) {
+    return false;
+  }
+
+  return step.requirement === "goal"
+    ? !canSubmitGoalFromOnboarding()
+    : !canSubmitSessionFromOnboarding();
 }
 
 function getCurrentStep() {
@@ -503,4 +541,24 @@ function buildStartedAt(previousMeta, mode) {
 async function readOnboardingMeta() {
   const storedMeta = await getMeta(appState.db, ONBOARDING_META_KEY);
   return normalizeOnboardingMeta(storedMeta);
+}
+
+function canSubmitGoalFromOnboarding() {
+  return (
+    gameForm instanceof HTMLFormElement &&
+    titleInput instanceof HTMLInputElement &&
+    titleInput.value.trim().length > 0
+  );
+}
+
+function canSubmitSessionFromOnboarding() {
+  const minutes = Number(sessionMinutesInput?.value);
+
+  return (
+    sessionForm instanceof HTMLFormElement &&
+    sessionGameSelect instanceof HTMLSelectElement &&
+    Boolean(sessionGameSelect.value) &&
+    Number.isFinite(minutes) &&
+    minutes > 0
+  );
 }
