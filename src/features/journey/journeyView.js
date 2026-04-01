@@ -32,7 +32,7 @@ import {
 } from "../../core/formatters.js";
 import { getCurrentLocale, t } from "../../core/i18n.js";
 import { appState } from "../../core/state.js";
-import { syncBodyScrollLock } from "../../core/ui.js";
+import { showToast, syncBodyScrollLock } from "../../core/ui.js";
 import {
   buildJourneyDerived,
   getJourneyBagMeta,
@@ -682,7 +682,7 @@ export function closeJourneyEventModal() {
   syncBodyScrollLock();
 }
 
-export function showJourneyEventThinking(choiceLabel) {
+export function showJourneyEventThinking(choiceLabel, duration = 3200) {
   if (!journeyEventBodyEl) return;
 
   const choiceButtons = journeyEventBodyEl.querySelectorAll(".journey-event-choice");
@@ -692,26 +692,14 @@ export function showJourneyEventThinking(choiceLabel) {
     }
   }
 
-  if (journeyEventBodyEl.querySelector(".journey-event-thinking")) {
-    return;
-  }
+  const processingLabel = String(choiceLabel || "").trim();
 
-  journeyEventBodyEl.insertAdjacentHTML(
-    "beforeend",
-    `
-      <div class="journey-event-thinking" aria-live="polite">
-        <span class="journey-event-thinking-title">${escapeHtml(
-          choiceLabel || t("journeyUi.modals.thinkingTitle")
-        )}</span>
-        <span class="journey-event-thinking-copy">${escapeHtml(
-          t("journeyUi.modals.thinkingCopy")
-        )}</span>
-        <span class="journey-event-thinking-dots" aria-hidden="true">
-          <span></span><span></span><span></span>
-        </span>
-      </div>
-    `
-  );
+  showToast(processingLabel || t("journeyUi.modals.thinkingTitle"), {
+    title: processingLabel ? t("journeyUi.modals.thinkingTitle") : "",
+    tone: "info",
+    duration,
+    placement: "top",
+  });
 }
 
 function renderJourneyChoiceLabel(choice) {

@@ -55,6 +55,8 @@ import {
   showJourneyEventThinking,
 } from "./journeyView.js";
 
+const JOURNEY_EVENT_RESOLVE_DELAY_MS = 3000;
+
 function showJourneyFeedback(message, isError = false) {
   showMessage(journeyMessageEl, message, isError);
 }
@@ -641,11 +643,12 @@ export async function handleJourneyEventModalClick(event) {
   showJourneyEventThinking(
     buildJourneyChoiceProgressText(
       button.querySelector(".journey-event-choice-title")?.textContent || ""
-    )
+    ),
+    JOURNEY_EVENT_RESOLVE_DELAY_MS + 400
   );
 
   try {
-    await wait(3000);
+    await wait(JOURNEY_EVENT_RESOLVE_DELAY_MS);
     await resolveJourneyEventChoice(button.dataset.eventId, button.dataset.choiceId);
   } finally {
     appState.isJourneyEventResolving = false;

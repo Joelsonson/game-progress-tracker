@@ -41,10 +41,14 @@ export function showToast(message, options = {}) {
     title = "",
     tone = "success",
     duration = 3200,
+    placement = "bottom",
   } = options;
 
   const toast = document.createElement("article");
   toast.className = `app-toast is-${tone}`;
+  if (placement === "top") {
+    toast.classList.add("is-top");
+  }
   toast.setAttribute("role", tone === "error" ? "alert" : "status");
 
   if (title) {

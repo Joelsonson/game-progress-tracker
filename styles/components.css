@@ -198,9 +198,21 @@
     transform 220ms ease;
 }
 
+.app-toast.is-top {
+  position: fixed;
+  top: max(16px, calc(env(safe-area-inset-top) + 12px));
+  left: 50%;
+  width: min(calc(100% - 32px), 420px);
+  transform: translate(-50%, -14px) scale(0.98);
+}
+
 .app-toast.is-visible {
   opacity: 1;
   transform: translateY(0) scale(1);
+}
+
+.app-toast.is-top.is-visible {
+  transform: translate(-50%, 0) scale(1);
 }
 
 .app-toast.is-success {
