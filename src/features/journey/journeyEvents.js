@@ -62,6 +62,8 @@ export function normalizeJourneyChoice(choice) {
     highlightWord:
       typeof choice.highlightWord === "string" ? choice.highlightWord.trim() : "",
     statKey,
+    roadIndex: Math.max(0, Math.floor(Number(choice.roadIndex) || 0)),
+    bossCheck: Boolean(choice.bossCheck),
     difficultyClass:
       hasExplicitOutcomeBranches && Number.isFinite(difficultyClass)
         ? Math.max(5, Math.min(25, Math.round(difficultyClass)))

@@ -19,6 +19,8 @@ import {
   JOURNEY_STARTER_ITEMS,
   JOURNEY_STAT_KEYS,
   JOURNEY_STAT_META,
+  JOURNEY_STORY_XP_CURVE_STEP,
+  JOURNEY_STORY_XP_GROWTH,
   JOURNEY_STORY_XP_PER_LEVEL,
   JOURNEY_TICK_MS,
   JOURNEY_WEAPON_META,
@@ -39,6 +41,7 @@ const JOURNEY_EVENT_HP_LOSS_MULTIPLIER = 3;
 const JOURNEY_BOSS_BATTLE_MAX_HP = 100;
 const JOURNEY_BOSS_BATTLE_TURN_LIMIT = 3;
 const JOURNEY_STRETCH_FAILURE_HP_RATIO = 0.05;
+let journeyChoiceDifficultyRoadIndex = 0;
 const JOURNEY_TRAVELER_AID_LOG =
   "A passing traveler shared dried meat and better directions after seeing the state you were in.";
 const JOURNEY_ZONE_NAMES_JA = [
@@ -496,6 +499,58 @@ export function pushJourneyDebugSnapshot(state) {
     0,
     JOURNEY_DEBUG_HISTORY_LIMIT
   );
+}
+
+function withJourneyChoiceDifficultyContext(roadIndex, build) {
+  const previousRoadIndex = journeyChoiceDifficultyRoadIndex;
+  journeyChoiceDifficultyRoadIndex = Math.max(0, Math.floor(Number(roadIndex) || 0));
+
+  try {
+    return build();
+  } finally {
+    journeyChoiceDifficultyRoadIndex = previousRoadIndex;
+  }
+}
+
+function getJourneyTierDifficultyBand(roadIndex) {
+  const normalizedRoadIndex = Math.max(0, Math.floor(Number(roadIndex) || 0));
+  const bandMin = 8 + Math.floor((normalizedRoadIndex + 1) / 2);
+  return {
+    min: bandMin,
+    max: bandMin + 4,
+  };
+}
+
+function getJourneyGeneratedDifficultyClass({
+  chanceBase = 0.24,
+  minChance = 0.14,
+  maxChance = 0.9,
+  roadIndex = journeyChoiceDifficultyRoadIndex,
+  bossCheck = false,
+} = {}) {
+  const band = getJourneyTierDifficultyBand(roadIndex);
+  const normalizedChanceBase = clamp(
+    Number.isFinite(Number(chanceBase)) ? Number(chanceBase) : 0.24,
+    0.05,
+    0.95
+  );
+  let difficultyBias = clamp((0.42 - normalizedChanceBase) / 0.24, 0, 1);
+
+  if (Number.isFinite(Number(minChance)) && Number(minChance) <= 0.16) {
+    difficultyBias += 0.08;
+  }
+  if (Number.isFinite(Number(maxChance)) && Number(maxChance) <= 0.72) {
+    difficultyBias += 0.1;
+  }
+  if (bossCheck) {
+    difficultyBias += 0.08;
+  }
+
+  const cappedMax = band.max + (difficultyBias >= 0.9 ? 1 : 0);
+  const scaledDc =
+    band.min + Math.round(clamp(difficultyBias, 0, 1) * (cappedMax - band.min));
+
+  return clamp(scaledDc, band.min, cappedMax);
 }
 
 export function getJourneyRollModifier(score) {
@@ -1991,7 +2046,17 @@ function buildJourneyStretchBossBattleEvent(
         preview: move.preview,
         highlightWord: move.highlightWord,
         statKey: move.statKey,
-        difficultyClass: move.difficultyClass,
+        roadIndex: state.bossIndex,
+        bossCheck: true,
+        difficultyClass: Number.isFinite(Number(move.difficultyClass))
+          ? Math.round(Number(move.difficultyClass))
+          : getJourneyGeneratedDifficultyClass({
+              chanceBase: move.chanceBase,
+              minChance: move.minChance,
+              maxChance: move.maxChance,
+              roadIndex: state.bossIndex,
+              bossCheck: true,
+            }),
         chanceBase: move.chanceBase,
         chancePerStat: move.chancePerStat,
         minChance: move.minChance,
@@ -2074,8 +2139,9 @@ function resolveJourneyBossBattleVictory(
   const resultVerb =
     finalOutcome === "defeated" ? `defeating ${boss.name}` : `driving ${boss.name} off`;
 
+  const clearedRoadIndex = state.bossIndex;
   state.bossIndex += 1;
-  state.storyXp += state.bossIndex === 1 ? 24 : 16;
+  state.storyXp += getJourneyBossStoryXpReward(clearedRoadIndex, true);
   state.bonusSkillPoints += 1;
   state.aidUrgency = Math.max(0, state.aidUrgency - 1);
 
@@ -2122,7 +2188,7 @@ function resolveJourneyBossBattleLoss(state, journeyStats, atDate, boss) {
     clamp(state.currentHunger - randomInt(14, 24), 0, journeyStats.maxHunger),
     Math.round(journeyStats.maxHunger * 0.28)
   );
-  state.storyXp += 4;
+  state.storyXp += getJourneyBossStoryXpReward(state.bossIndex, false);
   const defeatText = `${boss.name} overwhelms you before the stretch breaks, and you have to fall back in rough shape.`;
   addJourneyLog(state, defeatText, atDate.toISOString());
   sendJourneyToTown(
@@ -2621,6 +2687,7 @@ export function resolveJourneyBoss(state, journeyStats, atDate) {
   const clearedZoneName = getJourneyZoneName(state.bossIndex);
 
   if (success) {
+    const clearedRoadIndex = state.bossIndex;
     state.bossIndex += 1;
     state.currentHp = clamp(
       state.currentHp - randomInt(5, 12 + Math.floor(state.bossIndex / 2)),
@@ -2632,7 +2699,7 @@ export function resolveJourneyBoss(state, journeyStats, atDate) {
       0,
       journeyStats.maxHunger
     );
-    state.storyXp += state.bossIndex === 1 ? 24 : 16;
+    state.storyXp += getJourneyBossStoryXpReward(clearedRoadIndex, true);
     state.bonusSkillPoints += 1;
     state.aidUrgency = Math.max(0, state.aidUrgency - 1);
 
@@ -2685,7 +2752,7 @@ export function resolveJourneyBoss(state, journeyStats, atDate) {
     clamp(state.currentHunger - randomInt(14, 24), 0, journeyStats.maxHunger),
     Math.round(journeyStats.maxHunger * 0.28)
   );
-  state.storyXp += 4;
+  state.storyXp += getJourneyBossStoryXpReward(state.bossIndex, false);
   addJourneyLog(
     state,
     `${boss.name} drove you back and left you barely standing. The stretch only gave you about a ${stretchChallenge.successPercent}% shot and it went bad fast.`,
@@ -2931,7 +2998,15 @@ function createJourneyStatChoice({
     preview,
     highlightWord,
     statKey,
-    difficultyClass,
+    roadIndex: journeyChoiceDifficultyRoadIndex,
+    difficultyClass:
+      Number.isFinite(Number(difficultyClass))
+        ? Math.round(Number(difficultyClass))
+        : getJourneyGeneratedDifficultyClass({
+            chanceBase,
+            minChance,
+            maxChance,
+          }),
     chanceBase,
     chancePerStat,
     minChance,
@@ -2953,6 +3028,7 @@ function createJourneyGuaranteedChoice({
     label,
     preview,
     statKey: "resolve",
+    roadIndex: journeyChoiceDifficultyRoadIndex,
     chanceBase: 1,
     chancePerStat: 0,
     minChance: 1,
@@ -2978,7 +3054,13 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
     kind = "normal",
     repeatable = false
   ) => {
-    candidates.push({ key, weight, build, kind, repeatable });
+    candidates.push({
+      key,
+      weight,
+      build: () => withJourneyChoiceDifficultyContext(state.bossIndex, build),
+      kind,
+      repeatable,
+    });
   };
 
   if (
@@ -4660,7 +4742,13 @@ export function getJourneyChoiceDifficultyClass(choice) {
     0.95
   );
 
-  return clamp(21 - Math.round(baseChance * 20), 5, 25);
+  return getJourneyGeneratedDifficultyClass({
+    chanceBase: baseChance,
+    minChance: choice.minChance,
+    maxChance: choice.maxChance,
+    roadIndex: choice.roadIndex,
+    bossCheck: choice.bossCheck,
+  });
 }
 
 function resolveJourneyChoiceCheck(choice, journeyStats) {
@@ -4738,6 +4826,25 @@ function applyJourneyPermanentStatBonus(state, rawBonus) {
   )}.${detailText}`.trim();
 }
 
+function scaleJourneyEventStoryXp(amount, roadIndex) {
+  const baseAmount = Math.max(0, Math.round(Number(amount) || 0));
+  if (baseAmount <= 0) return 0;
+
+  const normalizedRoadIndex = Math.max(0, Math.floor(Number(roadIndex) || 0));
+  const multiplier = 1 + Math.min(0.4, normalizedRoadIndex * 0.08);
+  return Math.max(baseAmount, Math.round(baseAmount * multiplier));
+}
+
+function getJourneyBossStoryXpReward(roadIndex, success = true) {
+  const normalizedRoadIndex = Math.max(0, Math.floor(Number(roadIndex) || 0));
+
+  if (!success) {
+    return 4 + Math.min(8, normalizedRoadIndex * 2);
+  }
+
+  return 24 + normalizedRoadIndex * 6 + Math.floor(normalizedRoadIndex / 2) * 2;
+}
+
 export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
   const check = resolveJourneyChoiceCheck(choice, journeyStats);
   const success = check.success;
@@ -4745,7 +4852,7 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
   const notes = [];
   const hpDelta = scaleJourneyEventHpDelta(effects.hp);
   const storyXpDelta = success
-    ? effects.storyXp
+    ? scaleJourneyEventStoryXp(effects.storyXp, state.bossIndex)
     : Math.min(1, Math.round(Number(effects.storyXp) || 0));
 
   state.currentHp = clamp(
@@ -5236,8 +5343,41 @@ export function getJourneyLevel(state, currentTrackerLevel) {
   );
 }
 
+export function getJourneyStoryXpRequiredForLevelBonus(levelBonus) {
+  const normalizedLevelBonus = Math.max(0, Math.floor(Number(levelBonus) || 0));
+  const curvedGrowth =
+    (normalizedLevelBonus * (normalizedLevelBonus + 1) * JOURNEY_STORY_XP_CURVE_STEP) / 2;
+
+  return Math.max(
+    1,
+    JOURNEY_STORY_XP_PER_LEVEL +
+      normalizedLevelBonus * JOURNEY_STORY_XP_GROWTH +
+      curvedGrowth
+  );
+}
+
+export function getJourneyStoryLevelState(storyXp) {
+  let levelBonus = 0;
+  let remainingXp = Math.max(0, Math.floor(Number(storyXp) || 0));
+  let currentLevelRequirement =
+    getJourneyStoryXpRequiredForLevelBonus(levelBonus);
+
+  while (remainingXp >= currentLevelRequirement) {
+    remainingXp -= currentLevelRequirement;
+    levelBonus += 1;
+    currentLevelRequirement = getJourneyStoryXpRequiredForLevelBonus(levelBonus);
+  }
+
+  return {
+    levelBonus,
+    xpIntoLevel: remainingXp,
+    xpToNextLevel: currentLevelRequirement - remainingXp,
+    currentLevelRequirement,
+  };
+}
+
 export function getJourneyStoryLevelBonus(storyXp) {
-  return Math.floor(Math.max(0, Number(storyXp) || 0) / JOURNEY_STORY_XP_PER_LEVEL);
+  return getJourneyStoryLevelState(storyXp).levelBonus;
 }
 
 export function getUnspentSkillPoints(state, journeyLevel) {

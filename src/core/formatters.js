@@ -90,10 +90,16 @@ export function buildXpSummary(games, sessions) {
 }
 
 export function getXpRequiredForLevel(level) {
+  const normalizedLevel = Math.max(1, Math.floor(Number(level) || 1));
+  const levelOffset = normalizedLevel - 1;
+  const curvedGrowth =
+    (levelOffset * (levelOffset + 1) * XP_RULES.levelXpCurveStep) / 2;
+
   return Math.max(
     1,
     XP_RULES.baseLevelXp +
-      Math.max(0, Math.floor(Number(level) || 1) - 1) * XP_RULES.levelXpGrowth
+      levelOffset * XP_RULES.levelXpGrowth +
+      curvedGrowth
   );
 }
 

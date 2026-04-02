@@ -26,6 +26,7 @@ export const XP_RULES = {
   completionBonus: 100,
   baseLevelXp: 100,
   levelXpGrowth: 20,
+  levelXpCurveStep: 5,
 };
 
 export const GAME_DIFFICULTY_META = {
@@ -183,6 +184,8 @@ export const JOURNEY_DEBUG_HISTORY_LIMIT = 6;
 export const JOURNEY_RECENT_EVENT_LIMIT = 4;
 export const JOURNEY_COMPLETED_EVENT_LIMIT = 40;
 export const JOURNEY_STORY_XP_PER_LEVEL = 100;
+export const JOURNEY_STORY_XP_GROWTH = 16;
+export const JOURNEY_STORY_XP_CURVE_STEP = 4;
 export const JOURNEY_BASE_CLASS = "stranded";
 export const JOURNEY_BASE_STAT_SCORE = 8;
 export const JOURNEY_STARTING_SKILL_POINTS = 4;

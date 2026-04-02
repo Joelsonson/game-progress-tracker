@@ -22,7 +22,6 @@ import {
   JOURNEY_CLASS_META,
   JOURNEY_STAT_KEYS,
   JOURNEY_STAT_META,
-  JOURNEY_STORY_XP_PER_LEVEL,
 } from "../../core/constants.js";
 import {
   clamp,
@@ -46,8 +45,8 @@ import {
   getJourneyLevel,
   getJourneyPendingWeapons,
   getJourneySegmentProgress,
+  getJourneyStoryLevelState,
   getJourneyStatusLabel,
-  getJourneyStoryLevelBonus,
   getJourneyWeaponInventory,
   getJourneyZoneName,
   getRecoveryText,
@@ -1878,14 +1877,12 @@ function buildJourneyViewModel(state, games, sessions, xpSummary) {
     0,
     100
   );
-  const storyLevelBonus = getJourneyStoryLevelBonus(state.storyXp);
-  const storyXpIntoLevel = state.storyXp % JOURNEY_STORY_XP_PER_LEVEL;
-  const storyXpToNextLevel =
-    storyXpIntoLevel === 0
-      ? JOURNEY_STORY_XP_PER_LEVEL
-      : JOURNEY_STORY_XP_PER_LEVEL - storyXpIntoLevel;
+  const storyLevelState = getJourneyStoryLevelState(state.storyXp);
+  const storyLevelBonus = storyLevelState.levelBonus;
+  const storyXpIntoLevel = storyLevelState.xpIntoLevel;
+  const storyXpToNextLevel = storyLevelState.xpToNextLevel;
   const storyProgressPercent =
-    (storyXpIntoLevel / JOURNEY_STORY_XP_PER_LEVEL) * 100;
+    (storyXpIntoLevel / Math.max(1, storyLevelState.currentLevelRequirement)) * 100;
   const displayName = getJourneyDisplayName(state);
   const bagMeta = getJourneyBagMeta(state.bagKey);
   const weaponInventory = getJourneyWeaponInventory(state);
@@ -1898,14 +1895,14 @@ function buildJourneyViewModel(state, games, sessions, xpSummary) {
       ? {
           sourceLabel: t("journeyUi.character.storyXp"),
           current: storyXpIntoLevel,
-          goal: JOURNEY_STORY_XP_PER_LEVEL,
+          goal: storyLevelState.currentLevelRequirement,
           remaining: storyXpToNextLevel,
           progressPercent: storyProgressPercent,
         }
       : {
           sourceLabel: t("journeyUi.character.trackerXp"),
           current: xpSummary.xpIntoLevel,
-          goal: 100,
+          goal: xpSummary.currentLevelRequirement,
           remaining: xpSummary.xpToNextLevel,
           progressPercent: xpSummary.progressPercent,
         };
@@ -1928,6 +1925,7 @@ function buildJourneyViewModel(state, games, sessions, xpSummary) {
     hpPercent,
     hungerPercent,
     storyLevelBonus,
+    storyLevelState,
     storyXpIntoLevel,
     storyXpToNextLevel,
     storyProgressPercent,
@@ -2134,7 +2132,7 @@ function renderCharacterLevelBreakdown(viewModel) {
               <span class="journey-chip">${escapeHtml(
                 t("journeyUi.character.currentStoryBar", {
                   current: viewModel.storyXpIntoLevel,
-                  total: JOURNEY_STORY_XP_PER_LEVEL,
+                  total: viewModel.storyLevelState.currentLevelRequirement,
                 })
               )}</span>
               <span class="journey-chip is-active">${escapeHtml(
@@ -2155,8 +2153,16 @@ function renderCharacterSkillModal(viewModel) {
     return;
   }
 
+  const previousSkillDialog = characterSkillModalRoot.querySelector(
+    ".character-skill-dialog"
+  );
+  if (previousSkillDialog instanceof HTMLElement) {
+    appState.characterSkillModalScrollTop = previousSkillDialog.scrollTop;
+  }
+
   if (!appState.showCharacterSkillModal) {
     characterSkillModalRoot.innerHTML = "";
+    appState.characterSkillModalScrollTop = 0;
     syncBodyScrollLock();
     return;
   }
@@ -2221,6 +2227,17 @@ function renderCharacterSkillModal(viewModel) {
       </div>
     </div>
   `;
+
+  const nextSkillDialog = characterSkillModalRoot.querySelector(".character-skill-dialog");
+  if (nextSkillDialog instanceof HTMLElement && appState.characterSkillModalScrollTop > 0) {
+    const targetScrollTop = Math.min(
+      appState.characterSkillModalScrollTop,
+      Math.max(0, nextSkillDialog.scrollHeight - nextSkillDialog.clientHeight)
+    );
+    window.requestAnimationFrame(() => {
+      nextSkillDialog.scrollTop = targetScrollTop;
+    });
+  }
 
   syncBodyScrollLock();
 }

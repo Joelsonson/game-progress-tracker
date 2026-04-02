@@ -12,6 +12,7 @@ export const appState = {
   activeSessionsTab: DEFAULT_SESSIONS_TAB,
   editingCharacterName: false,
   showCharacterSkillModal: false,
+  characterSkillModalScrollTop: 0,
   isJourneyEventResolving: false,
   themePreference: "system",
   locale: "en",
