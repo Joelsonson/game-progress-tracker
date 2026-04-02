@@ -2581,11 +2581,9 @@ function renderJourneyRadarChart(journeyStats) {
 
 function renderCharacterRadarLegendItem(entry) {
   const breakdown = entry.breakdown;
-  const hasBonus =
-    Boolean(breakdown?.classBonus) ||
-    Boolean(breakdown?.weaponBonus) ||
-    Boolean(breakdown?.modifier) ||
-    Boolean(breakdown?.allocated);
+  const hasExternalBoost =
+    (Number(breakdown?.weaponBonus) || 0) > 0 ||
+    (Number(breakdown?.modifier) || 0) > 0;
   const rollBonusText = breakdown
     ? t("journeyUi.stats.rollBonus", {
         value: formatSignedNumber(breakdown.rollModifier),
@@ -2593,12 +2591,12 @@ function renderCharacterRadarLegendItem(entry) {
     : "";
 
   return `
-    <details class="character-radar-legend-item ${hasBonus ? "is-boosted" : ""}">
+    <details class="character-radar-legend-item ${hasExternalBoost ? "is-boosted" : ""}">
       <summary class="character-radar-legend-summary">
         <span>${escapeHtml(entry.label)}</span>
         <div class="character-radar-legend-summary-value">
           <div class="character-radar-legend-summary-math">
-            <strong class="${hasBonus ? "is-boosted" : ""}">${entry.value}</strong>
+            <strong class="${hasExternalBoost ? "is-boosted" : ""}">${entry.value}</strong>
             ${
               rollBonusText
                 ? `<small class="character-radar-roll-bonus">${escapeHtml(rollBonusText)}</small>`
