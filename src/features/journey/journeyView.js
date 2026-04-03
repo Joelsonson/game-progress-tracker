@@ -105,6 +105,10 @@ const JOURNEY_BATTLE_ART = {
     src: "./assets/journey/images/MossbackSnapjawPlaceholder.svg",
     alt: "Placeholder silhouette for Mossback Snapjaw",
   },
+  2: {
+    src: "./assets/journey/images/BridgeAmbusherPlaceholder.svg",
+    alt: "Placeholder silhouette for Bridge Ambusher",
+  },
 };
 
 const JOURNEY_LOCALIZED_META = {

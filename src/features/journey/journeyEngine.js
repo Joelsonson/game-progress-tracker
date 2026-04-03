@@ -1658,7 +1658,7 @@ export function autoResolvePendingJourneyEvents(state, journeyStats, atIso) {
 }
 
 export function supportsJourneyBossBattle(state) {
-  return Math.max(0, Math.floor(Number(state?.bossIndex) || 0)) <= 1;
+  return Math.max(0, Math.floor(Number(state?.bossIndex) || 0)) <= 2;
 }
 
 export function queueJourneyStretchBossBattle(state, journeyStats, atDate) {
@@ -2120,12 +2120,16 @@ function buildJourneyBossBattleLoadoutNote(bossIndex, journeyStats) {
   if (weaponLabel) {
     return bossIndex === 0
       ? `You keep ${weaponLabel} ready and wait for one clean opening.`
-      : `You keep ${weaponLabel} ready and look for the next opening.`;
+      : bossIndex === 2
+        ? `You keep ${weaponLabel} ready and try not to give the bridge a single bad step it can use against you.`
+        : `You keep ${weaponLabel} ready and look for the next opening.`;
   }
 
   return bossIndex === 0
     ? "You have no proper weapon, so every opening has to come from timing, footing, and nerve."
-    : "You are fighting without a proper weapon, so space and timing matter more than ever.";
+    : bossIndex === 2
+      ? "You are fighting without a proper weapon on a narrow bridge, so timing, balance, and nerve matter more than ever."
+      : "You are fighting without a proper weapon, so space and timing matter more than ever.";
 }
 
 function resolveJourneyBossBattleVictory(
@@ -2627,6 +2631,222 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
                   : "You scramble across its back, stay ahead of the snap, and hammer the weak line hard enough to finish the road.",
               failureText:
                 "You almost stay above the turn, but the thrash throws you off early and the landing costs you.",
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  if (bossIndex === 2) {
+    return {
+      intro:
+        "Halfway to the bridge, a figure rises from behind the broken rail with a hooked polearm in one hand and a short bow already bent in the other.",
+      opening:
+        "The old crossing is too narrow to ignore and too exposed to rush blindly. Until the ambusher breaks, the Abandoned Footpath ends here.",
+      turnPressure: 2,
+      turnHungerCost: 3,
+      counterText: (turn) =>
+        turn === 1
+          ? "The ambusher gives ground just enough to keep you on the bridge approach, bowstring singing as they hunt for another clean line."
+          : turn === 2
+            ? "Boots scrape on wet planks as the ambusher shifts between broken rails and stabbing reach, refusing to give you the center of the bridge."
+            : "The whole bridge rattles under the exchange, and the ambusher commits everything to one last ugly finish.",
+      turns: [
+        {
+          scene:
+            "The first arrow comes low and mean, meant to pin you on the approach while the hooked weapon keeps the bridge itself out of reach.",
+          prompt:
+            "This opening is about getting through the kill lane without giving the ambusher the clean rhythm they want.",
+          moves: [
+            {
+              key: "ambusher:rail-cut",
+              label: hasWeapon
+                ? "Use the broken rail for cover and cut in hard"
+                : "Use the broken rail for cover and crash in hard",
+              preview: "Advance under cover before the next shot can settle.",
+              highlightWord: hasWeapon ? "cut" : "crash",
+              statKey: "finesse",
+              chanceBase: 0.38,
+              chancePerStat: 0.05,
+              minChance: 0.27,
+              maxChance: 0.86,
+              bossDamage: { successBase: 26, successPerStat: 2.2, failBase: 10, failPerStat: 0.8 },
+              selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.56 },
+              successText:
+                hasWeapon
+                  ? "You slip behind the shattered rail, spoil the shot, and cut across the ambusher's leading side before they can reset."
+                  : "You slip behind the shattered rail, spoil the shot, and crash into the ambusher's leading side before they can reset.",
+              failureText:
+                hasWeapon
+                  ? "You close most of the distance, but the arrow still clips you and your cut lands without full weight."
+                  : "You close most of the distance, but the arrow still clips you and your hit lands without full weight.",
+            },
+            {
+              key: "ambusher:bull-through",
+              label: "Bull through the arrow line and break their footing",
+              preview: "Take the pain now to ruin their distance game.",
+              highlightWord: "Bull",
+              statKey: "might",
+              chanceBase: 0.34,
+              chancePerStat: 0.05,
+              minChance: 0.24,
+              maxChance: 0.82,
+              bossDamage: { successBase: 30, successPerStat: 2.4, failBase: 11, failPerStat: 0.9 },
+              selfDamage: { successBase: 10, failBase: 18, reductionPerStat: 0.47 },
+              successText:
+                "You drive straight through the shot, slam the bridge boards hard enough to shake their balance, and force the fight inside the bow's comfort.",
+              failureText:
+                "You make it through, but the arrow and hook both bite on the way in. The ambusher gives ground without really losing control.",
+            },
+            {
+              key: "ambusher:string-read",
+              label: "Read the draw and move on the release",
+              preview: "Beat the shot with timing instead of speed.",
+              highlightWord: "release",
+              statKey: "resolve",
+              chanceBase: 0.4,
+              chancePerStat: 0.045,
+              minChance: 0.3,
+              maxChance: 0.85,
+              bossDamage: { successBase: 24, successPerStat: 2.1, failBase: 9, failPerStat: 0.7 },
+              selfDamage: { successBase: 7, failBase: 14, reductionPerStat: 0.6 },
+              successText:
+                "You wait through the fear, move on the exact snap of the string, and steal a clean opening before the ambusher can flow into the next shot.",
+              failureText:
+                "You read the rhythm late. The dodge still happens, just not cleanly enough to keep the hook from finding you afterward.",
+            },
+          ],
+        },
+        {
+          scene:
+            "Now the fight is on the planks themselves, with the hooked weapon trying to drag your center off the line while the broken railing threatens every bad step.",
+          prompt:
+            "The middle exchange is about owning the bridge center. If the ambusher keeps your footing crooked, the whole crossing belongs to them.",
+          moves: [
+            {
+              key: "ambusher:hook-bind",
+              label: hasWeapon
+                ? "Bind the hook and cut through the opening"
+                : "Bind the hook and crash through the opening",
+              preview: "Beat the polearm at close range before it can control your feet.",
+              highlightWord: "Bind",
+              statKey: "might",
+              chanceBase: 0.35,
+              chancePerStat: 0.05,
+              minChance: 0.24,
+              maxChance: 0.82,
+              bossDamage: { successBase: 29, successPerStat: 2.3, failBase: 10, failPerStat: 0.8 },
+              selfDamage: { successBase: 10, failBase: 17, reductionPerStat: 0.48 },
+              successText:
+                hasWeapon
+                  ? "You catch the hooked shaft in the bind, wrench it off line, and cut through the gap before the ambusher can recover."
+                  : "You catch the hooked shaft in the bind, wrench it off line, and crash through the gap before the ambusher can recover.",
+              failureText:
+                "You get the bind, but not the leverage. The hook still tears your stance sideways and the counter lands ugly.",
+            },
+            {
+              key: "ambusher:plank-dance",
+              label: "Dance the slick planks and take their blind side",
+              preview: "Use the narrow footing better than the person who chose it.",
+              highlightWord: "Dance",
+              statKey: "finesse",
+              chanceBase: 0.4,
+              chancePerStat: 0.05,
+              minChance: 0.29,
+              maxChance: 0.86,
+              bossDamage: { successBase: 26, successPerStat: 2.2, failBase: 10, failPerStat: 0.8 },
+              selfDamage: { successBase: 7, failBase: 14, reductionPerStat: 0.6 },
+              successText:
+                hasWeapon
+                  ? "You skim the slick boards, slip past the hooked reach, and cut across the ambusher's blind side before they can pivot."
+                  : "You skim the slick boards, slip past the hooked reach, and hammer the ambusher from the blind side before they can pivot.",
+              failureText:
+                "A wet board skids under you at the wrong instant, and the ambusher punishes the stumble before you can recover the line.",
+            },
+            {
+              key: "ambusher:bridge-rhythm",
+              label: "Feel the bridge sway and strike on its rhythm",
+              preview: "Let the whole crossing tell you when the opening is real.",
+              highlightWord: "rhythm",
+              statKey: "arcana",
+              chanceBase: 0.37,
+              chancePerStat: 0.05,
+              minChance: 0.26,
+              maxChance: 0.84,
+              bossDamage: { successBase: 27, successPerStat: 2.3, failBase: 10, failPerStat: 0.8 },
+              selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.54 },
+              successText:
+                "You catch the bridge's shuddering rhythm and move with it, landing your answer in the exact beat where the ambusher cannot brace properly.",
+              failureText:
+                "You almost catch the rhythm, but the bridge bucks under both of you and the opening closes into a scrambling mess.",
+            },
+          ],
+        },
+        {
+          scene:
+            "The bridge rails are splintered, the bow is no longer an option, and the ambusher finally commits to killing you before the crossing leaves either of you standing.",
+          prompt:
+            "This last exchange decides the crossing. Break their nerve, break their stance, or throw them off the bridge's control for good.",
+          moves: [
+            {
+              key: "ambusher:railing-drive",
+              label: "Drive them through the broken rail line",
+              preview: "End it by taking the bridge's edge away from them.",
+              highlightWord: "Drive",
+              statKey: "might",
+              chanceBase: 0.34,
+              chancePerStat: 0.05,
+              minChance: 0.23,
+              maxChance: 0.8,
+              bossDamage: { successBase: 31, successPerStat: 2.5, failBase: 11, failPerStat: 0.9 },
+              selfDamage: { successBase: 11, failBase: 18, reductionPerStat: 0.45 },
+              successText:
+                "You hit with everything the bridge can bear, crush the ambusher back through the broken rail line, and take the crossing by force.",
+              failureText:
+                "You commit to the shove, but the ambusher turns just enough of it aside to make the rebound hurt both of you.",
+            },
+            {
+              key: "ambusher:hold-feint",
+              label: hasWeapon
+                ? "Hold through the feint and cut the true opening"
+                : "Hold through the feint and break the true opening",
+              preview: "Patience beats a dirty finisher if your nerve holds.",
+              highlightWord: "Hold",
+              statKey: "resolve",
+              chanceBase: 0.4,
+              chancePerStat: 0.045,
+              minChance: 0.3,
+              maxChance: 0.85,
+              bossDamage: { successBase: 25, successPerStat: 2.1, failBase: 10, failPerStat: 0.8 },
+              selfDamage: { successBase: 8, failBase: 14, reductionPerStat: 0.6 },
+              successText:
+                hasWeapon
+                  ? "You refuse the bait, wait out the feint, and cut the real opening the instant the ambusher overcommits."
+                  : "You refuse the bait, wait out the feint, and break the real opening the instant the ambusher overcommits.",
+              failureText:
+                "You read the trick, but not fast enough. The real hit still gets into you before your answer lands.",
+            },
+            {
+              key: "ambusher:shattered-bow",
+              label: hasWeapon
+                ? "Turn the shattered bow into a finishing opening"
+                : "Turn the shattered bow into a finishing break",
+              preview: "Use the wreckage of the fight before they can reset their reach.",
+              highlightWord: "shattered",
+              statKey: "finesse",
+              chanceBase: 0.38,
+              chancePerStat: 0.05,
+              minChance: 0.27,
+              maxChance: 0.85,
+              bossDamage: { successBase: 28, successPerStat: 2.3, failBase: 10, failPerStat: 0.8 },
+              selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.56 },
+              successText:
+                hasWeapon
+                  ? "You knock the ruined bow across their vision, slip under the hooked reach, and cut the finishing line before they can reclaim space."
+                  : "You knock the ruined bow across their vision, slip under the hooked reach, and hammer the finishing line before they can reclaim space.",
+              failureText:
+                "The distraction buys almost enough. Almost is not clean on a bridge, and the counter catches you before the exchange fully breaks your way.",
             },
           ],
         },

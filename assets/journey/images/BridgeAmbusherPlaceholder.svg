@@ -1,0 +1,68 @@
+<svg width="960" height="1200" viewBox="0 0 960 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="168" y1="84" x2="804" y2="1112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2C2A44"/>
+      <stop offset="1" stop-color="#12101E"/>
+    </linearGradient>
+    <linearGradient id="fog" x1="184" y1="266" x2="790" y2="694" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8E97BE" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#2A2D42" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="bridge" x1="190" y1="744" x2="770" y2="1052" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#876D52"/>
+      <stop offset="1" stop-color="#4E3F34"/>
+    </linearGradient>
+    <linearGradient id="ambusher" x1="374" y1="304" x2="662" y2="858" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D49A67"/>
+      <stop offset="1" stop-color="#6E4B35"/>
+    </linearGradient>
+    <filter id="shadow" x="182" y="180" width="590" height="704" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="26"/>
+      <feGaussianBlur stdDeviation="30"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.0470588 0 0 0 0 0.0431373 0 0 0 0 0.0862745 0 0 0 0.52 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_1"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_1" result="shape"/>
+    </filter>
+  </defs>
+  <rect width="960" height="1200" rx="52" fill="url(#bg)"/>
+  <rect x="64" y="64" width="832" height="1072" rx="36" stroke="#F4EAD4" stroke-opacity="0.28" stroke-width="2"/>
+  <path d="M94 546C210 458 318 430 454 430C566 430 670 462 866 582V764H94V546Z" fill="url(#fog)"/>
+  <path d="M148 1082L316 720H646L812 1082H148Z" fill="url(#bridge)" fill-opacity="0.96"/>
+  <path d="M318 720L232 1082" stroke="#A68662" stroke-width="12" stroke-linecap="round"/>
+  <path d="M642 720L728 1082" stroke="#A68662" stroke-width="12" stroke-linecap="round"/>
+  <path d="M270 720V964" stroke="#BDA17E" stroke-width="10" stroke-linecap="round"/>
+  <path d="M690 720V964" stroke="#BDA17E" stroke-width="10" stroke-linecap="round"/>
+  <path d="M236 816H720" stroke="#D3B48E" stroke-opacity="0.28" stroke-width="12" stroke-linecap="round"/>
+  <path d="M220 900H740" stroke="#D3B48E" stroke-opacity="0.2" stroke-width="10" stroke-linecap="round"/>
+  <path d="M404 720L282 876" stroke="#E6D2B4" stroke-opacity="0.18" stroke-width="10" stroke-linecap="round"/>
+  <path d="M558 720L676 874" stroke="#E6D2B4" stroke-opacity="0.18" stroke-width="10" stroke-linecap="round"/>
+  <path d="M704 658L770 610" stroke="#AFA4C5" stroke-opacity="0.34" stroke-width="8" stroke-linecap="round"/>
+  <g filter="url(#shadow)">
+    <path d="M470 272C548 272 610 330 610 410C610 428 606 448 598 464L660 520C700 556 706 618 674 648L622 698C650 744 636 804 586 832L528 864C468 898 394 876 360 820C336 782 338 734 360 698L328 666C284 622 288 550 336 512L388 470C378 452 372 430 372 410C372 330 394 272 470 272Z" fill="url(#ambusher)"/>
+    <path d="M472 292C532 292 574 338 574 404" stroke="#F2D6BB" stroke-opacity="0.34" stroke-width="12" stroke-linecap="round"/>
+    <path d="M418 430C454 398 514 398 550 430" stroke="#2B1A17" stroke-width="72" stroke-linecap="round"/>
+    <path d="M478 382C478 344 506 314 542 314C584 314 614 352 614 402C614 470 558 516 486 516H404" stroke="#2B1A17" stroke-width="92" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M488 392C488 352 514 330 544 330C576 330 596 360 596 402C596 454 552 494 490 494H424" stroke="#6A4B38" stroke-width="66" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M420 478L598 660" stroke="#2B1A17" stroke-width="122" stroke-linecap="round"/>
+    <path d="M430 486L590 650" stroke="#6A4B38" stroke-width="88" stroke-linecap="round"/>
+    <path d="M540 444L710 276" stroke="#2B1A17" stroke-width="26" stroke-linecap="round"/>
+    <path d="M550 454L706 298" stroke="#C7976A" stroke-width="14" stroke-linecap="round"/>
+    <path d="M670 304L734 238L742 318L670 304Z" fill="#D9A46E"/>
+    <path d="M518 500L346 288" stroke="#2B1A17" stroke-width="22" stroke-linecap="round"/>
+    <path d="M522 508L350 298" stroke="#D29B65" stroke-width="12" stroke-linecap="round"/>
+    <path d="M328 280C374 266 426 286 456 324" stroke="#EBC8A5" stroke-opacity="0.32" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="548" cy="386" r="18" fill="#F4EAD4"/>
+    <circle cx="548" cy="386" r="7" fill="#1A161A"/>
+    <path d="M392 514L572 682" stroke="#EED9BC" stroke-width="6" stroke-linecap="round" stroke-dasharray="2 24"/>
+    <path d="M548 444L702 292" stroke="#F2D7BC" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 18"/>
+  </g>
+  <circle cx="734" cy="248" r="74" fill="#F1D38A" fill-opacity="0.08"/>
+  <circle cx="734" cy="248" r="38" fill="#F1D38A" fill-opacity="0.15"/>
+  <text x="120" y="128" fill="#F4EAD4" font-family="Georgia, serif" font-size="42" letter-spacing="2.4">ABANDONED FOOTPATH</text>
+  <text x="120" y="176" fill="#C9D5C4" font-family="Arial, sans-serif" font-size="28" letter-spacing="3.2">BRIDGE AMBUSHER</text>
+  <text x="120" y="1048" fill="#F4EAD4" font-family="Arial, sans-serif" font-size="24" letter-spacing="2.6">PLACEHOLDER BOSS ART</text>
+  <text x="120" y="1086" fill="#C9D5C4" font-family="Arial, sans-serif" font-size="22" letter-spacing="1.2">Swap this image when the final boss art is ready.</text>
+</svg>
