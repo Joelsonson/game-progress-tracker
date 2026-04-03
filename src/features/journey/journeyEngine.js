@@ -3174,10 +3174,10 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
 
   if (!state.storyFlags.foundWeapon) {
     pushCandidate("survival:weapon-cart", 4, () => ({
-          title: "A broken cart in the brush",
+          title: "A broken cart in the thorn brush",
           teaser: "There may be scraps worth risking a closer look for.",
           detail:
-            "Roots have half-swallowed an overturned cart. A cracked spear shaft, a rusted belt knife, and a few ruined travel goods are still tangled in the frame.",
+            "You spot an overturned cart half-swallowed by roots in the thorn brush. A cracked spear shaft, a rusted belt knife, and a few ruined travel goods are still tangled in the frame.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -3233,7 +3233,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
             }),
             createJourneyStatChoice({
               label: "Steady yourself and salvage only what matters",
-              preview: "Take a breath, ignore the junk, and leave with the best piece.",
+              preview: "Take a breath, grab the best piece, and keep moving.",
               highlightWord: "Steady",
               statKey: "resolve",
               chanceBase: 0.36,
@@ -3265,7 +3265,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
           title: "A patch of unfamiliar berries",
           teaser: "It could be food. It could also be a mistake.",
           detail:
-            "You find dark berries growing where the light breaks through the trees. Some are pecked at by birds. Some are untouched.",
+            "You spot dark berries growing where the light breaks through the trees. Some have been pecked by birds. Some hang untouched.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -3342,7 +3342,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
           title: "Heavy tracks near the creek",
           teaser: "Something big has been moving through this area.",
           detail:
-            "Fresh prints cut into the mud beside the water. They are too wide to ignore and too recent to feel safe.",
+            "You find fresh prints cut deep into the mud beside the water. They are too wide to ignore and too recent to feel safe.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -3421,7 +3421,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
           title: "A collapsed watchtower in the reeds",
           teaser: "Most of it is rotten, but the top still overlooks the road ahead.",
           detail:
-            "A watchtower leans at an ugly angle above the marsh grass. The lower door is jammed, the ladder is splintered, and old signal marks still cling to the timber.",
+            "You come across a watchtower leaning at an ugly angle above the marsh grass. The lower door is jammed, the ladder is splintered, and old signal marks still cling to the timber.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -3497,9 +3497,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
     if (currentBagRank < 1) {
       pushCandidate("arrival:forager-satchel", 4, () => ({
             title: "A torn satchel caught in the briars",
-            teaser: "The strap is snagged high in the brush, but the bag itself still looks sound.",
+            teaser: "The strap is snagged high in the thorns, but the bag itself still looks sound.",
             detail:
-              "You spot a leather satchel hanging where a traveler must have torn free of the thicket in a hurry. The pouch is within reach if you are willing to make the attempt count.",
+              "You spot a leather satchel hanging where a traveler must have torn free of the thicket in a hurry. The bag is within reach if you can get it down without ruining it.",
             createdAt: eventTime,
             choices: [
               createJourneyStatChoice({
@@ -3579,7 +3579,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
           title: "Cold rain before dusk",
           teaser: "You need to decide whether to stop or suffer through it.",
           detail:
-            "The weather turns without warning. The air is suddenly bitter and the path is starting to vanish under rain and leaf litter.",
+            "The weather turns without warning. Cold rain starts slanting through the trees, the air goes bitter, and the path begins to vanish beneath wet leaves and mud.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -3631,16 +3631,16 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Rig the runoff before the light dies",
-              preview: "Use quick hands to turn the rain into something useful.",
-              highlightWord: "Rig",
+              label: "Catch clean rainwater before the light dies",
+              preview: "Use quick hands to turn the storm into something useful.",
+              highlightWord: "Catch",
               statKey: "finesse",
               chanceBase: 0.29,
               chancePerStat: 0.08,
               successText:
-                "You angle cloth, bark, and broken branches just right, saving clean runoff and a little dignity before the storm can strip both away.",
+                "You angle cloth, bark, and branches just right, catching clean rainwater and salvaging something useful from the storm before the light dies.",
               failureText:
-                "The runoff spills where you do not need it and the setup collapses twice before you give up cold and irritated.",
+                "Your makeshift catch slips, spills, and collapses twice before you finally abandon it, cold and irritated.",
               successEffects: {
                 hunger: 8,
                 bonusRations: 1,
@@ -3743,7 +3743,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
           title: "A sealed supply niche in a ruined gate",
           teaser: "Someone hid real expedition gear here and hoped to come back for it.",
           detail:
-            "Inside a broken gatehouse, you find a fitted wall niche behind a loose stone. The cache holds a field kit wrapped in oilcloth, but the lock and stonework both look ready to fight you for it.",
+            "Inside a broken gatehouse, you find a fitted wall niche hidden behind a loose stone. A field kit wrapped in oilcloth sits inside, but the lock and crumbling stonework both look ready to fight you for it.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -3825,7 +3825,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
           title: "A waystone with a hidden compartment",
           teaser: "The stone still marks the road, but someone carved more into it than directions.",
           detail:
-            "At a fork in the road stands an old waystone etched with faded route marks and a seam near the base where a compartment might once have been hidden.",
+            "You come to an old waystone at a fork in the road, etched with faded route marks and a seam near the base where a hidden compartment might once have been tucked away.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -3904,7 +3904,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
           title: "A guard by a roadside fire",
           teaser: "He notices how you hold yourself and offers a little training.",
           detail:
-            "A tired local guard is warming his hands beside a watchfire. After hearing about the boar, he laughs once and says you still grip your weapon like someone who expects it to apologize.",
+            "You come across a tired local guard warming his hands beside a watchfire. After hearing about the boar, he laughs once and says you still grip your weapon like someone who expects it to apologize.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -3980,7 +3980,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
           title: "A whispering shrine",
           teaser: "The stones hum when you get close.",
           detail:
-            "Half-buried stones surround a shallow spring. When you reach toward the water, the air tightens around your hand as if the world is paying attention.",
+            "You find half-buried stones circling a shallow spring. When you reach toward the water, the air tightens around your hand as if the world itself is paying attention.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4132,7 +4132,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
           title: "Smoke from a charcoal pit",
           teaser: "Working folk are camped ahead, and they look like people who notice everything.",
           detail:
-            "You find a ring of charcoal burners tending low earthen mounds and blackened stacks of wood. They are wary, practical people, the sort who have learned to measure strangers by how much trouble they bring with them.",
+            "You come upon a ring of charcoal burners tending low earthen mounds and blackened stacks of wood. They are wary, practical people, the sort who measure strangers by how much trouble they bring with them.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4215,7 +4215,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
           title: "A rope ferry over black water",
           teaser: "The crossing is still usable, but only just.",
           detail:
-            "At the edge of a dark cut in the land, you find a flat ferry platform tethered to a rope thick as your wrist. The current below is mean, fast, and loud enough to make every bad outcome sound plausible.",
+            "You come to a flat ferry platform tethered to a rope as thick as your wrist. The black water below is fast, mean, and loud enough to make every bad outcome feel possible.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4294,7 +4294,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
           title: "Lanterns hung for the dead",
           teaser: "Someone still tends this old roadside custom.",
           detail:
-            "At dusk you come upon a line of small lanterns hung from iron hooks and thorn branches, each flame set before an old roadside name. The air is quiet in the reverent way a chapel is quiet after everybody has gone home.",
+            "At dusk you come upon a line of small lanterns hung from iron hooks and thorn branches, each flame set before an old roadside name. The air is quiet in the reverent way a chapel feels after everybody has gone home.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4371,7 +4371,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
           title: "The Last Hearth Below the Hill",
           teaser: "A ruined shrine still keeps one ember alive beneath the rain.",
           detail:
-            "Beyond a tumble of leaning stones, you find the shell of an old roadside shrine. Its roof is gone, its icons broken, and yet one ember still glows in the drowned hearth at its center. A half-legible carving names this place the Last Hearth, where travelers once swore what they would not let the dark take from them.",
+            "You pick your way beyond a tumble of leaning stones and find the shell of an old roadside shrine. Its roof is gone, its icons are broken, and yet one ember still glows in the drowned hearth at its center. A half-legible carving names this place the Last Hearth, where travelers once swore what they would not let the dark take from them.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4468,7 +4468,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
           title: "An oath-cairn of the first wardens",
           teaser: "The stones are too massive to have been stacked by ordinary hands.",
           detail:
-            "On a wind-scoured rise stands a cairn built from slabs no farmer's cart could have moved. Iron rings, now red with age, are set into the stone at shoulder height. A weather-soft inscription says the first wardens came here to swear which burden they would carry for the frontier and which fear they would never carry home.",
+            "You reach a wind-scoured rise crowned by a cairn built from slabs no farmer's cart could have moved. Iron rings, now red with age, are set into the stone at shoulder height. A weather-soft inscription says the first wardens came here to swear which burden they would carry for the frontier and which fear they would never carry home.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4565,7 +4565,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
           title: "The mirror spring under moonlight",
           teaser: "The surface shows more than one sky.",
           detail:
-            "Hidden in a fold of stone is a spring so still it reflects the moon twice: once above, once from some pale depth below the waterline. Old chalk marks on the surrounding rock suggest travelers came here seeking revelations and usually left with scars.",
+            "You find a spring hidden in a fold of stone, so still it reflects the moon twice: once above, once from some pale depth below the waterline. Old chalk marks on the surrounding rock suggest travelers came here seeking revelations and usually left with scars.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
