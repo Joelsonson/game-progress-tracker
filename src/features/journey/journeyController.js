@@ -32,14 +32,17 @@ import {
   discardJourneyPendingWeapon,
   dropJourneyWeapon,
   equipJourneyWeapon,
+  getJourneyBoss,
   getJourneyEventCandidates,
   getJourneyLevel,
+  getSupportedJourneyBossBattleIndexes,
   getJourneyWeaponMeta,
   getUnspentSkillPoints,
   hasJourneyClassUnlocked,
   keepJourneyPendingWeapon,
   normalizeJourneyState,
   pushJourneyDebugSnapshot,
+  queueJourneyStretchBossBattle,
   rememberJourneyCompletedEventKey,
   replaceJourneyWeapon,
   resolveJourneyBossBattleTurn,
@@ -531,6 +534,50 @@ export async function handleJourneyClick(event) {
       showJourneyFeedback(`Forced event: ${forcedEvent.title}.`);
       await appState.renderApp();
       openJourneyEventModal(forcedEvent);
+      return;
+    }
+
+    if (action === "debug-boss-event") {
+      const bossSelect = document.querySelector("#journeyDebugBossSelect");
+      const selectedBossIndex = Math.max(
+        0,
+        Math.floor(
+          Number(
+            bossSelect instanceof HTMLSelectElement ? bossSelect.value : state.bossIndex
+          ) || 0
+        )
+      );
+      const supportedBossIndexes = getSupportedJourneyBossBattleIndexes();
+
+      if (!supportedBossIndexes.includes(selectedBossIndex)) {
+        showJourneyFeedback("That boss debug fight is not implemented yet.", true);
+        return;
+      }
+
+      pushJourneyDebugSnapshot(state);
+      state.pendingEvents = [];
+      state.status = "adventuring";
+      state.restUntil = null;
+      state.recoveryStartedAt = null;
+      state.recoveryObjective = "";
+      state.bossIndex = selectedBossIndex;
+
+      const debugJourneyStats = buildJourneyDerived(state, journeyLevel);
+      const forcedBossEvent = queueJourneyStretchBossBattle(
+        state,
+        debugJourneyStats,
+        new Date()
+      );
+
+      if (!forcedBossEvent) {
+        showJourneyFeedback("Could not force that boss event.", true);
+        return;
+      }
+
+      await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
+      showJourneyFeedback(`Forced boss event: ${getJourneyBoss(selectedBossIndex).name}.`);
+      await appState.renderApp();
+      openJourneyEventModal(forcedBossEvent);
       return;
     }
 

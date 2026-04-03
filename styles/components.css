@@ -1067,6 +1067,17 @@
   text-align: left;
 }
 
+.journey-debug-boss-row {
+  display: grid;
+  gap: 10px;
+}
+
+.journey-debug-boss-row .secondary-button {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+}
+
 .journey-locked-class {
   display: grid;
   gap: 4px;

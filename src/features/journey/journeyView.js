@@ -46,6 +46,7 @@ import {
   getJourneyLevel,
   getJourneyPendingWeapons,
   getJourneySegmentProgress,
+  getSupportedJourneyBossBattleIndexes,
   getJourneyStoryLevelState,
   getJourneyStatusLabel,
   getJourneyWeaponInventory,
@@ -667,6 +668,26 @@ function getJourneyEventDockSummary(eventEntry) {
 
 function getJourneyEventDockPreview(eventEntry) {
   return String(eventEntry?.teaser || eventEntry?.detail || "").trim();
+}
+
+function renderJourneyDebugBossOptions(currentBossIndex) {
+  const supportedBossIndexes = getSupportedJourneyBossBattleIndexes();
+  const selectedBossIndex = supportedBossIndexes.includes(currentBossIndex)
+    ? currentBossIndex
+    : supportedBossIndexes[0] || 0;
+
+  return supportedBossIndexes
+    .map((bossIndex) => {
+      const boss = getJourneyBoss(bossIndex);
+      return `
+        <option value="${bossIndex}" ${
+          bossIndex === selectedBossIndex ? "selected" : ""
+        }>
+          ${escapeHtml(`${bossIndex + 1}. ${boss.name}`)}
+        </option>
+      `;
+    })
+    .join("");
 }
 
 export function renderJourneyEventDock(state) {
@@ -1685,6 +1706,16 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
           <button type="button" class="secondary-button" data-journey-action="debug-event">${escapeHtml(
             t("journeyUi.page.forceEvent")
           )}</button>
+          <div class="journey-debug-boss-row">
+            <select id="journeyDebugBossSelect" aria-label="${escapeAttribute(
+              t("journeyUi.page.debugBossSelect")
+            )}">
+              ${renderJourneyDebugBossOptions(viewModel.state.bossIndex)}
+            </select>
+            <button type="button" class="secondary-button" data-journey-action="debug-boss-event">${escapeHtml(
+              t("journeyUi.page.forceBossEvent")
+            )}</button>
+          </div>
           <button type="button" class="secondary-button" data-journey-action="debug-undo">${escapeHtml(
             t("journeyUi.page.undoDebugStep")
           )}</button>

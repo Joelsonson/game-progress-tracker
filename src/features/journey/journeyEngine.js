@@ -40,6 +40,7 @@ const JOURNEY_EVENT_HP_GAIN_MULTIPLIER = 2;
 const JOURNEY_EVENT_HP_LOSS_MULTIPLIER = 3;
 const JOURNEY_BOSS_BATTLE_MAX_HP = 100;
 const JOURNEY_BOSS_BATTLE_TURN_LIMIT = 3;
+const JOURNEY_SUPPORTED_BOSS_BATTLE_MAX_INDEX = 2;
 const JOURNEY_STRETCH_FAILURE_HP_RATIO = 0.05;
 let journeyChoiceDifficultyRoadIndex = 0;
 const JOURNEY_TRAVELER_AID_LOG =
@@ -1658,7 +1659,17 @@ export function autoResolvePendingJourneyEvents(state, journeyStats, atIso) {
 }
 
 export function supportsJourneyBossBattle(state) {
-  return Math.max(0, Math.floor(Number(state?.bossIndex) || 0)) <= 2;
+  return (
+    Math.max(0, Math.floor(Number(state?.bossIndex) || 0)) <=
+    JOURNEY_SUPPORTED_BOSS_BATTLE_MAX_INDEX
+  );
+}
+
+export function getSupportedJourneyBossBattleIndexes() {
+  return Array.from(
+    { length: JOURNEY_SUPPORTED_BOSS_BATTLE_MAX_INDEX + 1 },
+    (_, index) => index
+  );
 }
 
 export function queueJourneyStretchBossBattle(state, journeyStats, atDate) {
