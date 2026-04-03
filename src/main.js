@@ -27,6 +27,7 @@ import {
   importDataButton,
   importDataInput,
   journeyContentEl,
+  journeyEventDockRoot,
   journeyEventCloseButton,
   journeyEventModal,
   journeyHistoryCloseButton,
@@ -68,12 +69,19 @@ import {
   syncGameDifficultyPresentation,
 } from "./features/games/gamesController.js";
 import { renderGames, renderHomeOverview, renderPlayerProgress, renderStats } from "./features/games/gamesView.js";
-import { handleHomeJourneyClick, handleJourneyClick, handleJourneyEventModalClick, handleJourneyOutcomeModalClick } from "./features/journey/journeyController.js";
+import {
+  handleHomeJourneyClick,
+  handleJourneyClick,
+  handleJourneyEventDockClick,
+  handleJourneyEventModalClick,
+  handleJourneyOutcomeModalClick,
+} from "./features/journey/journeyController.js";
 import { buildJourneySupplies, syncJourneyState } from "./features/journey/journeyEngine.js";
 import {
   closeJourneyEventModal,
   closeJourneyOutcomeModal,
   initializeJourneySpritePreviews,
+  renderJourneyEventDock,
   renderCharacterSheet,
   renderHomeJourney,
   renderIdleJourney,
@@ -174,6 +182,9 @@ function bindEvents() {
   journeyOutcomeCloseButton?.addEventListener("click", closeJourneyOutcomeModal);
   journeyHistoryModal?.addEventListener("click", handleJourneyHistoryModalClick);
   journeyHistoryCloseButton?.addEventListener("click", closeJourneyHistoryModal);
+  journeyEventDockRoot?.addEventListener("click", (event) => {
+    void handleJourneyEventDockClick(event);
+  });
   characterSkillModalRoot?.addEventListener("click", handleJourneyClick);
   document.addEventListener("keydown", handleGlobalKeyDown);
 
@@ -228,6 +239,12 @@ function handleGlobalKeyDown(event) {
 
   if (event.key === "Escape" && journeyEventModal && !journeyEventModal.hidden) {
     closeJourneyEventModal();
+    return;
+  }
+
+  if (event.key === "Escape" && appState.journeyEventDockExpanded) {
+    appState.journeyEventDockExpanded = false;
+    renderJourneyEventDock(appState.latestIdleJourney);
   }
 }
 
@@ -311,12 +328,14 @@ export async function renderApp() {
   const xpSummary = buildXpSummary(sortedGames, sessions);
   const idleJourney = await syncJourneyState(idleJourneyRaw, sortedGames, sessions, xpSummary);
   const journeySupplies = buildJourneySupplies(sortedGames, sessions, idleJourney);
+  appState.latestIdleJourney = idleJourney;
 
   renderHomeOverview(sortedGames, sessions, sessionStats, xpSummary);
   renderHomeJourney(idleJourney, xpSummary, journeySupplies);
   renderPlayerProgress(xpSummary);
   renderStats(sortedGames, sessions);
   renderIdleJourney(idleJourney, sortedGames, sessions, xpSummary);
+  renderJourneyEventDock(idleJourney);
   renderCharacterSheet(idleJourney, sortedGames, sessions, xpSummary);
   initializeJourneySpritePreviews();
   renderSessionGameOptions(sortedGames);

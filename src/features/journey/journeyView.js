@@ -3,6 +3,7 @@ import {
   characterContentEl,
   homeJourneyContentEl,
   journeyContentEl,
+  journeyEventDockRoot,
   journeyEventBodyEl,
   journeyEventMetaEl,
   journeyEventModal,
@@ -92,6 +93,8 @@ const JOURNEY_PORTRAIT_SPRITE = {
   maxDisplayWidth: 176,
   maxDisplayHeight: 220,
 };
+
+const JOURNEY_EVENT_DOCK_ICON = "./assets/journey/icons/Journey%20Icon.png";
 
 const JOURNEY_BATTLE_ART = {
   0: {
@@ -534,7 +537,6 @@ export function renderHomeJourney(state, xpSummary, supplies) {
     0,
     100
   );
-  const pendingEvent = state.pendingEvents[0] || null;
   const displayName = getJourneyDisplayName(state);
   const stretchSprite = getJourneyStretchSprite(state, hpPercent, hungerPercent);
   const progressDisplay = buildJourneyProgressDisplay({
@@ -617,26 +619,148 @@ export function renderHomeJourney(state, xpSummary, supplies) {
         <button type="button" class="secondary-button" data-home-action="open-journey">
           ${escapeHtml(t("journeyUi.home.openJourney"))}
         </button>
+      </div>
+    </div>
+  `;
+}
+
+function getJourneyDockActiveEvent(state) {
+  const pendingEvents = Array.isArray(state?.pendingEvents) ? state.pendingEvents : [];
+  const activeEventIds = new Set(pendingEvents.map((entry) => entry.id));
+
+  appState.journeyEventDockDismissedIds = appState.journeyEventDockDismissedIds.filter(
+    (eventId) => activeEventIds.has(eventId)
+  );
+
+  const activeEvent =
+    pendingEvents.find(
+      (entry) => !appState.journeyEventDockDismissedIds.includes(entry.id)
+    ) || null;
+
+  if (!activeEvent) {
+    appState.journeyEventDockExpanded = false;
+    appState.journeyEventDockEventId = "";
+    return null;
+  }
+
+  if (appState.journeyEventDockEventId !== activeEvent.id) {
+    appState.journeyEventDockExpanded = false;
+    appState.journeyEventDockEventId = activeEvent.id;
+  }
+
+  return activeEvent;
+}
+
+function getJourneyEventDockSummary(eventEntry) {
+  if (eventEntry?.kind === "boss") {
+    return t("journeyUi.dock.bossSummary", {
+      name: getJourneyEventTitle(eventEntry.title),
+    });
+  }
+
+  return t("journeyUi.dock.eventSummary");
+}
+
+function getJourneyEventDockPreview(eventEntry) {
+  return String(eventEntry?.teaser || eventEntry?.detail || "").trim();
+}
+
+export function renderJourneyEventDock(state) {
+  if (!journeyEventDockRoot) return;
+
+  if (appState.onboarding?.active) {
+    journeyEventDockRoot.hidden = true;
+    journeyEventDockRoot.innerHTML = "";
+    return;
+  }
+
+  const activeEvent = getJourneyDockActiveEvent(state);
+  if (!activeEvent) {
+    journeyEventDockRoot.hidden = true;
+    journeyEventDockRoot.innerHTML = "";
+    return;
+  }
+
+  const isExpanded = Boolean(appState.journeyEventDockExpanded);
+  const eventTitle = getJourneyEventTitle(activeEvent.title);
+  const eyebrow =
+    activeEvent.kind === "boss"
+      ? t("journeyUi.dock.bossEyebrow")
+      : t("journeyUi.dock.eventEyebrow");
+  const previewText = getJourneyEventDockPreview(activeEvent);
+
+  journeyEventDockRoot.hidden = false;
+  journeyEventDockRoot.innerHTML = `
+    <div class="journey-event-dock" data-state="${escapeAttribute(
+      isExpanded ? "expanded" : "collapsed"
+    )}">
+      <section
+        id="journeyEventDockPanel"
+        class="journey-event-dock-panel"
+        aria-hidden="${isExpanded ? "false" : "true"}"
+      >
+        <div class="journey-event-dock-panel-head">
+          <div>
+            <p class="journey-event-dock-eyebrow">${escapeHtml(eyebrow)}</p>
+            <h3 class="journey-event-dock-title">${escapeHtml(eventTitle)}</h3>
+          </div>
+          <button
+            type="button"
+            class="journey-event-dock-collapse"
+            data-journey-dock-action="collapse"
+            aria-label="${escapeAttribute(t("journeyUi.dock.collapse"))}"
+          >
+            <span aria-hidden="true">⌄</span>
+          </button>
+        </div>
+        <p class="journey-event-dock-meta">${escapeHtml(
+          t("journeyUi.dock.waitingSince", {
+            value: formatDateTime(activeEvent.createdAt),
+          })
+        )}</p>
+        <p class="journey-event-dock-copy">${escapeHtml(
+          getJourneyEventDockSummary(activeEvent)
+        )}</p>
         ${
-          pendingEvent
-            ? `
-              <button
-                type="button"
-                class="primary-button journey-home-event-button"
-                data-home-action="open-event"
-                data-event-id="${pendingEvent.id}"
-              >
-                <span class="journey-event-kicker">${escapeHtml(
-                  t("journeyUi.home.newEvent")
-                )}</span>
-                <span class="journey-home-event-title">${escapeHtml(
-                  getJourneyEventTitle(pendingEvent.title)
-                )}</span>
-              </button>
-            `
+          previewText
+            ? `<p class="journey-event-dock-preview">${escapeHtml(previewText)}</p>`
             : ""
         }
-      </div>
+        <div class="journey-event-dock-actions">
+          <button
+            type="button"
+            class="primary-button journey-event-dock-primary"
+            data-journey-dock-action="open-event"
+            data-event-id="${escapeAttribute(activeEvent.id)}"
+          >
+            ${escapeHtml(t("journeyUi.dock.action"))}
+          </button>
+          <button
+            type="button"
+            class="secondary-button journey-event-dock-secondary"
+            data-journey-dock-action="dismiss"
+            data-event-id="${escapeAttribute(activeEvent.id)}"
+          >
+            ${escapeHtml(t("journeyUi.dock.ignore"))}
+          </button>
+        </div>
+      </section>
+
+      <button
+        type="button"
+        class="journey-event-dock-trigger"
+        data-journey-dock-action="toggle"
+        data-event-id="${escapeAttribute(activeEvent.id)}"
+        aria-controls="journeyEventDockPanel"
+        aria-expanded="${isExpanded ? "true" : "false"}"
+        aria-label="${escapeAttribute(t("journeyUi.dock.expand"))}"
+      >
+        <span class="journey-event-dock-trigger-ring" aria-hidden="true"></span>
+        <span class="journey-event-dock-trigger-icon">
+          <img src="${JOURNEY_EVENT_DOCK_ICON}" alt="" />
+        </span>
+        <span class="journey-event-dock-trigger-badge" aria-hidden="true">!</span>
+      </button>
     </div>
   `;
 }

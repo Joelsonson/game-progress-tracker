@@ -34,8 +34,8 @@ import { normalizeJourneyChoice, normalizeJourneyEvent } from "./journeyEvents.j
 const JOURNEY_HISTORY_LIMIT = 24;
 const JOURNEY_AMBIENT_LOG_COOLDOWN_MS = 1000 * 60 * 60 * 4;
 const JOURNEY_AMBIENT_REPEAT_MEMORY = 3;
-const JOURNEY_EVENT_COOLDOWN_MIN_HOURS = 1;
-const JOURNEY_EVENT_COOLDOWN_MAX_HOURS = 3;
+const JOURNEY_EVENT_COOLDOWN_MIN_HOURS = 4;
+const JOURNEY_EVENT_COOLDOWN_MAX_HOURS = 6;
 const JOURNEY_EVENT_HP_GAIN_MULTIPLIER = 2;
 const JOURNEY_EVENT_HP_LOSS_MULTIPLIER = 3;
 const JOURNEY_BOSS_BATTLE_MAX_HP = 100;
@@ -2872,30 +2872,14 @@ export function maybeQueueJourneyEvent(state, atDate, journeyLevel, journeyConte
     return;
   }
 
-  if (state.nextEventAt && atDate < new Date(state.nextEventAt)) {
+  if (!state.nextEventAt) {
+    startJourneyEventCooldown(state, atDate);
     return;
   }
 
-  const phase = getJourneyPhase(state);
-  const baseChance = aidMode
-    ? 0.48
-    : phase === "arrival"
-      ? 0.18
-      : phase === "survival"
-        ? 0.13
-        : 0.08;
-  const pressureBonus = journeyContext?.neglectScore
-    ? Math.min(0.05, journeyContext.neglectScore * 0.008)
-    : 0;
-  const eventChance = Math.min(
-    aidMode ? 0.72 : 0.3,
-    baseChance +
-      Math.max(0, journeyLevel - 1) * 0.01 +
-      pressureBonus +
-      Math.min(0.18, state.aidUrgency * 0.08)
-  );
-
-  if (Math.random() > eventChance) return;
+  if (state.nextEventAt && atDate < new Date(state.nextEventAt)) {
+    return;
+  }
 
   let allCandidates = getJourneyEventCandidates(
     state,
@@ -2971,6 +2955,7 @@ export function maybeQueueJourneyEvent(state, atDate, journeyLevel, journeyConte
     0,
     JOURNEY_PENDING_EVENT_LIMIT
   );
+  startJourneyEventCooldown(state, atDate);
   addJourneyLog(
     state,
     `Something happened: ${nextEvent.title}.`,

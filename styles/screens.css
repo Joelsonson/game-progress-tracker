@@ -601,6 +601,16 @@
     max-height: calc(100dvh - 28px);
   }
 
+  .journey-event-dock-root {
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+
+  .journey-event-dock-actions {
+    grid-template-columns: 1fr;
+  }
+
   .character-skill-modal {
     align-items: end;
     padding-inline: 12px;

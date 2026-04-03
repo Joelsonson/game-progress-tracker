@@ -43,7 +43,6 @@ import {
   rememberJourneyCompletedEventKey,
   replaceJourneyWeapon,
   resolveJourneyBossBattleTurn,
-  startJourneyEventCooldown,
   syncJourneyState,
 } from "./journeyEngine.js";
 import { normalizeJourneyEvent } from "./journeyEvents.js";
@@ -52,6 +51,7 @@ import {
   closeJourneyOutcomeModal,
   openJourneyEventModal,
   openJourneyOutcomeModal,
+  renderJourneyEventDock,
   showJourneyEventThinking,
   showJourneyRollToast,
 } from "./journeyView.js";
@@ -60,6 +60,52 @@ const JOURNEY_EVENT_RESOLVE_DELAY_MS = 3000;
 
 function showJourneyFeedback(message, isError = false) {
   showMessage(journeyMessageEl, message, isError);
+}
+
+async function loadJourneyRuntime() {
+  const [gamesRaw, sessionsRaw, idleRaw] = await Promise.all([
+    getAllGames(appState.db),
+    getAllSessions(appState.db),
+    getMeta(appState.db, IDLE_JOURNEY_META_KEY),
+  ]);
+
+  const games = enforceMainGameRules(
+    gamesRaw.map((game) => normalizeGameRecord(game))
+  );
+  const sessions = sessionsRaw.map((session) => normalizeSessionRecord(session));
+  const xpSummary = buildXpSummary(games, sessions);
+  const state = await syncJourneyState(idleRaw, games, sessions, xpSummary);
+
+  appState.latestIdleJourney = state;
+  return { games, sessions, xpSummary, state };
+}
+
+async function openPendingJourneyEventById(eventId) {
+  const safeEventId = String(eventId || "").trim();
+  if (!safeEventId) return false;
+
+  const { state } = await loadJourneyRuntime();
+  const pendingEvent = state.pendingEvents.find((entry) => entry.id === safeEventId);
+
+  appState.journeyEventDockExpanded = false;
+  renderJourneyEventDock(state);
+
+  if (!pendingEvent) {
+    showJourneyFeedback("That event is no longer waiting.", true);
+    await appState.renderApp();
+    return false;
+  }
+
+  if (pendingEvent.autoResolve) {
+    await resolveJourneyEventChoice(
+      pendingEvent.id,
+      pendingEvent.choices[0]?.id || ""
+    );
+    return true;
+  }
+
+  openJourneyEventModal(pendingEvent);
+  return true;
 }
 
 function openJourneyHistoryModal({
@@ -139,39 +185,8 @@ export async function handleHomeJourneyClick(event) {
 
   if (action !== "open-event") return;
 
-  const eventId = button.dataset.eventId;
-  if (!eventId) return;
-
   try {
-    const [gamesRaw, sessionsRaw, idleRaw] = await Promise.all([
-      getAllGames(appState.db),
-      getAllSessions(appState.db),
-      getMeta(appState.db, IDLE_JOURNEY_META_KEY),
-    ]);
-
-    const games = enforceMainGameRules(
-      gamesRaw.map((game) => normalizeGameRecord(game))
-    );
-    const sessions = sessionsRaw.map((session) => normalizeSessionRecord(session));
-    const xpSummary = buildXpSummary(games, sessions);
-    const state = await syncJourneyState(idleRaw, games, sessions, xpSummary);
-    await appState.renderApp();
-
-    const pendingEvent = state.pendingEvents.find((entry) => entry.id === eventId);
-    if (pendingEvent) {
-      if (pendingEvent.autoResolve) {
-        await resolveJourneyEventChoice(
-          pendingEvent.id,
-          pendingEvent.choices[0]?.id || ""
-        );
-        return;
-      }
-
-      openJourneyEventModal(pendingEvent);
-      return;
-    }
-
-    showJourneyFeedback("That event is no longer waiting.", true);
+    await openPendingJourneyEventById(button.dataset.eventId);
   } catch (error) {
     console.error("Failed to open journey event:", error);
     showJourneyFeedback(
@@ -193,6 +208,19 @@ export async function handleJourneyClick(event) {
     return;
   }
 
+  if (action === "open-event") {
+    try {
+      await openPendingJourneyEventById(button.dataset.eventId);
+    } catch (error) {
+      console.error("Failed to open journey event:", error);
+      showJourneyFeedback(
+        getErrorMessage(error, "Could not open that journey event."),
+        true
+      );
+    }
+    return;
+  }
+
   try {
     const [gamesRaw, sessionsRaw, idleRaw] = await Promise.all([
       getAllGames(appState.db),
@@ -208,28 +236,6 @@ export async function handleJourneyClick(event) {
     const state = await syncJourneyState(idleRaw, games, sessions, xpSummary);
     const journeyLevel = getJourneyLevel(state, xpSummary.level);
     const supplies = buildJourneySupplies(games, sessions, state);
-
-    if (action === "open-event") {
-      const eventId = button.dataset.eventId;
-      const pendingEvent = state.pendingEvents.find((entry) => entry.id === eventId);
-
-      if (!pendingEvent) {
-        showJourneyFeedback("That event is no longer waiting.", true);
-        await appState.renderApp();
-        return;
-      }
-
-      if (pendingEvent.autoResolve) {
-        await resolveJourneyEventChoice(
-          pendingEvent.id,
-          pendingEvent.choices[0]?.id || ""
-        );
-        return;
-      }
-
-      openJourneyEventModal(pendingEvent);
-      return;
-    }
 
     if (action === "open-road-history") {
       openJourneyHistoryModal({
@@ -665,6 +671,61 @@ export function handleJourneyOutcomeModalClick(event) {
   }
 }
 
+export async function handleJourneyEventDockClick(event) {
+  const button =
+    event.target instanceof HTMLElement
+      ? event.target.closest("button[data-journey-dock-action]")
+      : null;
+  if (!button) return;
+
+  const action = button.dataset.journeyDockAction;
+  const eventId = String(button.dataset.eventId || "").trim();
+
+  if (action === "toggle") {
+    appState.journeyEventDockExpanded = !appState.journeyEventDockExpanded;
+    renderJourneyEventDock(appState.latestIdleJourney);
+    return;
+  }
+
+  if (action === "collapse") {
+    appState.journeyEventDockExpanded = false;
+    renderJourneyEventDock(appState.latestIdleJourney);
+    return;
+  }
+
+  if (action === "dismiss") {
+    if (!eventId) return;
+
+    if (!appState.journeyEventDockDismissedIds.includes(eventId)) {
+      appState.journeyEventDockDismissedIds = [
+        ...appState.journeyEventDockDismissedIds,
+        eventId,
+      ];
+    }
+
+    appState.journeyEventDockExpanded = false;
+    renderJourneyEventDock(appState.latestIdleJourney);
+    showToast(t("journeyUi.dock.dismissedBody"), {
+      title: t("journeyUi.dock.dismissedTitle"),
+      tone: "info",
+      replace: true,
+    });
+    return;
+  }
+
+  if (action === "open-event") {
+    try {
+      await openPendingJourneyEventById(eventId);
+    } catch (error) {
+      console.error("Failed to open journey event from dock:", error);
+      showJourneyFeedback(
+        getErrorMessage(error, "Could not open that journey event."),
+        true
+      );
+    }
+  }
+}
+
 export async function resolveJourneyEventChoice(eventId, choiceId) {
   try {
     const [gamesRaw, sessionsRaw, idleRaw] = await Promise.all([
@@ -684,7 +745,6 @@ export async function resolveJourneyEventChoice(eventId, choiceId) {
     const eventEntry = state.pendingEvents.find((entry) => entry.id === eventId);
     const choice = eventEntry?.choices.find((entry) => entry.id === choiceId);
     const atIso = new Date().toISOString();
-    const atDate = new Date(atIso);
 
     if (!eventEntry || !choice) {
       closeJourneyEventModal();
@@ -734,7 +794,6 @@ export async function resolveJourneyEventChoice(eventId, choiceId) {
         debugHistory: [],
       });
       resolution = applyJourneyChoiceEffects(state, choice, journeyStats, atIso);
-      startJourneyEventCooldown(state, atDate);
 
       if (!eventEntry.repeatable) {
         rememberJourneyCompletedEventKey(

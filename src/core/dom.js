@@ -108,6 +108,7 @@ export const journeyHistoryBodyEl = document.querySelector("#journeyHistoryBody"
 export const journeyHistoryCloseButton = document.querySelector(
   "#journeyHistoryCloseButton"
 );
+export const journeyEventDockRoot = document.querySelector("#journeyEventDock");
 export const characterSkillModalRoot = document.querySelector(
   "#characterSkillModalRoot"
 );
