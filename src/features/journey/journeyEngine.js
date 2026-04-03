@@ -4361,23 +4361,23 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyPhase === "survival") {
     pushCandidate("survival:charcoal-burners", 3, () => ({
           title: "Smoke from a charcoal pit",
-          teaser: "Working folk are camped ahead, and they look like people who notice everything.",
+          teaser: "Smoke, banked earth, and a wary invitation promise shelter if you can earn it.",
           detail:
-            "You come upon a ring of charcoal burners tending low earthen mounds and blackened stacks of wood. They are wary, practical people, the sort who measure strangers by how much trouble they bring with them.",
+            "Toward dusk you come upon charcoal burners tending low earthen mounds and blackened stacks of cordwood. They do not wave you in like friends, but one of them jerks her chin toward the fire and tells you there is room to warm yourself if you make yourself useful before night closes in.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
-              label: "Earn their trust before asking for anything",
-              preview: "Offer honest help and let patience do the bargaining.",
-              highlightWord: "trust",
+              label: "Work quietly for your supper and bedroll",
+              preview: "Take the offered place by the fire and earn it the patient way.",
+              highlightWord: "quietly",
               statKey: "resolve",
               chanceBase: 0.31,
               chancePerStat: 0.07,
               minChance: 0.22,
               successText:
-                "You stack wood, keep your mouth shut when it would only hurt, and let the burners decide you are not another road leech. When you leave, they send you off with food, a coal-warmed flask, and the safer trail.",
+                "You stack wood, draw water, and mind the pits without making yourself a nuisance. By the time the stew is ladled out, the burners have decided you have earned your place by the fire. At dawn they send you on with food, a coal-warmed flask, and the safer trail through the trees.",
               failureText:
-                "You help well enough, but not long enough to cross the distance between caution and trust. They still give you directions, though the rest you wanted stays behind with the smoke.",
+                "You help well enough, but the camp never fully relaxes around you. They let you warm yourself and point out the morning road, though the extra food and easy company stay behind with the smoke.",
               successEffects: {
                 bonusRations: 2,
                 bonusTonics: 1,
@@ -4390,16 +4390,16 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Shift the heaviest timber for them",
-              preview: "Speak in effort and let the work make your case.",
-              highlightWord: "heaviest",
+              label: "Take the worst of the night's labor",
+              preview: "Volunteer for the backbreaking work and let effort speak for you.",
+              highlightWord: "worst",
               statKey: "might",
               chanceBase: 0.28,
               chancePerStat: 0.08,
               successText:
-                "You shoulder the backbreaking pieces nobody wants and win their respect the hard way. One old burner laughs, claps your shoulder, and presses supplies into your hands.",
+                "You drag green timber, shift packed earth, and haul the loads that make everyone else's back ache in sympathy. The burners decide that anyone willing to bleed sweat for a place at the fire deserves a full bowl and provisions for the road.",
               failureText:
-                "You get the timber moving, but at the cost of torn breath and aching ribs. They feed you out of basic decency, not admiration.",
+                "You force the work through, but it leaves you shaking and short of breath before the pits are settled. They still feed you and let you stay at the edge of the firelight, more out of decency than admiration.",
               successEffects: {
                 hp: -2,
                 hunger: 10,
@@ -4413,16 +4413,16 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Read the soot marks on their wagons",
-              preview: "Look for the road knowledge hidden in their routine.",
-              highlightWord: "soot",
+              label: "Listen to their road talk and study their marks",
+              preview: "Stay useful around camp while learning how they read the wild roads.",
+              highlightWord: "marks",
               statKey: "finesse",
               chanceBase: 0.29,
               chancePerStat: 0.08,
               successText:
-                "You notice the coded slashes and soot circles they use to mark safe turns, bad crossings, and bandit country. The lesson buys you distance and a little welcome besides.",
+                "While the burners eat and trade gossip, you notice the soot slashes on their wagon boards and the cuts they leave on nearby posts. Once they see you have the sense to follow along, they explain which marks mean safe turns, bad crossings, and hungry men on the road. You leave the camp faster and wiser for it.",
               failureText:
-                "You think you have their signs understood, but only half of them. The mistake costs time before one of the burners sighs and points you back on course.",
+                "You try to piece their sign language together from half-heard talk and firelit glimpses, but you come away with only part of it. The mistake costs you time the next day before one of the burners catches up long enough to point you back on course.",
               successEffects: {
                 distance: 11,
                 bonusRations: 1,
