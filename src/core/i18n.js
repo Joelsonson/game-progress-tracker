@@ -12,6 +12,11 @@ const translations = {
       eyebrow: "旅の記録",
       titleSub: "Journey Log",
     },
+    loading: {
+      eyebrow: "Preparing the journey",
+      title: "Loading your goals and route",
+      body: "Warming up your goal library, sessions, and travel state.",
+    },
     nav: {
       home: "Home",
       journey: "Journey",
@@ -320,6 +325,7 @@ const translations = {
         defaultCoverHint:
           "Pick a bundled card image if you do not want to upload one.",
         defaultCoverNone: "Random built-in cover",
+        defaultCoverLoading: "Loading built-in covers...",
         defaultCoverOption1: "Built-in cover 1",
         defaultCoverOption2: "Built-in cover 2",
         defaultCoverOption3: "Built-in cover 3",
@@ -717,6 +723,11 @@ const translations = {
       eyebrow: "旅の記録",
       titleSub: "Journey Log",
     },
+    loading: {
+      eyebrow: "旅の準備中",
+      title: "目標と旅路を読み込んでいます",
+      body: "目標ライブラリ、セッション、旅の状態を整えています。",
+    },
     nav: {
       home: "ホーム",
       journey: "旅路",
@@ -1023,6 +1034,7 @@ const translations = {
         defaultCoverHint:
           "アップロードしない場合は、最初から入っているカード画像を選べます。",
         defaultCoverNone: "ランダムに選ぶ",
+        defaultCoverLoading: "内蔵カバーを読み込み中...",
         defaultCoverOption1: "内蔵カバー 1",
         defaultCoverOption2: "内蔵カバー 2",
         defaultCoverOption3: "内蔵カバー 3",

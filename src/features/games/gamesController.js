@@ -51,7 +51,9 @@ import { downloadCompletionCard } from "../art/completionCard.js";
 import { optimizeUploadedImage } from "../art/imageCropper.js";
 import { notifyOnboardingGoalSaved } from "../onboarding/onboardingController.js";
 import { saveSessionEntry } from "../sessions/sessionsController.js";
-import { renderGameActionSheet } from "./gamesView.js";
+import { renderBuiltInCoverPicker, renderGameActionSheet } from "./gamesView.js";
+
+let builtInCoverDiscoveryPromise = null;
 
 export function openGameActionsSheet(game) {
   if (!gameActionsModal || !gameActionsBodyEl || !gameActionsTitleEl || !gameActionsMetaEl) {
@@ -193,12 +195,30 @@ export async function repairGamesIfNeeded() {
   }
 }
 
-export async function primeBuiltInCoverImageOptions() {
-  appState.builtInCoverImageOptions = await discoverBuiltInCoverImageOptions();
-
-  if (builtInCoverPickerEl) {
-    builtInCoverPickerEl.innerHTML = "";
+export async function primeBuiltInCoverImageOptions({ force = false } = {}) {
+  if (!force && appState.builtInCoverImageOptions.length) {
+    return appState.builtInCoverImageOptions;
   }
+
+  if (builtInCoverDiscoveryPromise) {
+    return builtInCoverDiscoveryPromise;
+  }
+
+  appState.builtInCoverImageOptionsLoading = true;
+  renderBuiltInCoverPicker();
+
+  builtInCoverDiscoveryPromise = discoverBuiltInCoverImageOptions()
+    .then((options) => {
+      appState.builtInCoverImageOptions = options;
+      return options;
+    })
+    .finally(() => {
+      appState.builtInCoverImageOptionsLoading = false;
+      builtInCoverDiscoveryPromise = null;
+      renderBuiltInCoverPicker();
+    });
+
+  return builtInCoverDiscoveryPromise;
 }
 
 export async function handleAddGame(event) {

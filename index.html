@@ -34,13 +34,39 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
     />
-    <link rel="stylesheet" href="./styles/tokens.css?v=20260404a" />
-    <link rel="stylesheet" href="./styles/base.css?v=20260404a" />
-    <link rel="stylesheet" href="./styles/layout.css?v=20260404a" />
-    <link rel="stylesheet" href="./styles/components.css?v=20260404a" />
-    <link rel="stylesheet" href="./styles/screens.css?v=20260404a" />
+    <link rel="stylesheet" href="./styles/tokens.css?v=20260404c" />
+    <link rel="stylesheet" href="./styles/base.css?v=20260404c" />
+    <link rel="stylesheet" href="./styles/layout.css?v=20260404c" />
+    <link rel="stylesheet" href="./styles/components.css?v=20260404c" />
+    <link rel="stylesheet" href="./styles/screens.css?v=20260404c" />
   </head>
   <body>
+    <div id="appBootSplash" class="app-boot-splash" aria-live="polite">
+      <div class="app-boot-sheen" aria-hidden="true"></div>
+      <section class="app-boot-card" aria-labelledby="appBootTitle">
+        <div class="app-boot-orbit" aria-hidden="true">
+          <span class="app-boot-ring app-boot-ring-a"></span>
+          <span class="app-boot-ring app-boot-ring-b"></span>
+          <span class="app-boot-star app-boot-star-a"></span>
+          <span class="app-boot-star app-boot-star-b"></span>
+          <span class="app-boot-star app-boot-star-c"></span>
+          <div class="app-boot-core">
+            <div class="app-boot-sprite"></div>
+          </div>
+        </div>
+
+        <div class="app-boot-copy">
+          <p class="eyebrow" data-i18n="loading.eyebrow">Preparing the journey</p>
+          <h2 id="appBootTitle" data-i18n="loading.title">
+            Loading your goals and route
+          </h2>
+          <p class="muted-text" data-i18n="loading.body">
+            Warming up your goal library, sessions, and travel state.
+          </p>
+        </div>
+      </section>
+    </div>
+
     <main class="app-shell">
       <header class="hero">
         <p class="eyebrow" data-i18n="brand.eyebrow">Real life Questlog</p>
@@ -797,6 +823,6 @@
     </div>
     <div id="toastViewport" class="toast-viewport" aria-live="polite" aria-atomic="true"></div>
 
-    <script type="module" src="./src/main.js?v=20260329f"></script>
+    <script type="module" src="./src/main.js?v=20260404c"></script>
   </body>
 </html>

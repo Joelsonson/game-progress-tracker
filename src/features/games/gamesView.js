@@ -150,7 +150,13 @@ export function renderHomeOverview(
           ? `
             <div class="home-capsule-grid" role="list">
               ${visibleGames
-                .map((game) => renderHomeGoalCapsule(game))
+                .map((game, index) =>
+                  renderHomeGoalCapsule(
+                    game,
+                    sessionStats.get(game.id) || emptySessionStats(),
+                    index
+                  )
+                )
                 .join("")}
             </div>
             ${
@@ -295,14 +301,23 @@ function getHomeLibraryFilterOptions() {
   }));
 }
 
-function renderHomeGoalCapsule(game) {
+function renderHomeGoalCapsule(game, stats, index = 0) {
+  const isCompleted = game.status === GAME_STATUSES.COMPLETED;
+  const tier = isCompleted ? getCompletionTier(game, stats) : "";
+  const tierMeta = tier ? CARD_TIER_META[tier] : null;
+  const completedClass = isCompleted ? ` is-completed ${tierMeta?.className || ""}` : "";
+  const holographicStyle = isCompleted
+    ? ` style="${escapeAttribute(buildCompletedCapsuleStyle(game, tierMeta, index))}"`
+    : "";
+
   return `
     <article class="goal-capsule-card" role="listitem">
       <button
         type="button"
-        class="goal-capsule-button ${game.isMain ? "is-focus" : ""}"
+        class="goal-capsule-button ${game.isMain ? "is-focus" : ""}${completedClass}"
         data-action="open-game-actions"
         data-id="${game.id}"
+        ${holographicStyle}
       >
         ${renderHomeGoalCapsuleArt(game)}
         <div class="goal-capsule-overlay" aria-hidden="true"></div>
@@ -342,6 +357,32 @@ function getGoalCapsuleMonogram(title) {
 
   const monogram = parts.map((part) => part[0]?.toUpperCase() || "").join("");
   return monogram || "GO";
+}
+
+function buildCompletedCapsuleStyle(game, tierMeta, index) {
+  const seed = hashString(`${game.id}:${game.title}:${index}`);
+  const shift = 14 + (seed % 52);
+  const drift = -10 + (seed % 21);
+  const rotate = -7 + (seed % 15);
+  const delay = -0.35 * (index % 6);
+
+  return [
+    `--goal-holo-accent-a:${tierMeta?.accentA || "#c084fc"}`,
+    `--goal-holo-accent-b:${tierMeta?.accentB || "#7c3aed"}`,
+    `--goal-holo-accent-text:${tierMeta?.accentText || "#f8fafc"}`,
+    `--goal-holo-shift:${shift}%`,
+    `--goal-holo-drift:${drift}%`,
+    `--goal-holo-rotate:${rotate}deg`,
+    `--goal-holo-delay:${delay}s`,
+  ].join(";");
+}
+
+function hashString(value) {
+  return Array.from(String(value || "")).reduce(
+    (accumulator, character) =>
+      (accumulator * 31 + character.charCodeAt(0)) % 2147483647,
+    7
+  );
 }
 
 export function renderCompletionSpotlight(games, sessionStats) {
@@ -1392,6 +1433,16 @@ function renderBuiltInCoverActionButtons(game) {
 
 function renderBuiltInCoverPickerOptions() {
   const noneLabel = t("games.add.defaultCoverNone");
+  const loadingMarkup =
+    appState.builtInCoverImageOptionsLoading &&
+    !appState.builtInCoverImageOptions.length
+      ? `
+          <div class="built-in-cover-loading" aria-live="polite">
+            <span class="built-in-cover-loading-orb" aria-hidden="true"></span>
+            <span>${escapeHtml(t("games.add.defaultCoverLoading"))}</span>
+          </div>
+        `
+      : "";
   const optionsMarkup = appState.builtInCoverImageOptions
     .map((option) => {
       const inputId = `defaultCoverImage-${option.index}`;
@@ -1430,6 +1481,7 @@ function renderBuiltInCoverPickerOptions() {
     <label class="built-in-cover-option is-empty" for="defaultCoverImageNone">
       <span>${escapeHtml(noneLabel)}</span>
     </label>
+    ${loadingMarkup}
     ${optionsMarkup}
   `;
 }

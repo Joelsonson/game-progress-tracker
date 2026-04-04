@@ -3,6 +3,7 @@ import { getAllGames } from "./data/gamesRepo.js";
 import { getMeta, setMeta } from "./data/metaRepo.js";
 import { getAllSessions } from "./data/sessionsRepo.js";
 import {
+  appBootSplash,
   bannerArtPickerInput,
   characterSkillModalRoot,
   characterContentEl,
@@ -134,13 +135,15 @@ async function init() {
     applyLanguagePreference(appState.locale);
     applyThemePreference(appState.themePreference);
     await repairGamesIfNeeded();
-    await primeBuiltInCoverImageOptions();
+    void primeBuiltInCoverImageOptions();
     bindEvents();
     setActiveScreen(getPreferredScreenId());
     await renderApp();
+    dismissAppBootSplash();
     await maybeAutoStartOnboarding();
   } catch (error) {
     console.error("Failed to initialize app:", error);
+    dismissAppBootSplash({ immediate: true });
     showMessage(formMessage, t("messages.initError"), true);
   }
 }
@@ -269,6 +272,7 @@ function handleGlobalKeyDown(event) {
 function handleWindowResize() {
   handleViewportResize();
   syncOnboardingLayout();
+  syncHomeCapsuleChrome();
 }
 
 function handleSettingsModalClick(event) {
@@ -302,6 +306,7 @@ function handleWindowScroll() {
   window.requestAnimationFrame(() => {
     quickSwitchFramePending = false;
     syncQuickSwitchChrome();
+    syncHomeCapsuleChrome();
     syncOnboardingLayout();
   });
 }
@@ -328,6 +333,46 @@ function syncQuickSwitchChrome() {
     scrollProgress.toFixed(3)
   );
   lastQuickSwitchScrollY = nextScrollY;
+}
+
+function syncHomeCapsuleChrome() {
+  const rootStyle = document.documentElement?.style;
+  if (!rootStyle) return;
+
+  const scrollY = Math.max(window.scrollY || 0, 0);
+  const wave = scrollY / 150;
+  const tiltX = Math.sin(wave * 0.9) * 2.4;
+  const tiltY = Math.cos(wave * 0.68) * 4.2;
+  const shift = ((scrollY * 0.4) % 140) - 20;
+  const glintX = Math.sin(wave * 1.1) * 9;
+  const glintY = Math.cos(wave * 0.82) * 7;
+
+  rootStyle.setProperty("--home-holo-tilt-x", `${tiltX.toFixed(2)}deg`);
+  rootStyle.setProperty("--home-holo-tilt-y", `${tiltY.toFixed(2)}deg`);
+  rootStyle.setProperty("--home-holo-shift", `${shift.toFixed(2)}%`);
+  rootStyle.setProperty("--home-holo-glint-x", `${glintX.toFixed(2)}%`);
+  rootStyle.setProperty("--home-holo-glint-y", `${glintY.toFixed(2)}%`);
+}
+
+function dismissAppBootSplash({ immediate = false } = {}) {
+  if (!appBootSplash || appBootSplash.hidden) {
+    return;
+  }
+
+  const finish = () => {
+    appBootSplash.hidden = true;
+  };
+
+  if (immediate) {
+    appBootSplash.classList.add("is-ready");
+    finish();
+    return;
+  }
+
+  window.requestAnimationFrame(() => {
+    appBootSplash.classList.add("is-ready");
+    window.setTimeout(finish, 420);
+  });
 }
 
 export async function renderApp() {
@@ -372,6 +417,7 @@ export async function renderApp() {
   syncLanguagePreferenceInput();
   syncFocusedGoalsPreferenceInput();
   syncGameDifficultyPresentation();
+  syncHomeCapsuleChrome();
   handleOnboardingAppRendered({
     games: sortedGames,
     sessions,

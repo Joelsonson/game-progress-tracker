@@ -125,6 +125,7 @@ export const onboardingScrimRight = document.querySelector("#onboardingScrimRigh
 export const onboardingScrimBottom = document.querySelector("#onboardingScrimBottom");
 export const onboardingSpotlightFrame = document.querySelector("#onboardingSpotlightFrame");
 export const onboardingCardRoot = document.querySelector("#onboardingCardRoot");
+export const appBootSplash = document.querySelector("#appBootSplash");
 export const gameActionsModal = document.querySelector("#gameActionsModal");
 export const gameActionsTitleEl = document.querySelector("#gameActionsTitle");
 export const gameActionsMetaEl = document.querySelector("#gameActionsMeta");
