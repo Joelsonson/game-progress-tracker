@@ -84,6 +84,7 @@ import {
   renderHomeOverview,
   renderPlayerProgress,
   renderStats,
+  syncHomeGoalCapsuleImageStates,
 } from "./features/games/gamesView.js";
 import {
   handleHomeJourneyClick,
@@ -401,6 +402,7 @@ export async function renderApp() {
     appState.homeLibraryStatusFilter,
     appState.homeLibraryExpanded
   );
+  syncHomeGoalCapsuleImageStates();
   renderHomeJourney(idleJourney, xpSummary, journeySupplies);
   renderPlayerProgress(xpSummary);
   renderStats(sortedGames, sessions);

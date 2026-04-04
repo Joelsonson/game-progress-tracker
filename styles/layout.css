@@ -932,9 +932,12 @@
 
 .goal-capsule-card {
   min-width: 0;
+  border-radius: 24px;
+  overflow: hidden;
 }
 
 .goal-capsule-button {
+  --goal-capsule-radius: 24px;
   --goal-capsule-lift: 0px;
   --goal-capsule-rotate-x: 0deg;
   --goal-capsule-rotate-y: 0deg;
@@ -943,7 +946,7 @@
   aspect-ratio: 3 / 4;
   padding: 0;
   border: 1px solid rgba(var(--ink-rgb), 0.08);
-  border-radius: 24px;
+  border-radius: var(--goal-capsule-radius);
   overflow: hidden;
   background:
     linear-gradient(160deg, rgba(var(--panel-rgb), 0.98), rgba(var(--surface-rgb), 0.84)),
@@ -973,6 +976,13 @@
     0 0 0 1px rgba(var(--accent-rgb), 0.12);
 }
 
+.goal-capsule-media-shell {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
 .goal-capsule-image,
 .goal-capsule-placeholder,
 .goal-capsule-overlay {
@@ -984,6 +994,8 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.28s ease, transform 0.32s ease;
 }
 
 .goal-capsule-placeholder {
@@ -993,6 +1005,37 @@
     radial-gradient(circle at top left, rgba(var(--accent-blue-strong), 0.28), transparent 42%),
     radial-gradient(circle at bottom right, rgba(var(--accent-rgb), 0.2), transparent 34%),
     linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.92));
+  transition: opacity 0.28s ease, transform 0.32s ease;
+}
+
+.goal-capsule-media-shell.is-loading .goal-capsule-placeholder::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      115deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.08) 34%,
+      transparent 58%
+    );
+  transform: translateX(-70%);
+  animation: goal-capsule-image-shimmer 1.35s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.goal-capsule-media-shell.is-loaded .goal-capsule-image {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.goal-capsule-media-shell.is-loaded .goal-capsule-placeholder {
+  opacity: 0;
+  transform: scale(1.02);
+}
+
+.goal-capsule-media-shell.is-error .goal-capsule-image {
+  opacity: 0;
 }
 
 .goal-capsule-placeholder span {
@@ -1026,8 +1069,8 @@
 .goal-capsule-button.is-completed::after {
   content: "";
   position: absolute;
-  inset: -4%;
-  border-radius: inherit;
+  inset: 0;
+  border-radius: var(--goal-capsule-radius);
   pointer-events: none;
   will-change: transform, opacity, background-position;
 }
@@ -1190,6 +1233,22 @@
   50% {
     transform: translate3d(0, -2px, 0) scale(1.02);
     opacity: 0.76;
+  }
+}
+
+@keyframes goal-capsule-image-shimmer {
+  0% {
+    transform: translateX(-70%);
+    opacity: 0.22;
+  }
+
+  50% {
+    opacity: 0.42;
+  }
+
+  100% {
+    transform: translateX(70%);
+    opacity: 0.18;
   }
 }
 

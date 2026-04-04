@@ -67,6 +67,47 @@ export function renderBuiltInCoverPicker() {
   builtInCoverPickerEl.innerHTML = renderBuiltInCoverPickerOptions();
 }
 
+export function syncHomeGoalCapsuleImageStates() {
+  if (!homeOverviewEl) return;
+
+  const mediaElements = homeOverviewEl.querySelectorAll("[data-goal-capsule-media]");
+
+  for (const mediaElement of mediaElements) {
+    if (!(mediaElement instanceof HTMLElement)) {
+      continue;
+    }
+
+    const image = mediaElement.querySelector(".goal-capsule-image");
+    if (!(image instanceof HTMLImageElement)) {
+      continue;
+    }
+
+    const markLoaded = () => {
+      mediaElement.classList.remove("is-loading", "is-error");
+      mediaElement.classList.add("is-loaded");
+    };
+    const markError = () => {
+      mediaElement.classList.remove("is-loading", "is-loaded");
+      mediaElement.classList.add("is-error");
+    };
+
+    mediaElement.classList.remove("is-loaded", "is-error");
+    mediaElement.classList.add("is-loading");
+
+    if (image.complete) {
+      if (image.naturalWidth > 0) {
+        markLoaded();
+      } else {
+        markError();
+      }
+      continue;
+    }
+
+    image.addEventListener("load", markLoaded, { once: true });
+    image.addEventListener("error", markError, { once: true });
+  }
+}
+
 export function renderStats(games, sessions) {
   const totalGamesEl = document.querySelector("#totalGames");
   const inProgressCountEl = document.querySelector("#inProgressCount");
@@ -331,19 +372,27 @@ function renderHomeGoalCapsule(game, stats, index = 0) {
 
 function renderHomeGoalCapsuleArt(game) {
   const image = game.coverImage;
+  const monogram = getGoalCapsuleMonogram(game.title);
   if (image) {
     return `
-      <img
-        class="goal-capsule-image"
-        src="${escapeAttribute(image)}"
-        alt="${escapeAttribute(game.title)}"
-      />
+      <div class="goal-capsule-media-shell" data-goal-capsule-media>
+        <div class="goal-capsule-placeholder" aria-hidden="true">
+          <span>${escapeHtml(monogram)}</span>
+        </div>
+        <img
+          class="goal-capsule-image"
+          src="${escapeAttribute(image)}"
+          alt="${escapeAttribute(game.title)}"
+          loading="eager"
+          decoding="async"
+        />
+      </div>
     `;
   }
 
   return `
     <div class="goal-capsule-placeholder" aria-hidden="true">
-      <span>${escapeHtml(getGoalCapsuleMonogram(game.title))}</span>
+      <span>${escapeHtml(monogram)}</span>
     </div>
   `;
 }
