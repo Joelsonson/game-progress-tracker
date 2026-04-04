@@ -6,6 +6,7 @@ import {
 
 export const appState = {
   db: null,
+  builtInCoverImageOptions: [],
   pendingArtTarget: null,
   cropSession: null,
   activeScreenId: DEFAULT_SCREEN_ID,

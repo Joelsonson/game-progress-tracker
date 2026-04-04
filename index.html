@@ -346,79 +346,7 @@
                   <label data-i18n="games.add.defaultCoverLabel">
                     Built-in card image
                   </label>
-                  <div class="built-in-cover-grid">
-                    <input
-                      id="defaultCoverImageNone"
-                      class="built-in-cover-input"
-                      type="radio"
-                      name="defaultCoverImage"
-                      value=""
-                      checked
-                    />
-                    <label class="built-in-cover-option is-empty" for="defaultCoverImageNone">
-                      <span data-i18n="games.add.defaultCoverNone">No built-in cover</span>
-                    </label>
-
-                    <input
-                      id="defaultCoverImage1"
-                      class="built-in-cover-input"
-                      type="radio"
-                      name="defaultCoverImage"
-                      value="./assets/journey/defaultcoverimages/1.png"
-                    />
-                    <label class="built-in-cover-option" for="defaultCoverImage1">
-                      <img
-                        class="built-in-cover-thumb"
-                        src="./assets/journey/defaultcoverimages/1.png"
-                        alt="Built-in cover 1"
-                      />
-                    </label>
-
-                    <input
-                      id="defaultCoverImage2"
-                      class="built-in-cover-input"
-                      type="radio"
-                      name="defaultCoverImage"
-                      value="./assets/journey/defaultcoverimages/2.png"
-                    />
-                    <label class="built-in-cover-option" for="defaultCoverImage2">
-                      <img
-                        class="built-in-cover-thumb"
-                        src="./assets/journey/defaultcoverimages/2.png"
-                        alt="Built-in cover 2"
-                      />
-                    </label>
-
-                    <input
-                      id="defaultCoverImage3"
-                      class="built-in-cover-input"
-                      type="radio"
-                      name="defaultCoverImage"
-                      value="./assets/journey/defaultcoverimages/3.png"
-                    />
-                    <label class="built-in-cover-option" for="defaultCoverImage3">
-                      <img
-                        class="built-in-cover-thumb"
-                        src="./assets/journey/defaultcoverimages/3.png"
-                        alt="Built-in cover 3"
-                      />
-                    </label>
-
-                    <input
-                      id="defaultCoverImage4"
-                      class="built-in-cover-input"
-                      type="radio"
-                      name="defaultCoverImage"
-                      value="./assets/journey/defaultcoverimages/4.png"
-                    />
-                    <label class="built-in-cover-option" for="defaultCoverImage4">
-                      <img
-                        class="built-in-cover-thumb"
-                        src="./assets/journey/defaultcoverimages/4.png"
-                        alt="Built-in cover 4"
-                      />
-                    </label>
-                  </div>
+                  <div id="builtInCoverPicker" class="built-in-cover-grid"></div>
                   <p class="field-hint" data-i18n="games.add.defaultCoverHint">
                     Pick a bundled card image if you do not want to upload one.
                   </p>
@@ -836,7 +764,7 @@
           <div>
             <p class="eyebrow" data-i18n="tracker.actionSheetEyebrow">Tracker actions</p>
             <h2 id="gameActionsTitle">Manage goal</h2>
-            <p id="gameActionsMeta" class="muted-text">
+            <p id="gameActionsMeta" class="muted-text" hidden>
               Choose what to do next.
             </p>
           </div>

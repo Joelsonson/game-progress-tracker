@@ -72,10 +72,17 @@ import {
   handleGameActionsModalClick,
   handleGameActionsSubmit,
   handleListClick,
+  primeBuiltInCoverImageOptions,
   repairGamesIfNeeded,
   syncGameDifficultyPresentation,
 } from "./features/games/gamesController.js";
-import { renderGames, renderHomeOverview, renderPlayerProgress, renderStats } from "./features/games/gamesView.js";
+import {
+  renderBuiltInCoverPicker,
+  renderGames,
+  renderHomeOverview,
+  renderPlayerProgress,
+  renderStats,
+} from "./features/games/gamesView.js";
 import {
   handleHomeJourneyClick,
   handleJourneyClick,
@@ -126,6 +133,7 @@ async function init() {
     applyLanguagePreference(appState.locale);
     applyThemePreference(appState.themePreference);
     await repairGamesIfNeeded();
+    await primeBuiltInCoverImageOptions();
     bindEvents();
     setActiveScreen(getPreferredScreenId());
     await renderApp();
@@ -356,6 +364,7 @@ export async function renderApp() {
   initializeJourneySpritePreviews();
   renderSessionGameOptions(sortedGames);
   renderGames(sortedGames, sessionStats);
+  renderBuiltInCoverPicker();
   renderRecentSessions(sortedGames, sessions);
   syncSessionsTabUi();
   syncThemePreferenceInput();

@@ -2,11 +2,11 @@ import { isMainEligibleStatus, normalizeGameRecord } from "../../data/db.js";
 import { addGame, getAllGames, setMainGame, updateGame, updateGames } from "../../data/gamesRepo.js";
 import { getAllSessions } from "../../data/sessionsRepo.js";
 import {
+  builtInCoverPickerEl,
   bannerArtPickerInput,
   bannerImageInput,
   coverArtPickerInput,
   coverImageInput,
-  defaultCoverImageInputs,
   difficultyRewardPreview,
   formMessage,
   gameActionsBodyEl,
@@ -16,11 +16,15 @@ import {
   gameForm,
   gameDifficultyInputs,
   gameStatusInput,
+  getDefaultCoverImageInputs,
   notesInput,
   platformInput,
   titleInput,
 } from "../../core/dom.js";
 import {
+  BUILT_IN_COVER_IMAGE_DIRECTORY,
+  BUILT_IN_COVER_IMAGE_DISCOVERY_MAX,
+  BUILT_IN_COVER_IMAGE_EXTENSION,
   DEFAULT_GAME_DIFFICULTY,
   DEFAULT_GAME_STATUS,
   GAME_DIFFICULTIES,
@@ -55,7 +59,8 @@ export function openGameActionsSheet(game) {
   }
 
   gameActionsTitleEl.textContent = t("tracker.manageCard");
-  gameActionsMetaEl.textContent = t("tracker.actionSheetBody");
+  gameActionsMetaEl.textContent = "";
+  gameActionsMetaEl.hidden = true;
   gameActionsBodyEl.innerHTML = renderGameActionSheet(game);
   gameActionsModal.hidden = false;
   document.body.classList.add("has-overlay");
@@ -188,6 +193,14 @@ export async function repairGamesIfNeeded() {
   }
 }
 
+export async function primeBuiltInCoverImageOptions() {
+  appState.builtInCoverImageOptions = await discoverBuiltInCoverImageOptions();
+
+  if (builtInCoverPickerEl) {
+    builtInCoverPickerEl.innerHTML = "";
+  }
+}
+
 export async function handleAddGame(event) {
   event.preventDefault();
 
@@ -219,7 +232,9 @@ export async function handleAddGame(event) {
       "banner"
     );
     const coverImage =
-      uploadedCoverImage || getSelectedBundledCoverImage();
+      uploadedCoverImage ||
+      getSelectedBundledCoverImage() ||
+      getRandomBuiltInCoverImage();
 
     const now = new Date().toISOString();
 
@@ -319,10 +334,23 @@ function isValidGameDifficulty(value) {
 }
 
 function getSelectedBundledCoverImage() {
-  const selectedInput = defaultCoverImageInputs.find((input) => input.checked);
+  const selectedInput = getDefaultCoverImageInputs().find((input) => input.checked);
   const selectedValue = selectedInput?.value || "";
 
   return String(selectedValue || "").trim();
+}
+
+function getRandomBuiltInCoverImage() {
+  const options = Array.isArray(appState.builtInCoverImageOptions)
+    ? appState.builtInCoverImageOptions
+    : [];
+
+  if (!options.length) {
+    return "";
+  }
+
+  const randomIndex = Math.floor(Math.random() * options.length);
+  return String(options[randomIndex]?.src || "").trim();
 }
 
 export async function handleListClick(event) {
@@ -586,4 +614,40 @@ function showFeedback(message, { isError = false, toast = false } = {}) {
   }
 
   showMessage(formMessage, message, isError);
+}
+
+async function discoverBuiltInCoverImageOptions() {
+  const candidates = Array.from(
+    { length: BUILT_IN_COVER_IMAGE_DISCOVERY_MAX },
+    (_, index) => index + 1
+  );
+
+  const discovered = await Promise.all(
+    candidates.map(async (index) => {
+      const src = `${BUILT_IN_COVER_IMAGE_DIRECTORY}/${index}.${BUILT_IN_COVER_IMAGE_EXTENSION}`;
+      const exists = await checkImageExists(src);
+
+      if (!exists) {
+        return null;
+      }
+
+      return {
+        id: `default-cover-${index}`,
+        src,
+        index,
+      };
+    })
+  );
+
+  return discovered.filter(Boolean);
+}
+
+function checkImageExists(src) {
+  return new Promise((resolve) => {
+    const image = new Image();
+
+    image.onload = () => resolve(true);
+    image.onerror = () => resolve(false);
+    image.src = src;
+  });
 }

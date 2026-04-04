@@ -318,7 +318,7 @@ const translations = {
         defaultCoverLabel: "Built-in card image",
         defaultCoverHint:
           "Pick a bundled card image if you do not want to upload one.",
-        defaultCoverNone: "No built-in cover",
+        defaultCoverNone: "Random built-in cover",
         defaultCoverOption1: "Built-in cover 1",
         defaultCoverOption2: "Built-in cover 2",
         defaultCoverOption3: "Built-in cover 3",
@@ -1020,7 +1020,7 @@ const translations = {
         defaultCoverLabel: "内蔵カード画像",
         defaultCoverHint:
           "アップロードしない場合は、最初から入っているカード画像を選べます。",
-        defaultCoverNone: "内蔵カバーなし",
+        defaultCoverNone: "ランダムに選ぶ",
         defaultCoverOption1: "内蔵カバー 1",
         defaultCoverOption2: "内蔵カバー 2",
         defaultCoverOption3: "内蔵カバー 3",

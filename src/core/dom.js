@@ -7,12 +7,14 @@ export const gameDifficultyInputs = Array.from(
 );
 export const notesInput = document.querySelector("#notes");
 export const coverImageInput = document.querySelector("#coverImage");
-export const defaultCoverImageInputs = Array.from(
-  document.querySelectorAll('input[name="defaultCoverImage"]')
-);
+export const builtInCoverPickerEl = document.querySelector("#builtInCoverPicker");
 export const bannerImageInput = document.querySelector("#bannerImage");
 export const formMessage = document.querySelector("#formMessage");
 export const difficultyRewardPreview = document.querySelector("#difficultyRewardPreview");
+
+export function getDefaultCoverImageInputs() {
+  return Array.from(document.querySelectorAll('input[name="defaultCoverImage"]'));
+}
 
 export const sessionForm = document.querySelector("#sessionForm");
 export const sessionGameSelect = document.querySelector("#sessionGame");

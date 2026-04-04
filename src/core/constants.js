@@ -89,24 +89,10 @@ export const IMAGE_PRESET = {
   },
 };
 
-export const BUILT_IN_COVER_IMAGE_OPTIONS = [
-  {
-    id: "default-cover-1",
-    src: "./assets/journey/defaultcoverimages/1.png",
-  },
-  {
-    id: "default-cover-2",
-    src: "./assets/journey/defaultcoverimages/2.png",
-  },
-  {
-    id: "default-cover-3",
-    src: "./assets/journey/defaultcoverimages/3.png",
-  },
-  {
-    id: "default-cover-4",
-    src: "./assets/journey/defaultcoverimages/4.png",
-  },
-];
+export const BUILT_IN_COVER_IMAGE_DIRECTORY =
+  "./assets/journey/defaultcoverimages";
+export const BUILT_IN_COVER_IMAGE_EXTENSION = "png";
+export const BUILT_IN_COVER_IMAGE_DISCOVERY_MAX = 24;
 
 export const CARD_TIER_META = {
   bronze: {

@@ -1,4 +1,5 @@
 import {
+  builtInCoverPickerEl,
   completionSpotlightEl,
   gamesListEl,
   homeOverviewEl,
@@ -6,7 +7,6 @@ import {
   mainQuestPanelEl,
 } from "../../core/dom.js";
 import {
-  BUILT_IN_COVER_IMAGE_OPTIONS,
   CARD_TIER_META,
   GAME_DIFFICULTY_META,
   GAME_STATUSES,
@@ -33,6 +33,7 @@ import {
   renderCoverVisual,
 } from "../../core/formatters.js";
 import { t } from "../../core/i18n.js";
+import { appState } from "../../core/state.js";
 
 export function renderPlayerProgress(summary) {
   const playerLevelEl = document.querySelector("#playerLevel");
@@ -58,6 +59,12 @@ export function renderPlayerProgress(summary) {
     nextLevel: summary.level + 1,
   });
   xpProgressFillEl.style.width = `${summary.progressPercent}%`;
+}
+
+export function renderBuiltInCoverPicker() {
+  if (!builtInCoverPickerEl) return;
+
+  builtInCoverPickerEl.innerHTML = renderBuiltInCoverPickerOptions();
 }
 
 export function renderStats(games, sessions) {
@@ -1334,6 +1341,7 @@ function renderGameActionDisclosure({ title, body, content }) {
 function renderGameEditPanel(game) {
   const gameId = escapeAttribute(game.id);
   const currentObjective = escapeHtml(getGameObjectiveText(game));
+  const hasBuiltInCovers = appState.builtInCoverImageOptions.length > 0;
 
   return `
     <form class="stack-form game-action-edit-form" data-game-edit-form>
@@ -1385,16 +1393,22 @@ function renderGameEditPanel(game) {
           })}
         </div>
 
-        <details class="game-action-sheet-subsection game-action-sheet-subsection-nested">
-          <summary class="game-action-sheet-subsummary">
-            ${escapeHtml(t("tracker.actionSheetSections.useBuiltInCover"))}
-          </summary>
-          <div class="game-action-sheet-subsection-body">
-            <div class="built-in-cover-button-grid">
-              ${renderBuiltInCoverActionButtons(game)}
-            </div>
-          </div>
-        </details>
+        ${
+          hasBuiltInCovers
+            ? `
+              <details class="game-action-sheet-subsection game-action-sheet-subsection-nested">
+                <summary class="game-action-sheet-subsummary">
+                  ${escapeHtml(t("tracker.actionSheetSections.useBuiltInCover"))}
+                </summary>
+                <div class="game-action-sheet-subsection-body">
+                  <div class="built-in-cover-button-grid">
+                    ${renderBuiltInCoverActionButtons(game)}
+                  </div>
+                </div>
+              </details>
+            `
+            : ""
+        }
       </div>
     </details>
 
@@ -1433,9 +1447,9 @@ function renderGameEditPanel(game) {
 }
 
 function renderBuiltInCoverActionButtons(game) {
-  return BUILT_IN_COVER_IMAGE_OPTIONS.map((option, index) => {
+  return appState.builtInCoverImageOptions.map((option) => {
     const optionLabel = t("games.add.defaultCoverOptionLabel", {
-      index: index + 1,
+      index: option.index,
     });
     const isSelected = game.coverImage === option.src;
 
@@ -1457,6 +1471,50 @@ function renderBuiltInCoverActionButtons(game) {
       </button>
     `;
   }).join("");
+}
+
+function renderBuiltInCoverPickerOptions() {
+  const noneLabel = t("games.add.defaultCoverNone");
+  const optionsMarkup = appState.builtInCoverImageOptions
+    .map((option) => {
+      const inputId = `defaultCoverImage-${option.index}`;
+      const optionLabel = t("games.add.defaultCoverOptionLabel", {
+        index: option.index,
+      });
+
+      return `
+        <input
+          id="${escapeAttribute(inputId)}"
+          class="built-in-cover-input"
+          type="radio"
+          name="defaultCoverImage"
+          value="${escapeAttribute(option.src)}"
+        />
+        <label class="built-in-cover-option" for="${escapeAttribute(inputId)}">
+          <img
+            class="built-in-cover-thumb"
+            src="${escapeAttribute(option.src)}"
+            alt="${escapeAttribute(optionLabel)}"
+          />
+        </label>
+      `;
+    })
+    .join("");
+
+  return `
+    <input
+      id="defaultCoverImageNone"
+      class="built-in-cover-input"
+      type="radio"
+      name="defaultCoverImage"
+      value=""
+      checked
+    />
+    <label class="built-in-cover-option is-empty" for="defaultCoverImageNone">
+      <span>${escapeHtml(noneLabel)}</span>
+    </label>
+    ${optionsMarkup}
+  `;
 }
 
 export function renderCompletionCard(game, stats) {
