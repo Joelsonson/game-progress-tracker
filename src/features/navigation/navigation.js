@@ -69,7 +69,10 @@ export function setActiveScreen(screenId, options = {}) {
   applyScreenHash(nextScreenId);
 
   if (scrollToTop) {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({
+      top: 0,
+      behavior: getScreenScrollBehavior(),
+    });
   }
 }
 
@@ -82,4 +85,13 @@ export function applyScreenHash(screenId) {
   } catch (error) {
     // Ignore history update failures.
   }
+}
+
+function getScreenScrollBehavior() {
+  const prefersReducedMotion = window.matchMedia?.(
+    "(prefers-reduced-motion: reduce)"
+  )?.matches;
+  const isCoarsePointer = window.matchMedia?.("(pointer: coarse)")?.matches;
+
+  return prefersReducedMotion || isCoarsePointer ? "auto" : "smooth";
 }

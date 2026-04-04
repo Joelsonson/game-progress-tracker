@@ -87,7 +87,6 @@ import {
   handleGameActionsSubmit,
   handleListClick,
   openBuiltInCoverLibraryModal,
-  primeBuiltInCoverImageOptions,
   repairGamesIfNeeded,
   syncAddGameArtPreviews,
   syncGameDifficultyPresentation,
@@ -107,7 +106,11 @@ import {
   handleJourneyEventModalClick,
   handleJourneyOutcomeModalClick,
 } from "./features/journey/journeyController.js";
-import { buildJourneySupplies, syncJourneyState } from "./features/journey/journeyEngine.js";
+import {
+  buildJourneySupplies,
+  normalizeJourneyState,
+  syncJourneyState,
+} from "./features/journey/journeyEngine.js";
 import {
   closeJourneyEventModal,
   closeJourneyOutcomeModal,
@@ -140,8 +143,15 @@ document.addEventListener("DOMContentLoaded", init);
 
 let lastQuickSwitchScrollY = 0;
 let quickSwitchFramePending = false;
+let journeySpriteInitFrameId = 0;
+const APP_BOOT_SPLASH_FAILSAFE_MS = 2600;
+const JOURNEY_SYNC_TIMEOUT_MS = 1800;
 
 async function init() {
+  const bootSplashFailsafeId = window.setTimeout(() => {
+    dismissAppBootSplash({ immediate: true });
+  }, APP_BOOT_SPLASH_FAILSAFE_MS);
+
   try {
     appState.db = await openDB();
     appState.renderApp = renderApp;
@@ -150,13 +160,14 @@ async function init() {
     applyLanguagePreference(appState.locale);
     applyThemePreference(appState.themePreference);
     await repairGamesIfNeeded();
-    void primeBuiltInCoverImageOptions();
     bindEvents();
     setActiveScreen(getPreferredScreenId());
     await renderApp();
+    window.clearTimeout(bootSplashFailsafeId);
     dismissAppBootSplash();
     await maybeAutoStartOnboarding();
   } catch (error) {
+    window.clearTimeout(bootSplashFailsafeId);
     console.error("Failed to initialize app:", error);
     dismissAppBootSplash({ immediate: true });
     showMessage(formMessage, t("messages.initError"), true);
@@ -415,7 +426,12 @@ export async function renderApp() {
   const sortedGames = sortGames(games);
   const sessionStats = buildSessionStats(sessions);
   const xpSummary = buildXpSummary(sortedGames, sessions);
-  const idleJourney = await syncJourneyState(idleJourneyRaw, sortedGames, sessions, xpSummary);
+  const idleJourney = await syncJourneyStateSafely(
+    idleJourneyRaw,
+    sortedGames,
+    sessions,
+    xpSummary
+  );
   const journeySupplies = buildJourneySupplies(sortedGames, sessions, idleJourney);
   appState.latestIdleJourney = idleJourney;
 
@@ -434,7 +450,7 @@ export async function renderApp() {
   renderIdleJourney(idleJourney, sortedGames, sessions, xpSummary);
   renderJourneyEventDock(idleJourney);
   renderCharacterSheet(idleJourney, sortedGames, sessions, xpSummary);
-  initializeJourneySpritePreviews();
+  scheduleJourneySpriteInitialization();
   renderSessionGameOptions(sortedGames);
   renderGames(sortedGames, sessionStats);
   renderBuiltInCoverPicker();
@@ -449,6 +465,42 @@ export async function renderApp() {
   handleOnboardingAppRendered({
     games: sortedGames,
     sessions,
+  });
+}
+
+async function syncJourneyStateSafely(rawState, games, sessions, xpSummary) {
+  try {
+    const result = await Promise.race([
+      syncJourneyState(rawState, games, sessions, xpSummary),
+      waitForMs(JOURNEY_SYNC_TIMEOUT_MS).then(() => ({ __timedOut: true })),
+    ]);
+
+    if (result && result.__timedOut) {
+      console.warn("Journey sync timed out during render; using cached state.");
+      return normalizeJourneyState(rawState);
+    }
+
+    return normalizeJourneyState(result);
+  } catch (error) {
+    console.error("Failed to sync journey state during render:", error);
+    return normalizeJourneyState(rawState);
+  }
+}
+
+function scheduleJourneySpriteInitialization() {
+  if (journeySpriteInitFrameId) {
+    window.cancelAnimationFrame(journeySpriteInitFrameId);
+  }
+
+  journeySpriteInitFrameId = window.requestAnimationFrame(() => {
+    journeySpriteInitFrameId = 0;
+    initializeJourneySpritePreviews();
+  });
+}
+
+function waitForMs(durationMs) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, Math.max(0, durationMs));
   });
 }
 
