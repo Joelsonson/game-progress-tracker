@@ -15,6 +15,8 @@
   border: 1px solid rgba(96, 165, 250, 0.3);
   color: var(--accent-2);
   font-weight: 800;
+  font-size: 0.86rem;
+  letter-spacing: -0.02em;
   white-space: nowrap;
 }
 
@@ -88,12 +90,18 @@
 .stat-label {
   margin: 0 0 8px;
   color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .stat-value {
   margin: 0;
-  font-size: 1.35rem;
+  font-size: 1.28rem;
   font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
 }
 
 .top-layout {
@@ -120,6 +128,8 @@
 .muted-text {
   margin: 4px 0 0;
   color: var(--muted);
+  font-size: var(--font-size-body-sm);
+  line-height: 1.55;
 }
 
 .compact-note {
@@ -153,6 +163,8 @@
 .games-section h3 {
   margin: 0;
   font-size: 1.15rem;
+  line-height: 1.16;
+  letter-spacing: -0.02em;
 }
 
 .section-count {
@@ -386,6 +398,8 @@
 .session-title {
   margin: 0;
   font-size: 1.1rem;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
 }
 
 .game-card-banner .game-title {
@@ -816,7 +830,9 @@
   border-radius: 999px;
   padding: 8px 12px;
   color: var(--accent-2);
-  font-size: 0.9rem;
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   backdrop-filter: blur(12px);
 }
 
@@ -899,8 +915,9 @@
   color: var(--text);
   border-radius: 999px;
   padding: 10px 40px 10px 16px;
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   font-weight: 800;
+  letter-spacing: -0.01em;
   border-color: rgba(var(--accent-rgb), 0.24);
   box-shadow:
     0 10px 20px rgba(var(--ink-rgb), 0.08),
@@ -972,7 +989,7 @@
 .goal-capsule-placeholder span {
   font-size: clamp(2rem, 6vw, 2.8rem);
   font-weight: 900;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
   color: rgba(255, 255, 255, 0.88);
   text-transform: uppercase;
 }
@@ -991,17 +1008,11 @@
 
 .goal-capsule-title {
   margin: 0;
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "SF Pro Text",
-    "Segoe UI",
-    system-ui,
-    sans-serif;
+  font-family: var(--font-ui);
   font-size: clamp(0.98rem, 3vw, 1.14rem);
   font-weight: 800;
-  line-height: 1.08;
-  letter-spacing: 0.03em;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
   color: #fff;
   text-shadow: 0 10px 22px rgba(0, 0, 0, 0.4);
   display: -webkit-box;
@@ -1028,6 +1039,19 @@
 
 .home-library-empty h3 {
   margin: 0;
+  line-height: 1.14;
+  letter-spacing: -0.02em;
+}
+
+.home-library-empty-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.home-library-empty-button {
+  min-width: min(100%, 190px);
+  border-radius: 999px;
+  padding-inline: 18px;
 }
 
 .home-library-more {
@@ -1251,7 +1275,9 @@
 .summary-stat-label {
   display: block;
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   margin-bottom: 4px;
 }
 
@@ -1259,6 +1285,8 @@
   display: block;
   font-weight: 800;
   color: #eff6ff;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 .empty-state {

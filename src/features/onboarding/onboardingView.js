@@ -71,9 +71,9 @@ export function measureOnboardingTarget(targetName) {
     typeof CSS !== "undefined" && typeof CSS.escape === "function"
       ? CSS.escape(targetName)
       : String(targetName).replaceAll('"', '\\"');
-  const target = document.querySelector(
-    `[data-onboarding-target="${safeTargetName}"]`
-  );
+  const target =
+    document.querySelector(`[data-onboarding-target="${safeTargetName}"]`) ||
+    document.getElementById(String(targetName));
 
   if (!(target instanceof HTMLElement) || target.hidden) {
     return null;

@@ -185,6 +185,15 @@ export function renderHomeOverview(
                       statusLabel: getStatusMeta(normalizedFilter).label,
                     })
               )}</p>
+              <div class="home-library-empty-actions">
+                <button
+                  type="button"
+                  class="primary-button home-library-empty-button"
+                  data-home-shortcut="add-goal"
+                >
+                  ${escapeHtml(t("home.libraryEmptyAction"))}
+                </button>
+              </div>
             </div>
           `
       }

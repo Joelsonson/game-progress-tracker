@@ -68,9 +68,10 @@ const translations = {
         `${visible} ${statusLabel} goal${Number(visible) === 1 ? "" : "s"} out of ${total}`,
       libraryEmptyTitle: "Your library is empty right now",
       libraryEmptyBody:
-        "Add your first goal and it will land here as a capsule you can swipe through on Home.",
+        "Add your first goal and it will land here as a capsule on Home.",
       libraryEmptyFiltered: ({ statusLabel }) =>
         `Nothing is sitting in ${statusLabel} right now.`,
+      libraryEmptyAction: "+ Add new goal",
       libraryNoObjective: "No current objective set yet.",
       libraryFilters: {
         all: "All",
@@ -772,9 +773,10 @@ const translations = {
         `${total}件中 ${statusLabel} ${visible}件`,
       libraryEmptyTitle: "まだライブラリに目標がありません",
       libraryEmptyBody:
-        "最初の目標を追加すると、ホームでスワイプできるカプセルとしてここに並びます。",
+        "最初の目標を追加すると、ホームにカプセルとして並びます。",
       libraryEmptyFiltered: ({ statusLabel }) =>
         `${statusLabel}の目標は今ありません。`,
+      libraryEmptyAction: "+ 新しい目標を追加",
       libraryNoObjective: "現在の目標はまだ設定されていません。",
       libraryFilters: {
         all: "すべて",

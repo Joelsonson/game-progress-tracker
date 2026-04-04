@@ -52,6 +52,7 @@ import {
   DEFAULT_FOCUSED_GOALS_ENABLED,
   FOCUSED_GOALS_META_KEY,
   IDLE_JOURNEY_META_KEY,
+  SESSIONS_TABS,
 } from "./core/constants.js";
 import {
   buildSessionStats,
@@ -410,7 +411,13 @@ function handleHomeOverviewClick(event) {
   const shortcut = button.dataset.homeShortcut;
 
   if (shortcut === "log-session") {
-    setActiveSessionsTab("log-session");
+    setActiveSessionsTab(SESSIONS_TABS.LOG);
+    setActiveScreen("sessions", { store: true, scrollToTop: true });
+    return;
+  }
+
+  if (shortcut === "add-goal") {
+    setActiveSessionsTab(SESSIONS_TABS.NEW_GAME);
     setActiveScreen("sessions", { store: true, scrollToTop: true });
     return;
   }

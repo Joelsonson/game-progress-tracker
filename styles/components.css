@@ -1867,9 +1867,10 @@
 }
 
 .journey-battle-art-monogram {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-ui);
   font-size: 2.6rem;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: -0.04em;
   color: rgba(var(--accent-rgb), 0.85);
 }
 
@@ -2356,9 +2357,10 @@
 }
 
 .journey-event-thinking-title {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-ui);
   font-size: 1rem;
   font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--text);
 }
 
@@ -2616,7 +2618,7 @@
 .journey-event-choice-title,
 .journey-story-stat strong,
 .journey-zone {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-ui);
 }
 
 .journey-title-row h3 {
@@ -2634,13 +2636,7 @@
 .journey-overline,
 .journey-event-kicker,
 .journey-event-action {
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "SF Pro Text",
-    "Segoe UI",
-    system-ui,
-    sans-serif;
+  font-family: var(--font-ui);
   letter-spacing: 0.08em;
 }
 
@@ -2804,16 +2800,11 @@
 
 .journey-event-title,
 .journey-home-event-title {
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "SF Pro Text",
-    "Segoe UI",
-    system-ui,
-    sans-serif;
+  font-family: var(--font-ui);
   font-size: 1rem;
   line-height: 1.4;
   font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--text);
 }
 
@@ -2860,16 +2851,11 @@
 }
 
 .journey-event-choice-title {
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "SF Pro Text",
-    "Segoe UI",
-    system-ui,
-    sans-serif;
+  font-family: var(--font-ui);
   font-size: 1rem;
   line-height: 1.35;
   font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--text);
 }
 
@@ -3035,13 +3021,13 @@
   margin: 0;
   font-size: 0.74rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
 }
 
 .onboarding-card-body {
-  font-size: 0.98rem;
+  font-size: 0.96rem;
   line-height: 1.55;
 }
 

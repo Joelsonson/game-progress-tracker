@@ -1,5 +1,15 @@
 :root,
 :root[data-theme="light"] {
+  --font-ui: "Plus Jakarta Sans", "SF Pro Display", "SF Pro Text", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-size-body: 0.96rem;
+  --font-size-body-sm: 0.9rem;
+  --font-size-label: 0.72rem;
+  --font-size-title-1: clamp(1.74rem, 8vw, 2.28rem);
+  --font-size-title-2: clamp(1.26rem, 4.8vw, 1.56rem);
+  --font-size-title-3: 1.04rem;
+  --font-size-title-4: 0.96rem;
+  --font-tracking-tight: -0.03em;
+  --font-tracking-body: -0.01em;
   --bg: #f8f4f1;
   --panel: #fffaf6;
   --panel-2: #f3ece7;
