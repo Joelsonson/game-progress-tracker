@@ -75,6 +75,9 @@ const translations = {
       libraryFilters: {
         all: "All",
       },
+      libraryShowMore: ({ count }) =>
+        `Expand more${Number(count) > 0 ? ` (${count})` : ""}`,
+      libraryShowLess: "Show less",
       focusEyebrow: "Focus goal",
       focusTitle: "The goal you want front and center",
       focusBody:
@@ -304,6 +307,7 @@ const translations = {
         defaultCoverOption2: "Built-in cover 2",
         defaultCoverOption3: "Built-in cover 3",
         defaultCoverOption4: "Built-in cover 4",
+        defaultCoverOptionLabel: ({ index }) => `Built-in cover ${index}`,
         coverLabel: "Card image",
         coverHint:
           "Portrait images look best. Recommended upload: 900×1200 or larger. The app crops it to a 3:4 card frame after upload.",
@@ -758,6 +762,9 @@ const translations = {
       libraryFilters: {
         all: "すべて",
       },
+      libraryShowMore: ({ count }) =>
+        `もっと見る${Number(count) > 0 ? ` (${count})` : ""}`,
+      libraryShowLess: "折りたたむ",
       focusEyebrow: "フォーカス目標",
       focusTitle: "前面に置いておきたい目標",
       focusBody:
@@ -985,6 +992,7 @@ const translations = {
         defaultCoverOption2: "内蔵カバー 2",
         defaultCoverOption3: "内蔵カバー 3",
         defaultCoverOption4: "内蔵カバー 4",
+        defaultCoverOptionLabel: ({ index }) => `内蔵カバー ${index}`,
         coverLabel: "カード画像",
         coverHint:
           "縦長の画像がおすすめです。推奨: 900×1200以上。アップロード後に3:4カード枠へ切り抜かれます。",

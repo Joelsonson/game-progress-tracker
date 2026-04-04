@@ -11,6 +11,7 @@ export const appState = {
   activeScreenId: DEFAULT_SCREEN_ID,
   activeSessionsTab: DEFAULT_SESSIONS_TAB,
   homeLibraryStatusFilter: "all",
+  homeLibraryExpanded: false,
   latestIdleJourney: null,
   editingCharacterName: false,
   showCharacterSkillModal: false,

@@ -89,6 +89,25 @@ export const IMAGE_PRESET = {
   },
 };
 
+export const BUILT_IN_COVER_IMAGE_OPTIONS = [
+  {
+    id: "default-cover-1",
+    src: "./assets/journey/defaultcoverimages/1.png",
+  },
+  {
+    id: "default-cover-2",
+    src: "./assets/journey/defaultcoverimages/2.png",
+  },
+  {
+    id: "default-cover-3",
+    src: "./assets/journey/defaultcoverimages/3.png",
+  },
+  {
+    id: "default-cover-4",
+    src: "./assets/journey/defaultcoverimages/4.png",
+  },
+];
+
 export const CARD_TIER_META = {
   bronze: {
     label: "Bronze Finish",

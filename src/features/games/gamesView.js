@@ -5,7 +5,12 @@ import {
   listSummaryEl,
   mainQuestPanelEl,
 } from "../../core/dom.js";
-import { CARD_TIER_META, GAME_DIFFICULTY_META, GAME_STATUSES } from "../../core/constants.js";
+import {
+  BUILT_IN_COVER_IMAGE_OPTIONS,
+  CARD_TIER_META,
+  GAME_DIFFICULTY_META,
+  GAME_STATUSES,
+} from "../../core/constants.js";
 import {
   buildArtBackgroundStyle,
   computeStreak,
@@ -94,12 +99,18 @@ export function renderHomeOverview(
   sessions,
   sessionStats,
   xpSummary,
-  activeLibraryFilter = "all"
+  activeLibraryFilter = "all",
+  homeLibraryExpanded = false
 ) {
   if (!homeOverviewEl) return;
 
   const normalizedFilter = normalizeHomeLibraryFilter(activeLibraryFilter);
   const filteredGames = getHomeLibraryGames(games, normalizedFilter);
+  const canExpandLibrary = filteredGames.length > 6;
+  const visibleGames =
+    homeLibraryExpanded || !canExpandLibrary
+      ? filteredGames
+      : filteredGames.slice(0, 6);
   const filterOptions = getHomeLibraryFilterOptions();
   const latestCompletedGame = [...games]
     .filter((game) => game.status === GAME_STATUSES.COMPLETED && game.completedAt)
@@ -133,13 +144,34 @@ export function renderHomeOverview(
       </div>
 
       ${
-        filteredGames.length
+        visibleGames.length
           ? `
-            <div class="home-capsule-rail" role="list">
-              ${filteredGames
+            <div class="home-capsule-grid" role="list">
+              ${visibleGames
                 .map((game) => renderHomeGoalCapsule(game))
                 .join("")}
             </div>
+            ${
+              canExpandLibrary
+                ? `
+                  <div class="home-library-more">
+                    <button
+                      type="button"
+                      class="secondary-button home-library-more-button"
+                      data-home-library-toggle
+                    >
+                      ${escapeHtml(
+                        homeLibraryExpanded
+                          ? t("home.libraryShowLess")
+                          : t("home.libraryShowMore", {
+                              count: filteredGames.length - visibleGames.length,
+                            })
+                      )}
+                    </button>
+                  </div>
+                `
+                : ""
+            }
           `
           : `
             <div class="home-library-empty">
@@ -1217,8 +1249,47 @@ export function renderGameActionSheet(game) {
       )}">
         ${renderGameActions(game)}
       </div>
+
+      <div class="game-action-sheet-builtins">
+        <div>
+          <p class="eyebrow">${escapeHtml(t("games.add.defaultCoverLabel"))}</p>
+          <p class="game-action-sheet-meta">
+            ${escapeHtml(t("games.add.defaultCoverHint"))}
+          </p>
+        </div>
+        <div class="built-in-cover-button-grid">
+          ${renderBuiltInCoverActionButtons(game)}
+        </div>
+      </div>
     </div>
   `;
+}
+
+function renderBuiltInCoverActionButtons(game) {
+  return BUILT_IN_COVER_IMAGE_OPTIONS.map((option, index) => {
+    const optionLabel = t("games.add.defaultCoverOptionLabel", {
+      index: index + 1,
+    });
+    const isSelected = game.coverImage === option.src;
+
+    return `
+      <button
+        type="button"
+        class="built-in-cover-choice-button ${isSelected ? "is-selected" : ""}"
+        data-action="set-built-in-cover"
+        data-id="${game.id}"
+        data-cover-src="${escapeAttribute(option.src)}"
+        aria-pressed="${isSelected ? "true" : "false"}"
+        title="${escapeAttribute(optionLabel)}"
+      >
+        <img
+          class="built-in-cover-choice-thumb"
+          src="${escapeAttribute(option.src)}"
+          alt="${escapeAttribute(optionLabel)}"
+        />
+      </button>
+    `;
+  }).join("");
 }
 
 export function renderCompletionCard(game, stats) {

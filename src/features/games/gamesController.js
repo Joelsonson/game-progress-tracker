@@ -6,7 +6,7 @@ import {
   bannerImageInput,
   coverArtPickerInput,
   coverImageInput,
-  defaultCoverImageInput,
+  defaultCoverImageInputs,
   difficultyRewardPreview,
   formMessage,
   gameActionsBodyEl,
@@ -226,10 +226,8 @@ function isValidGameDifficulty(value) {
 }
 
 function getSelectedBundledCoverImage() {
-  const selectedValue =
-    defaultCoverImageInput instanceof HTMLSelectElement
-      ? defaultCoverImageInput.value
-      : "";
+  const selectedInput = defaultCoverImageInputs.find((input) => input.checked);
+  const selectedValue = selectedInput?.value || "";
 
   return String(selectedValue || "").trim();
 }
@@ -238,7 +236,7 @@ export async function handleListClick(event) {
   const button = event.target.closest("button[data-action]");
   if (!button) return;
 
-  const { action, id, status, target, direction } = button.dataset;
+  const { action, id, status, target, direction, coverSrc } = button.dataset;
   const triggeredFromActionSheet = Boolean(button.closest("#gameActionsModal"));
 
   try {
@@ -291,6 +289,31 @@ export async function handleListClick(event) {
     if (action === "pick-banner-art") {
       appState.pendingArtTarget = { gameId: id, kind: "banner" };
       openFilePicker(bannerArtPickerInput);
+      return;
+    }
+
+    if (action === "set-built-in-cover") {
+      const nextCoverImage = String(coverSrc || "").trim();
+      if (!nextCoverImage) {
+        showMessage(formMessage, t("games.messages.artUpdateFailed"), true);
+        return;
+      }
+
+      const now = new Date().toISOString();
+      await updateGame(appState.db, {
+        ...game,
+        coverImage: nextCoverImage,
+        artUpdatedAt: now,
+        updatedAt: now,
+      });
+      showMessage(
+        formMessage,
+        t("games.messages.artUpdated", {
+          kindLabel: t("games.add.coverLabel"),
+          title: game.title,
+        })
+      );
+      await appState.renderApp();
       return;
     }
 

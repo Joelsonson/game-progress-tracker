@@ -342,7 +342,8 @@ export async function renderApp() {
     sessions,
     sessionStats,
     xpSummary,
-    appState.homeLibraryStatusFilter
+    appState.homeLibraryStatusFilter,
+    appState.homeLibraryExpanded
   );
   renderHomeJourney(idleJourney, xpSummary, journeySupplies);
   renderPlayerProgress(xpSummary);
@@ -381,6 +382,15 @@ function handleThemePreferenceChange(event) {
 }
 
 function handleHomeOverviewClick(event) {
+  const expandButton = event.target instanceof HTMLElement
+    ? event.target.closest("button[data-home-library-toggle]")
+    : null;
+  if (expandButton) {
+    appState.homeLibraryExpanded = !appState.homeLibraryExpanded;
+    void renderApp();
+    return;
+  }
+
   const button = event.target instanceof HTMLElement
     ? event.target.closest("button[data-home-shortcut]")
     : null;
@@ -409,6 +419,7 @@ function handleHomeOverviewChange(event) {
 
   if (appState.homeLibraryStatusFilter !== normalizedFilter) {
     appState.homeLibraryStatusFilter = normalizedFilter;
+    appState.homeLibraryExpanded = false;
     void renderApp();
   }
 }
