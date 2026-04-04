@@ -7,6 +7,7 @@ export const gameDifficultyInputs = Array.from(
 );
 export const notesInput = document.querySelector("#notes");
 export const coverImageInput = document.querySelector("#coverImage");
+export const defaultCoverImageInput = document.querySelector("#defaultCoverImage");
 export const bannerImageInput = document.querySelector("#bannerImage");
 export const formMessage = document.querySelector("#formMessage");
 export const difficultyRewardPreview = document.querySelector("#difficultyRewardPreview");

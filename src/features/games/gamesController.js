@@ -6,6 +6,7 @@ import {
   bannerImageInput,
   coverArtPickerInput,
   coverImageInput,
+  defaultCoverImageInput,
   difficultyRewardPreview,
   formMessage,
   gameActionsBodyEl,
@@ -116,7 +117,7 @@ export async function handleAddGame(event) {
   }
 
   try {
-    const coverImage = await optimizeUploadedImage(
+    const uploadedCoverImage = await optimizeUploadedImage(
       coverImageInput.files?.[0],
       "cover"
     );
@@ -124,6 +125,8 @@ export async function handleAddGame(event) {
       bannerImageInput.files?.[0],
       "banner"
     );
+    const coverImage =
+      uploadedCoverImage || getSelectedBundledCoverImage();
 
     const now = new Date().toISOString();
 
@@ -220,6 +223,15 @@ function resetGameDifficultySelection() {
 
 function isValidGameDifficulty(value) {
   return Object.values(GAME_DIFFICULTIES).includes(value);
+}
+
+function getSelectedBundledCoverImage() {
+  const selectedValue =
+    defaultCoverImageInput instanceof HTMLSelectElement
+      ? defaultCoverImageInput.value
+      : "";
+
+  return String(selectedValue || "").trim();
 }
 
 export async function handleListClick(event) {

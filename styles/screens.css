@@ -224,27 +224,17 @@
   min-height: 144px;
 }
 
-.home-library-header {
-  display: grid;
-  gap: 12px;
-}
-
 .home-capsule-rail {
-  grid-auto-columns: minmax(280px, 84vw);
+  grid-auto-columns: clamp(156px, 42vw, 188px);
   gap: 12px;
 }
 
 .goal-capsule-button {
-  min-height: 220px;
   border-radius: 24px;
 }
 
-.goal-capsule-top {
-  padding: 14px 14px 0;
-}
-
-.goal-capsule-bottom {
-  padding: 52px 14px 14px;
+.goal-capsule-title-wrap {
+  padding: 16px 12px 12px;
 }
 
 .tracker-shell-panel {

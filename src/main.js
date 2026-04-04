@@ -145,6 +145,7 @@ function bindEvents() {
   gamesListEl.addEventListener("click", handleListClick);
   homeOverviewEl?.addEventListener("click", handleListClick);
   homeOverviewEl?.addEventListener("click", handleHomeOverviewClick);
+  homeOverviewEl?.addEventListener("change", handleHomeOverviewChange);
   gameActionsBodyEl?.addEventListener("click", handleListClick);
   journeyContentEl?.addEventListener("click", handleJourneyClick);
   characterContentEl?.addEventListener("click", handleJourneyClick);
@@ -380,22 +381,6 @@ function handleThemePreferenceChange(event) {
 }
 
 function handleHomeOverviewClick(event) {
-  const filterButton = event.target instanceof HTMLElement
-    ? event.target.closest("button[data-home-filter]")
-    : null;
-
-  if (filterButton) {
-    const nextFilter = String(filterButton.dataset.homeFilter || "").trim();
-    const normalizedFilter =
-      nextFilter === "all" || isValidStatus(nextFilter) ? nextFilter : "all";
-
-    if (appState.homeLibraryStatusFilter !== normalizedFilter) {
-      appState.homeLibraryStatusFilter = normalizedFilter;
-      void renderApp();
-    }
-    return;
-  }
-
   const button = event.target instanceof HTMLElement
     ? event.target.closest("button[data-home-shortcut]")
     : null;
@@ -411,6 +396,20 @@ function handleHomeOverviewClick(event) {
 
   if (shortcut === "tracker") {
     setActiveScreen("tracker", { store: true, scrollToTop: true });
+  }
+}
+
+function handleHomeOverviewChange(event) {
+  if (!(event.target instanceof HTMLSelectElement)) return;
+  if (!event.target.matches("[data-home-filter-select]")) return;
+
+  const nextFilter = String(event.target.value || "").trim();
+  const normalizedFilter =
+    nextFilter === "all" || isValidStatus(nextFilter) ? nextFilter : "all";
+
+  if (appState.homeLibraryStatusFilter !== normalizedFilter) {
+    appState.homeLibraryStatusFilter = normalizedFilter;
+    void renderApp();
   }
 }
 

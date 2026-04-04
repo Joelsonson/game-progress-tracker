@@ -110,41 +110,26 @@ export function renderHomeOverview(
 
   homeOverviewEl.innerHTML = `
     <section class="panel home-library-panel">
-      <div class="section-header home-section-header home-library-header">
-        <div>
-          <p class="eyebrow">${escapeHtml(t("home.libraryEyebrow"))}</p>
-          <h2>${escapeHtml(t("home.libraryTitle"))}</h2>
-          <p class="muted-text">${escapeHtml(t("home.libraryBody"))}</p>
-        </div>
-        <button type="button" class="secondary-button" data-home-shortcut="tracker">
-          ${escapeHtml(t("home.libraryViewAll"))}
-        </button>
-      </div>
-
       <div class="home-library-toolbar">
-        <div class="home-library-filter-row" aria-label="${escapeAttribute(
-          t("home.libraryFilterLabel")
-        )}">
-          ${filterOptions
-            .map(
-              (option) => `
-                <button
-                  type="button"
-                  class="home-library-filter-chip ${
-                    option.value === normalizedFilter ? "is-active" : ""
-                  }"
-                  data-home-filter="${option.value}"
-                  aria-pressed="${option.value === normalizedFilter ? "true" : "false"}"
-                >
-                  ${escapeHtml(option.label)}
-                </button>
-              `
-            )
-            .join("")}
-        </div>
-        <p class="home-library-summary">${escapeHtml(
-          buildHomeLibrarySummary(filteredGames.length, games.length, normalizedFilter)
-        )}</p>
+        <label class="home-library-filter-shell">
+          <select
+            class="home-library-filter-select"
+            data-home-filter-select
+            aria-label="${escapeAttribute(t("home.libraryFilterLabel"))}"
+          >
+            ${filterOptions
+              .map(
+                (option) => `
+                  <option value="${option.value}" ${
+                    option.value === normalizedFilter ? "selected" : ""
+                  }>
+                    ${escapeHtml(option.label)}
+                  </option>
+                `
+              )
+              .join("")}
+          </select>
+        </label>
       </div>
 
       ${
@@ -152,7 +137,7 @@ export function renderHomeOverview(
           ? `
             <div class="home-capsule-rail" role="list">
               ${filteredGames
-                .map((game) => renderHomeGoalCapsule(game, sessionStats))
+                .map((game) => renderHomeGoalCapsule(game))
                 .join("")}
             </div>
           `
@@ -291,77 +276,19 @@ function getHomeLibraryFilterOptions() {
   }));
 }
 
-function buildHomeLibrarySummary(visibleCount, totalCount, filterValue) {
-  if (filterValue === "all") {
-    return t("home.librarySummaryAll", {
-      visible: visibleCount,
-      total: totalCount,
-    });
-  }
-
-  return t("home.librarySummaryFiltered", {
-    visible: visibleCount,
-    total: totalCount,
-    statusLabel: getStatusMeta(filterValue).label,
-  });
-}
-
-function renderHomeGoalCapsule(game, sessionStats) {
-  const stats = sessionStats.get(game.id) || emptySessionStats();
-  const totalQuestXp =
-    stats.totalXp +
-    (game.status === GAME_STATUSES.COMPLETED ? getGameCompletionXp(game) : 0);
-  const statusMeta = getStatusMeta(game.status);
-  const objective = String(getGameObjectiveText(game) || "").trim();
-  const latestSessionNote = String(stats.latestSession?.note || "").trim();
-  const detailText =
-    objective || latestSessionNote || t("home.libraryNoObjective");
-
+function renderHomeGoalCapsule(game) {
   return `
-    <article class="goal-capsule-card ${game.isMain ? "is-focus" : ""}" role="listitem">
+    <article class="goal-capsule-card" role="listitem">
       <button
         type="button"
-        class="goal-capsule-button"
+        class="goal-capsule-button ${game.isMain ? "is-focus" : ""}"
         data-action="open-game-actions"
         data-id="${game.id}"
       >
         ${renderHomeGoalCapsuleArt(game)}
         <div class="goal-capsule-overlay" aria-hidden="true"></div>
-
-        <div class="goal-capsule-top">
-          <div class="goal-capsule-badges">
-            ${
-              game.isMain
-                ? `<span class="badge badge-main">${escapeHtml(
-                    t("tracker.mainQuest.badge")
-                  )}</span>`
-                : ""
-            }
-            <span class="badge badge-status ${escapeAttribute(
-              statusMeta.badgeClass
-            )}">${escapeHtml(statusMeta.label)}</span>
-          </div>
-          <span class="goal-capsule-manage">${escapeHtml(t("tracker.actions"))}</span>
-        </div>
-
-        <div class="goal-capsule-bottom">
-          <p class="goal-capsule-kicker">${escapeHtml(getPlatformText(game))}</p>
-          <h3>${escapeHtml(game.title)}</h3>
-          <p class="goal-capsule-copy">${escapeHtml(detailText)}</p>
-
-          <div class="goal-capsule-meta">
-            <span class="goal-capsule-meta-pill">${escapeHtml(
-              t("tracker.summaryPills.sessions", { count: stats.sessionCount })
-            )}</span>
-            <span class="goal-capsule-meta-pill">${escapeHtml(
-              t("tracker.summaryPills.playTime", {
-                value: formatMinutes(stats.totalMinutes),
-              })
-            )}</span>
-            <span class="goal-capsule-meta-pill">${escapeHtml(
-              t("tracker.summaryPills.questXp", { xp: totalQuestXp })
-            )}</span>
-          </div>
+        <div class="goal-capsule-title-wrap">
+          <h3 class="goal-capsule-title">${escapeHtml(game.title)}</h3>
         </div>
       </button>
     </article>
@@ -369,7 +296,7 @@ function renderHomeGoalCapsule(game, sessionStats) {
 }
 
 function renderHomeGoalCapsuleArt(game) {
-  const image = game.bannerImage || game.coverImage;
+  const image = game.coverImage;
   if (image) {
     return `
       <img

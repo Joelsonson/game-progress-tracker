@@ -296,6 +296,14 @@ const translations = {
         objectiveLabel: "Current objective",
         objectivePlaceholder:
           "Where you left off, your current goal, next objective...",
+        defaultCoverLabel: "Built-in card image",
+        defaultCoverHint:
+          "Pick a bundled card image if you do not want to upload one.",
+        defaultCoverNone: "No built-in cover",
+        defaultCoverOption1: "Built-in cover 1",
+        defaultCoverOption2: "Built-in cover 2",
+        defaultCoverOption3: "Built-in cover 3",
+        defaultCoverOption4: "Built-in cover 4",
         coverLabel: "Card image",
         coverHint:
           "Portrait images look best. Recommended upload: 900×1200 or larger. The app crops it to a 3:4 card frame after upload.",
@@ -969,6 +977,14 @@ const translations = {
         objectiveLabel: "現在の目標",
         objectivePlaceholder:
           "どこで止めたか、今の目標、次にやること…",
+        defaultCoverLabel: "内蔵カード画像",
+        defaultCoverHint:
+          "アップロードしない場合は、最初から入っているカード画像を選べます。",
+        defaultCoverNone: "内蔵カバーなし",
+        defaultCoverOption1: "内蔵カバー 1",
+        defaultCoverOption2: "内蔵カバー 2",
+        defaultCoverOption3: "内蔵カバー 3",
+        defaultCoverOption4: "内蔵カバー 4",
         coverLabel: "カード画像",
         coverHint:
           "縦長の画像がおすすめです。推奨: 900×1200以上。アップロード後に3:4カード枠へ切り抜かれます。",

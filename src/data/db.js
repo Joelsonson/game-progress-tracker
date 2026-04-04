@@ -31,9 +31,23 @@ export function isMainEligibleStatus(status) {
 }
 
 function normalizeImageValue(value) {
-  return typeof value === "string" && value.startsWith("data:image/")
-    ? value
-    : "";
+  if (typeof value !== "string") return "";
+
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  if (trimmed.startsWith("data:image/")) {
+    return trimmed;
+  }
+
+  if (
+    trimmed.startsWith("./assets/") ||
+    trimmed.startsWith("assets/")
+  ) {
+    return trimmed;
+  }
+
+  return "";
 }
 
 export function normalizeGameRecord(game = {}) {
