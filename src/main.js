@@ -53,7 +53,13 @@ import {
   FOCUSED_GOALS_META_KEY,
   IDLE_JOURNEY_META_KEY,
 } from "./core/constants.js";
-import { buildSessionStats, buildXpSummary, enforceMainGameRules, sortGames } from "./core/formatters.js";
+import {
+  buildSessionStats,
+  buildXpSummary,
+  enforceMainGameRules,
+  isValidStatus,
+  sortGames,
+} from "./core/formatters.js";
 import { applyStaticTranslations, normalizeLocale, setActiveLocale, t } from "./core/i18n.js";
 import { appState } from "./core/state.js";
 import { closeSettingsModal, openSettingsModal, showMessage, syncBodyScrollLock } from "./core/ui.js";
@@ -330,7 +336,13 @@ export async function renderApp() {
   const journeySupplies = buildJourneySupplies(sortedGames, sessions, idleJourney);
   appState.latestIdleJourney = idleJourney;
 
-  renderHomeOverview(sortedGames, sessions, sessionStats, xpSummary);
+  renderHomeOverview(
+    sortedGames,
+    sessions,
+    sessionStats,
+    xpSummary,
+    appState.homeLibraryStatusFilter
+  );
   renderHomeJourney(idleJourney, xpSummary, journeySupplies);
   renderPlayerProgress(xpSummary);
   renderStats(sortedGames, sessions);
@@ -368,6 +380,22 @@ function handleThemePreferenceChange(event) {
 }
 
 function handleHomeOverviewClick(event) {
+  const filterButton = event.target instanceof HTMLElement
+    ? event.target.closest("button[data-home-filter]")
+    : null;
+
+  if (filterButton) {
+    const nextFilter = String(filterButton.dataset.homeFilter || "").trim();
+    const normalizedFilter =
+      nextFilter === "all" || isValidStatus(nextFilter) ? nextFilter : "all";
+
+    if (appState.homeLibraryStatusFilter !== normalizedFilter) {
+      appState.homeLibraryStatusFilter = normalizedFilter;
+      void renderApp();
+    }
+    return;
+  }
+
   const button = event.target instanceof HTMLElement
     ? event.target.closest("button[data-home-shortcut]")
     : null;

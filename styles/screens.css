@@ -224,6 +224,29 @@
   min-height: 144px;
 }
 
+.home-library-header {
+  display: grid;
+  gap: 12px;
+}
+
+.home-capsule-rail {
+  grid-auto-columns: minmax(280px, 84vw);
+  gap: 12px;
+}
+
+.goal-capsule-button {
+  min-height: 220px;
+  border-radius: 24px;
+}
+
+.goal-capsule-top {
+  padding: 14px 14px 0;
+}
+
+.goal-capsule-bottom {
+  padding: 52px 14px 14px;
+}
+
 .tracker-shell-panel {
   padding: 0;
   border: 0;

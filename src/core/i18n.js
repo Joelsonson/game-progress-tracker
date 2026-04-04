@@ -56,6 +56,25 @@ const translations = {
     },
     home: {
       playerProgressEyebrow: "Player progression",
+      libraryEyebrow: "Goal library",
+      libraryTitle: "Your goals as capsules",
+      libraryBody:
+        "Swipe through your goal library, filter by status, and jump straight into the one you want to move next.",
+      libraryViewAll: "Open tracker",
+      libraryFilterLabel: "Filter goal library by status",
+      librarySummaryAll: ({ visible, total }) =>
+        `${visible} of ${total} goals ready to browse`,
+      librarySummaryFiltered: ({ visible, total, statusLabel }) =>
+        `${visible} ${statusLabel} goal${Number(visible) === 1 ? "" : "s"} out of ${total}`,
+      libraryEmptyTitle: "Your library is empty right now",
+      libraryEmptyBody:
+        "Add your first goal and it will land here as a capsule you can swipe through on Home.",
+      libraryEmptyFiltered: ({ statusLabel }) =>
+        `Nothing is sitting in ${statusLabel} right now.`,
+      libraryNoObjective: "No current objective set yet.",
+      libraryFilters: {
+        all: "All",
+      },
       focusEyebrow: "Focus goal",
       focusTitle: "The goal you want front and center",
       focusBody:
@@ -712,6 +731,25 @@ const translations = {
     },
     home: {
       playerProgressEyebrow: "プレイヤー進行度",
+      libraryEyebrow: "目標ライブラリ",
+      libraryTitle: "カプセルで並ぶ目標たち",
+      libraryBody:
+        "ホームでは目標をカプセルで横に流して見渡せます。状態で絞り込み、そのまま次に進めたい目標へ飛べます。",
+      libraryViewAll: "一覧を開く",
+      libraryFilterLabel: "状態で目標ライブラリを絞り込む",
+      librarySummaryAll: ({ visible, total }) =>
+        `${total}件中 ${visible}件を表示中`,
+      librarySummaryFiltered: ({ visible, total, statusLabel }) =>
+        `${total}件中 ${statusLabel} ${visible}件`,
+      libraryEmptyTitle: "まだライブラリに目標がありません",
+      libraryEmptyBody:
+        "最初の目標を追加すると、ホームでスワイプできるカプセルとしてここに並びます。",
+      libraryEmptyFiltered: ({ statusLabel }) =>
+        `${statusLabel}の目標は今ありません。`,
+      libraryNoObjective: "現在の目標はまだ設定されていません。",
+      libraryFilters: {
+        all: "すべて",
+      },
       focusEyebrow: "フォーカス目標",
       focusTitle: "前面に置いておきたい目標",
       focusBody:

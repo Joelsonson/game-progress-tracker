@@ -89,16 +89,18 @@ export function renderStats(games, sessions) {
   currentStreakEl.textContent = `${streak} ${t("common.dayWord", { count: streak })}`;
 }
 
-export function renderHomeOverview(games, sessions, sessionStats, xpSummary) {
+export function renderHomeOverview(
+  games,
+  sessions,
+  sessionStats,
+  xpSummary,
+  activeLibraryFilter = "all"
+) {
   if (!homeOverviewEl) return;
 
-  const mainGame =
-    games.find((game) => game.isMain) ||
-    games.find((game) => game.status === GAME_STATUSES.IN_PROGRESS) ||
-    null;
-  const mainStats = mainGame
-    ? sessionStats.get(mainGame.id) || emptySessionStats()
-    : emptySessionStats();
+  const normalizedFilter = normalizeHomeLibraryFilter(activeLibraryFilter);
+  const filteredGames = getHomeLibraryGames(games, normalizedFilter);
+  const filterOptions = getHomeLibraryFilterOptions();
   const latestCompletedGame = [...games]
     .filter((game) => game.status === GAME_STATUSES.COMPLETED && game.completedAt)
     .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))[0] || null;
@@ -107,21 +109,63 @@ export function renderHomeOverview(games, sessions, sessionStats, xpSummary) {
     : emptySessionStats();
 
   homeOverviewEl.innerHTML = `
-    <section class="panel home-focus-panel">
-      <div class="section-header home-section-header">
+    <section class="panel home-library-panel">
+      <div class="section-header home-section-header home-library-header">
         <div>
-          <p class="eyebrow">${escapeHtml(t("home.focusEyebrow"))}</p>
-          <h2>${escapeHtml(t("home.focusTitle"))}</h2>
+          <p class="eyebrow">${escapeHtml(t("home.libraryEyebrow"))}</p>
+          <h2>${escapeHtml(t("home.libraryTitle"))}</h2>
+          <p class="muted-text">${escapeHtml(t("home.libraryBody"))}</p>
         </div>
+        <button type="button" class="secondary-button" data-home-shortcut="tracker">
+          ${escapeHtml(t("home.libraryViewAll"))}
+        </button>
+      </div>
+
+      <div class="home-library-toolbar">
+        <div class="home-library-filter-row" aria-label="${escapeAttribute(
+          t("home.libraryFilterLabel")
+        )}">
+          ${filterOptions
+            .map(
+              (option) => `
+                <button
+                  type="button"
+                  class="home-library-filter-chip ${
+                    option.value === normalizedFilter ? "is-active" : ""
+                  }"
+                  data-home-filter="${option.value}"
+                  aria-pressed="${option.value === normalizedFilter ? "true" : "false"}"
+                >
+                  ${escapeHtml(option.label)}
+                </button>
+              `
+            )
+            .join("")}
+        </div>
+        <p class="home-library-summary">${escapeHtml(
+          buildHomeLibrarySummary(filteredGames.length, games.length, normalizedFilter)
+        )}</p>
       </div>
 
       ${
-        mainGame
-          ? renderHomeFocusCard(mainGame, mainStats)
+        filteredGames.length
+          ? `
+            <div class="home-capsule-rail" role="list">
+              ${filteredGames
+                .map((game) => renderHomeGoalCapsule(game, sessionStats))
+                .join("")}
+            </div>
+          `
           : `
-            <div class="home-focus-empty">
-              <h3>${escapeHtml(t("home.focusEmptyTitle"))}</h3>
-              <p class="muted-text">${escapeHtml(t("home.focusEmptyBody"))}</p>
+            <div class="home-library-empty">
+              <h3>${escapeHtml(t("home.libraryEmptyTitle"))}</h3>
+              <p class="muted-text">${escapeHtml(
+                normalizedFilter === "all"
+                  ? t("home.libraryEmptyBody")
+                  : t("home.libraryEmptyFiltered", {
+                      statusLabel: getStatusMeta(normalizedFilter).label,
+                    })
+              )}</p>
             </div>
           `
       }
@@ -215,6 +259,143 @@ export function renderHomeOverview(games, sessions, sessionStats, xpSummary) {
         : ""
     }
   `;
+}
+
+const HOME_LIBRARY_FILTER_ORDER = [
+  "all",
+  GAME_STATUSES.IN_PROGRESS,
+  GAME_STATUSES.BACKLOG,
+  GAME_STATUSES.COMPLETED,
+  GAME_STATUSES.PAUSED,
+  GAME_STATUSES.DROPPED,
+];
+
+function normalizeHomeLibraryFilter(filterValue) {
+  const safeFilter = String(filterValue || "").trim();
+  return HOME_LIBRARY_FILTER_ORDER.includes(safeFilter) ? safeFilter : "all";
+}
+
+function getHomeLibraryGames(games, filterValue) {
+  if (filterValue === "all") {
+    return games;
+  }
+
+  return games.filter((game) => game.status === filterValue);
+}
+
+function getHomeLibraryFilterOptions() {
+  return HOME_LIBRARY_FILTER_ORDER.map((value) => ({
+    value,
+    label:
+      value === "all" ? t("home.libraryFilters.all") : getStatusMeta(value).label,
+  }));
+}
+
+function buildHomeLibrarySummary(visibleCount, totalCount, filterValue) {
+  if (filterValue === "all") {
+    return t("home.librarySummaryAll", {
+      visible: visibleCount,
+      total: totalCount,
+    });
+  }
+
+  return t("home.librarySummaryFiltered", {
+    visible: visibleCount,
+    total: totalCount,
+    statusLabel: getStatusMeta(filterValue).label,
+  });
+}
+
+function renderHomeGoalCapsule(game, sessionStats) {
+  const stats = sessionStats.get(game.id) || emptySessionStats();
+  const totalQuestXp =
+    stats.totalXp +
+    (game.status === GAME_STATUSES.COMPLETED ? getGameCompletionXp(game) : 0);
+  const statusMeta = getStatusMeta(game.status);
+  const objective = String(getGameObjectiveText(game) || "").trim();
+  const latestSessionNote = String(stats.latestSession?.note || "").trim();
+  const detailText =
+    objective || latestSessionNote || t("home.libraryNoObjective");
+
+  return `
+    <article class="goal-capsule-card ${game.isMain ? "is-focus" : ""}" role="listitem">
+      <button
+        type="button"
+        class="goal-capsule-button"
+        data-action="open-game-actions"
+        data-id="${game.id}"
+      >
+        ${renderHomeGoalCapsuleArt(game)}
+        <div class="goal-capsule-overlay" aria-hidden="true"></div>
+
+        <div class="goal-capsule-top">
+          <div class="goal-capsule-badges">
+            ${
+              game.isMain
+                ? `<span class="badge badge-main">${escapeHtml(
+                    t("tracker.mainQuest.badge")
+                  )}</span>`
+                : ""
+            }
+            <span class="badge badge-status ${escapeAttribute(
+              statusMeta.badgeClass
+            )}">${escapeHtml(statusMeta.label)}</span>
+          </div>
+          <span class="goal-capsule-manage">${escapeHtml(t("tracker.actions"))}</span>
+        </div>
+
+        <div class="goal-capsule-bottom">
+          <p class="goal-capsule-kicker">${escapeHtml(getPlatformText(game))}</p>
+          <h3>${escapeHtml(game.title)}</h3>
+          <p class="goal-capsule-copy">${escapeHtml(detailText)}</p>
+
+          <div class="goal-capsule-meta">
+            <span class="goal-capsule-meta-pill">${escapeHtml(
+              t("tracker.summaryPills.sessions", { count: stats.sessionCount })
+            )}</span>
+            <span class="goal-capsule-meta-pill">${escapeHtml(
+              t("tracker.summaryPills.playTime", {
+                value: formatMinutes(stats.totalMinutes),
+              })
+            )}</span>
+            <span class="goal-capsule-meta-pill">${escapeHtml(
+              t("tracker.summaryPills.questXp", { xp: totalQuestXp })
+            )}</span>
+          </div>
+        </div>
+      </button>
+    </article>
+  `;
+}
+
+function renderHomeGoalCapsuleArt(game) {
+  const image = game.bannerImage || game.coverImage;
+  if (image) {
+    return `
+      <img
+        class="goal-capsule-image"
+        src="${escapeAttribute(image)}"
+        alt="${escapeAttribute(game.title)}"
+      />
+    `;
+  }
+
+  return `
+    <div class="goal-capsule-placeholder" aria-hidden="true">
+      <span>${escapeHtml(getGoalCapsuleMonogram(game.title))}</span>
+    </div>
+  `;
+}
+
+function getGoalCapsuleMonogram(title) {
+  const parts = String(title || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2);
+
+  const monogram = parts.map((part) => part[0]?.toUpperCase() || "").join("");
+  return monogram || "GO";
 }
 
 export function renderCompletionSpotlight(games, sessionStats) {

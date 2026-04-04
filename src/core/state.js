@@ -10,6 +10,7 @@ export const appState = {
   cropSession: null,
   activeScreenId: DEFAULT_SCREEN_ID,
   activeSessionsTab: DEFAULT_SESSIONS_TAB,
+  homeLibraryStatusFilter: "all",
   latestIdleJourney: null,
   editingCharacterName: false,
   showCharacterSkillModal: false,
