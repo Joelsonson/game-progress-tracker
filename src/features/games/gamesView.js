@@ -352,7 +352,10 @@ function renderHomeGoalCapsule(game, stats, index = 0) {
     : "";
 
   return `
-    <article class="goal-capsule-card" role="listitem">
+    <article
+      class="goal-capsule-card${isCompleted ? " is-completed-shell" : ""}"
+      role="listitem"
+    >
       <button
         type="button"
         class="goal-capsule-button ${game.isMain ? "is-focus" : ""}${completedClass}"
