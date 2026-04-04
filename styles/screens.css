@@ -479,6 +479,11 @@
   justify-self: start;
 }
 
+.journey-route-hero-visuals {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+}
+
 .character-radar-legend,
 .character-vitals-grid {
   grid-template-columns: 1fr;

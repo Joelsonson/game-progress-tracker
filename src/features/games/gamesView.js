@@ -120,12 +120,6 @@ export function renderHomeOverview(
       ? filteredGames
       : filteredGames.slice(0, 6);
   const filterOptions = getHomeLibraryFilterOptions();
-  const latestCompletedGame = [...games]
-    .filter((game) => game.status === GAME_STATUSES.COMPLETED && game.completedAt)
-    .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))[0] || null;
-  const latestCompletedStats = latestCompletedGame
-    ? sessionStats.get(latestCompletedGame.id) || emptySessionStats()
-    : emptySessionStats();
 
   homeOverviewEl.innerHTML = `
     <section class="panel home-library-panel">
@@ -259,30 +253,6 @@ export function renderHomeOverview(
         </div>
       </section>
     </div>
-
-    ${
-      latestCompletedGame
-        ? `
-          <section class="panel home-win-panel">
-            <div class="section-header home-section-header">
-              <div>
-                <p class="eyebrow">${escapeHtml(t("home.recentWinEyebrow"))}</p>
-                <h2>${escapeHtml(t("home.recentWinTitle"))}</h2>
-              </div>
-              <button
-                type="button"
-                class="secondary-button action-success"
-                data-action="download-card"
-                data-id="${latestCompletedGame.id}"
-              >
-                ${escapeHtml(t("tracker.actionsMenu.downloadCard"))}
-              </button>
-            </div>
-            ${renderHomeRecentWin(latestCompletedGame, latestCompletedStats)}
-          </section>
-        `
-        : ""
-    }
   `;
 }
 
@@ -607,68 +577,6 @@ function renderHomeFocusCard(game, stats) {
           <button type="button" class="secondary-button" data-home-shortcut="tracker">
             ${escapeHtml(t("home.quickViewTracker"))}
           </button>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function renderHomeRecentWin(game, stats) {
-  const bannerImage = game.bannerImage || game.coverImage;
-  const bannerArt = bannerImage
-    ? `<img class="game-card-banner-image" src="${escapeAttribute(
-        bannerImage
-      )}" alt="" aria-hidden="true" />`
-    : "";
-  const totalQuestXp = stats.totalXp + getGameCompletionXp(game);
-
-  return `
-    <div class="home-win-card">
-      <div class="completion-card-banner home-win-banner">
-        ${bannerArt}
-        <div class="completion-card-content">
-          <div class="completion-card-heading">
-            <div>
-              <h3>${escapeHtml(game.title)}</h3>
-              <p class="completion-meta">${escapeHtml(
-                t("tracker.completionSpotlight.meta", {
-                  date: formatDate(game.completedAt),
-                  sessions: stats.sessionCount,
-                  sessionWord: t("common.sessionWord", { count: stats.sessionCount }),
-                  playTime: formatMinutes(stats.totalMinutes),
-                })
-              )}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="summary-grid">
-        <div class="summary-stat">
-          <span class="summary-stat-label">${escapeHtml(
-            t("tracker.completionCard.totalPlayTime")
-          )}</span>
-          <span class="summary-stat-value">${escapeHtml(
-            formatMinutes(stats.totalMinutes)
-          )}</span>
-        </div>
-        <div class="summary-stat">
-          <span class="summary-stat-label">${escapeHtml(
-            t("tracker.completionCard.sessions")
-          )}</span>
-          <span class="summary-stat-value">${stats.sessionCount}</span>
-        </div>
-        <div class="summary-stat">
-          <span class="summary-stat-label">${escapeHtml(
-            t("tracker.completionCard.meaningful")
-          )}</span>
-          <span class="summary-stat-value">${stats.meaningfulCount}</span>
-        </div>
-        <div class="summary-stat">
-          <span class="summary-stat-label">${escapeHtml(
-            t("tracker.completionCard.totalXp")
-          )}</span>
-          <span class="summary-stat-value">${totalQuestXp}</span>
         </div>
       </div>
     </div>

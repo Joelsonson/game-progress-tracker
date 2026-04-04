@@ -66,8 +66,8 @@ export const ONBOARDING_STEPS = [
   {
     id: ONBOARDING_STEP_IDS.HOME_JOURNEY,
     kind: "spotlight",
-    screenId: "home",
-    target: "home-journey-panel",
+    screenId: "journey",
+    target: "journeyPanel",
     locksBodyScroll: true,
     sprite: ONBOARDING_SPRITE,
     eyebrowKey: "onboarding.steps.homeJourney.eyebrow",

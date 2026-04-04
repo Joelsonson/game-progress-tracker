@@ -1693,11 +1693,29 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
           </div>
           <p class="journey-zone">${escapeHtml(viewModel.activityText)}</p>
         </div>
-        ${renderJourneySpriteBanner(stretchSprite.sprite, {
-          wrapperClass: "journey-route-sprite-banner",
-          stageClass: "journey-sprite-stage-route",
-          label: stretchSprite.label,
-        })}
+        <div class="journey-route-hero-visuals">
+          ${renderJourneySpriteBanner(stretchSprite.sprite, {
+            wrapperClass: "journey-route-sprite-banner",
+            stageClass: "journey-sprite-stage-route",
+            label: stretchSprite.label,
+          })}
+          <div class="journey-route-vitals">
+            ${renderJourneyRouteVital({
+              label: t("journeyUi.common.health"),
+              current: viewModel.state.currentHp,
+              max: viewModel.journeyStats.maxHp,
+              percent: viewModel.hpPercent,
+              fillClass: "resource-fill-health",
+            })}
+            ${renderJourneyRouteVital({
+              label: t("journeyUi.common.hunger"),
+              current: viewModel.state.currentHunger,
+              max: viewModel.journeyStats.maxHunger,
+              percent: viewModel.hungerPercent,
+              fillClass: "resource-fill-hunger",
+            })}
+          </div>
+        </div>
       </div>
       ${renderJourneyProgressDisplay(progressDisplay)}
 
@@ -1738,14 +1756,6 @@ export function renderIdleJourney(state, games, sessions, xpSummary) {
         )}</p>
         <h4>${escapeHtml(t("journeyUi.page.expeditionFocusTitle"))}</h4>
         <div class="journey-story-stats">
-          <div class="journey-story-stat">
-            <span>${escapeHtml(t("journeyUi.common.health"))}</span>
-            <strong>${Math.round(viewModel.state.currentHp)} / ${viewModel.journeyStats.maxHp}</strong>
-          </div>
-          <div class="journey-story-stat">
-            <span>${escapeHtml(t("journeyUi.common.hunger"))}</span>
-            <strong>${Math.round(viewModel.state.currentHunger)} / ${viewModel.journeyStats.maxHunger}</strong>
-          </div>
           <button
             type="button"
             class="journey-story-stat journey-story-stat-button"
@@ -2372,6 +2382,23 @@ function renderCharacterLevelPanel(viewModel) {
       </div>
       ${renderCharacterLevelBreakdown(viewModel)}
     </section>
+  `;
+}
+
+function renderJourneyRouteVital(config) {
+  return `
+    <div class="journey-route-vital">
+      <div class="resource-meta">
+        <span>${escapeHtml(config.label)}</span>
+        <span>${Math.round(config.current)} / ${config.max}</span>
+      </div>
+      <div class="resource-track">
+        <div
+          class="resource-fill ${escapeAttribute(config.fillClass)}"
+          style="width: ${config.percent}%"
+        ></div>
+      </div>
+    </div>
   `;
 }
 
