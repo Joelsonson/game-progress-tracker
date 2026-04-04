@@ -27,133 +27,36 @@ import { notifyOnboardingSessionSaved } from "../onboarding/onboardingController
 export async function handleAddSession(event) {
   event.preventDefault();
 
-  const gameId = sessionGameSelect.value;
-  const minutes = Number(sessionMinutesInput.value);
-  const note = sessionNoteInput.value.trim();
-  const updatedObjective = sessionObjectiveInput.value.trim();
-  const meaningfulProgress = meaningfulProgressInput.checked;
-
-  if (!gameId) {
-    showMessage(
-      sessionMessage,
-      t("sessions.messages.noGameSelected"),
-      true
-    );
-    return;
-  }
-
-  if (!Number.isFinite(minutes) || minutes <= 0) {
-    showMessage(
-      sessionMessage,
-      t("sessions.messages.invalidMinutes"),
-      true
-    );
-    return;
-  }
-
   try {
-    const [gamesRaw, sessionsRaw] = await Promise.all([
-      getAllGames(appState.db),
-      getAllSessions(appState.db),
-    ]);
-    const games = gamesRaw.map((game) => normalizeGameRecord(game));
-    const sessions = sessionsRaw.map((session) => normalizeSessionRecord(session));
-    const selectedGame = games.find((game) => game.id === gameId);
-
-    if (!selectedGame) {
-      showMessage(sessionMessage, t("sessions.messages.gameNotFound"), true);
-      return;
-    }
-
-    if (!canLogSessionForGame(selectedGame)) {
-      showMessage(
-        sessionMessage,
-        t("sessions.messages.needsInProgress", { title: selectedGame.title }),
-        true
-      );
-      return;
-    }
-
-    const focusTax = rollFocusPenalty({
-      selectedGame,
-      allGames: games,
-      meaningfulProgress,
-      minutes,
-      focusedGoalsEnabled: appState.focusedGoalsEnabled,
-    });
-
-    const now = new Date().toISOString();
-
-    const newSession = normalizeSessionRecord({
-      id: crypto.randomUUID(),
-      gameId,
-      minutes,
-      note,
-      meaningfulProgress,
-      focusPenaltyXp: focusTax.penaltyXp,
-      focusPenaltyReason: focusTax.reason,
-      playedAt: now,
-      createdAt: now,
-    });
-    const previousXpSummary = buildXpSummary(games, sessions);
-    const nextXpSummary = buildXpSummary(games, [...sessions, newSession]);
-
-    await addSession(appState.db, newSession);
-    await updateGame(appState.db, {
-      ...selectedGame,
-      currentObjective:
-        updatedObjective || selectedGame.currentObjective || selectedGame.notes || "",
-      updatedAt: now,
+    const result = await saveSessionEntry({
+      gameId: sessionGameSelect.value,
+      minutes: sessionMinutesInput.value,
+      note: sessionNoteInput.value.trim(),
+      updatedObjective: sessionObjectiveInput.value.trim(),
+      meaningfulProgress: meaningfulProgressInput.checked,
     });
 
     sessionForm.reset();
     meaningfulProgressInput.checked = false;
 
-    const replayText =
-      selectedGame.status === GAME_STATUSES.COMPLETED
-        ? t("sessions.messages.replaySuffix")
-        : "";
-    const xpBreakdown = getSessionXpBreakdown(newSession);
-    const focusText = xpBreakdown.focusPenalty
-      ? t("sessions.messages.focusTaxSuffix", {
-          value: xpBreakdown.focusPenalty,
-        })
-      : "";
-    const objectiveText = updatedObjective
-      ? t("sessions.messages.objectiveUpdatedSuffix")
-      : "";
-
     showMessage(
       sessionMessage,
-      t("sessions.messages.logged", {
-        duration: formatMinutes(minutes),
-        replayText,
-        title: selectedGame.title,
-        totalText: xpBreakdown.totalText,
-        focusText,
-        objectiveText,
-      })
+      result.successMessage
     );
 
     await appState.renderApp();
     await notifyOnboardingSessionSaved();
-    sessionGameSelect.value = gameId;
-    showToast(
-      `Logged ${formatMinutes(minutes)} for ${selectedGame.title}. ${xpBreakdown.totalText}.`,
-      {
-        title: "Progress logged",
-      }
-    );
+    sessionGameSelect.value = result.selectedGame.id;
+    showToast(result.toastMessage, {
+      title: "Progress logged",
+    });
 
-    if (nextXpSummary.level > previousXpSummary.level) {
-      showToast(
-        buildLevelUpToast(previousXpSummary.level, nextXpSummary.level),
-        {
-          title: "Level up",
-          tone: "info",
-          duration: 4200,
-        }
-      );
+    if (result.levelUpMessage) {
+      showToast(result.levelUpMessage, {
+        title: "Level up",
+        tone: "info",
+        duration: 4200,
+      });
     }
   } catch (error) {
     console.error("Failed to save session:", error);
@@ -163,6 +66,108 @@ export async function handleAddSession(event) {
       true
     );
   }
+}
+
+export async function saveSessionEntry({
+  gameId,
+  minutes,
+  note = "",
+  updatedObjective = "",
+  meaningfulProgress = false,
+}) {
+  const safeGameId = String(gameId || "").trim();
+  const numericMinutes = Number(minutes);
+  const safeNote = String(note || "").trim();
+  const safeObjective = String(updatedObjective || "").trim();
+
+  if (!safeGameId) {
+    throw new Error(t("sessions.messages.noGameSelected"));
+  }
+
+  if (!Number.isFinite(numericMinutes) || numericMinutes <= 0) {
+    throw new Error(t("sessions.messages.invalidMinutes"));
+  }
+
+  const [gamesRaw, sessionsRaw] = await Promise.all([
+    getAllGames(appState.db),
+    getAllSessions(appState.db),
+  ]);
+  const games = gamesRaw.map((game) => normalizeGameRecord(game));
+  const sessions = sessionsRaw.map((session) => normalizeSessionRecord(session));
+  const selectedGame = games.find((game) => game.id === safeGameId);
+
+  if (!selectedGame) {
+    throw new Error(t("sessions.messages.gameNotFound"));
+  }
+
+  if (!canLogSessionForGame(selectedGame)) {
+    throw new Error(
+      t("sessions.messages.needsInProgress", { title: selectedGame.title })
+    );
+  }
+
+  const focusTax = rollFocusPenalty({
+    selectedGame,
+    allGames: games,
+    meaningfulProgress,
+    minutes: numericMinutes,
+    focusedGoalsEnabled: appState.focusedGoalsEnabled,
+  });
+
+  const now = new Date().toISOString();
+
+  const newSession = normalizeSessionRecord({
+    id: crypto.randomUUID(),
+    gameId: safeGameId,
+    minutes: numericMinutes,
+    note: safeNote,
+    meaningfulProgress,
+    focusPenaltyXp: focusTax.penaltyXp,
+    focusPenaltyReason: focusTax.reason,
+    playedAt: now,
+    createdAt: now,
+  });
+  const previousXpSummary = buildXpSummary(games, sessions);
+  const nextXpSummary = buildXpSummary(games, [...sessions, newSession]);
+
+  await addSession(appState.db, newSession);
+  await updateGame(appState.db, {
+    ...selectedGame,
+    currentObjective:
+      safeObjective || selectedGame.currentObjective || selectedGame.notes || "",
+    updatedAt: now,
+  });
+
+  const replayText =
+    selectedGame.status === GAME_STATUSES.COMPLETED
+      ? t("sessions.messages.replaySuffix")
+      : "";
+  const xpBreakdown = getSessionXpBreakdown(newSession);
+  const focusText = xpBreakdown.focusPenalty
+    ? t("sessions.messages.focusTaxSuffix", {
+        value: xpBreakdown.focusPenalty,
+      })
+    : "";
+  const objectiveText = safeObjective
+    ? t("sessions.messages.objectiveUpdatedSuffix")
+    : "";
+
+  return {
+    selectedGame,
+    successMessage: t("sessions.messages.logged", {
+      duration: formatMinutes(numericMinutes),
+      replayText,
+      title: selectedGame.title,
+      totalText: xpBreakdown.totalText,
+      focusText,
+      objectiveText,
+    }),
+    toastMessage: `Logged ${formatMinutes(numericMinutes)} for ${selectedGame.title}. ${xpBreakdown.totalText}.`,
+    levelUpMessage:
+      nextXpSummary.level > previousXpSummary.level
+        ? buildLevelUpToast(previousXpSummary.level, nextXpSummary.level)
+        : "",
+  };
 }
 
 function buildLevelUpToast(previousLevel, nextLevel) {

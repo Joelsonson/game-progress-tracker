@@ -70,6 +70,7 @@ import {
   handleAddGame,
   handleArtPickerChange,
   handleGameActionsModalClick,
+  handleGameActionsSubmit,
   handleListClick,
   repairGamesIfNeeded,
   syncGameDifficultyPresentation,
@@ -147,6 +148,7 @@ function bindEvents() {
   homeOverviewEl?.addEventListener("click", handleHomeOverviewClick);
   homeOverviewEl?.addEventListener("change", handleHomeOverviewChange);
   gameActionsBodyEl?.addEventListener("click", handleListClick);
+  gameActionsBodyEl?.addEventListener("submit", handleGameActionsSubmit);
   journeyContentEl?.addEventListener("click", handleJourneyClick);
   characterContentEl?.addEventListener("click", handleJourneyClick);
   homeJourneyContentEl?.addEventListener("click", handleHomeJourneyClick);

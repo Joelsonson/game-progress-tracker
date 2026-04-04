@@ -1,4 +1,4 @@
-import { isMainEligibleStatus, normalizeGameRecord, normalizeSessionRecord } from "../../data/db.js";
+import { isMainEligibleStatus, normalizeGameRecord } from "../../data/db.js";
 import { addGame, getAllGames, setMainGame, updateGame, updateGames } from "../../data/gamesRepo.js";
 import { getAllSessions } from "../../data/sessionsRepo.js";
 import {
@@ -33,7 +33,6 @@ import {
   enforceMainGameRules,
   getDifficultyPreviewText,
   getErrorMessage,
-  getGameActionSheetMetaText,
   getGameCompletionXp,
   getStatusLabel,
   hasGameChanged,
@@ -43,10 +42,11 @@ import {
 } from "../../core/formatters.js";
 import { t } from "../../core/i18n.js";
 import { appState } from "../../core/state.js";
-import { openFilePicker, scrollDeck, showMessage } from "../../core/ui.js";
+import { openFilePicker, scrollDeck, showMessage, showToast } from "../../core/ui.js";
 import { downloadCompletionCard } from "../art/completionCard.js";
 import { optimizeUploadedImage } from "../art/imageCropper.js";
 import { notifyOnboardingGoalSaved } from "../onboarding/onboardingController.js";
+import { saveSessionEntry } from "../sessions/sessionsController.js";
 import { renderGameActionSheet } from "./gamesView.js";
 
 export function openGameActionsSheet(game) {
@@ -54,12 +54,8 @@ export function openGameActionsSheet(game) {
     return;
   }
 
-  const platformLabel =
-    game.platform && game.platform !== "Unspecified"
-      ? game.platform
-      : t("common.unspecified");
-  gameActionsTitleEl.textContent = game.title;
-  gameActionsMetaEl.textContent = getGameActionSheetMetaText(game, platformLabel);
+  gameActionsTitleEl.textContent = t("tracker.manageCard");
+  gameActionsMetaEl.textContent = t("tracker.actionSheetBody");
   gameActionsBodyEl.innerHTML = renderGameActionSheet(game);
   gameActionsModal.hidden = false;
   document.body.classList.add("has-overlay");
@@ -77,6 +73,103 @@ export function handleGameActionsModalClick(event) {
   if (!(event.target instanceof HTMLElement)) return;
   if (event.target.closest("[data-close-game-actions]")) {
     closeGameActionsSheet();
+  }
+}
+
+export async function handleGameActionsSubmit(event) {
+  event.preventDefault();
+
+  const form = event.target;
+  if (!(form instanceof HTMLFormElement)) return;
+
+  const feedbackEl = form.querySelector("[data-game-action-feedback]");
+  if (feedbackEl instanceof HTMLElement) {
+    feedbackEl.textContent = "";
+  }
+
+  if (form.matches("[data-game-session-form]")) {
+    const formData = new FormData(form);
+
+    try {
+      const result = await saveSessionEntry({
+        gameId: formData.get("gameId"),
+        minutes: formData.get("minutes"),
+        note: formData.get("note"),
+        meaningfulProgress: formData.get("meaningfulProgress") === "on",
+      });
+
+      closeGameActionsSheet();
+      await appState.renderApp();
+      await notifyOnboardingSessionSaved();
+      showToast(result.toastMessage, {
+        placement: "top",
+        replace: true,
+      });
+
+      if (result.levelUpMessage) {
+        showToast(result.levelUpMessage, {
+          title: "Level up",
+          tone: "info",
+          duration: 4200,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to save session from action sheet:", error);
+      showMessage(
+        feedbackEl,
+        getErrorMessage(error, t("sessions.messages.saveFailed")),
+        true
+      );
+    }
+
+    return;
+  }
+
+  if (form.matches("[data-game-edit-form]")) {
+    const formData = new FormData(form);
+    const gameId = String(formData.get("gameId") || "").trim();
+    const nextTitle = String(formData.get("title") || "").trim();
+    const nextObjective = String(formData.get("currentObjective") || "").trim();
+
+    if (!nextTitle) {
+      showMessage(feedbackEl, t("games.add.titleMissing"), true);
+      return;
+    }
+
+    try {
+      const game = await getGameById(gameId);
+
+      if (!game) {
+        showMessage(feedbackEl, t("games.messages.notFound"), true);
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const updatedGame = normalizeGameRecord({
+        ...game,
+        title: nextTitle,
+        currentObjective: nextObjective,
+        updatedAt: now,
+      });
+
+      await updateGame(appState.db, updatedGame);
+      closeGameActionsSheet();
+      await appState.renderApp();
+      showToast(
+        t("games.messages.detailsUpdated", { title: updatedGame.title }),
+        {
+          placement: "top",
+          replace: true,
+        }
+      );
+    } catch (error) {
+      console.error("Failed to update goal details:", error);
+      showMessage(
+        feedbackEl,
+        getErrorMessage(error, t("games.messages.updateFailed")),
+        true
+      );
+    }
   }
 }
 
@@ -238,6 +331,7 @@ export async function handleListClick(event) {
 
   const { action, id, status, target, direction, coverSrc } = button.dataset;
   const triggeredFromActionSheet = Boolean(button.closest("#gameActionsModal"));
+  const shouldToast = triggeredFromActionSheet;
 
   try {
     if (action === "scroll-deck") {
@@ -245,13 +339,13 @@ export async function handleListClick(event) {
       return;
     }
 
-    const games = (await getAllGames(appState.db)).map((game) =>
-      normalizeGameRecord(game)
-    );
-    const game = games.find((entry) => entry.id === id);
+    const game = await getGameById(id);
 
     if (!game) {
-      showMessage(formMessage, t("games.messages.notFound"), true);
+      showFeedback(t("games.messages.notFound"), {
+        isError: true,
+        toast: shouldToast,
+      });
       return;
     }
 
@@ -266,28 +360,37 @@ export async function handleListClick(event) {
 
     if (action === "make-main") {
       if (!isMainEligibleStatus(game.status)) {
-        showMessage(
-          formMessage,
-          t("games.messages.makeMainRestricted"),
-          true
-        );
+        showFeedback(t("games.messages.makeMainRestricted"), {
+          isError: true,
+          toast: shouldToast,
+        });
         return;
       }
 
       await setMainGame(appState.db, id);
-      showMessage(formMessage, t("games.messages.nowMain", { title: game.title }));
+      showFeedback(t("games.messages.nowMain", { title: game.title }), {
+        toast: shouldToast,
+      });
       await appState.renderApp();
       return;
     }
 
     if (action === "pick-cover-art") {
-      appState.pendingArtTarget = { gameId: id, kind: "cover" };
+      appState.pendingArtTarget = {
+        gameId: id,
+        kind: "cover",
+        toast: shouldToast,
+      };
       openFilePicker(coverArtPickerInput);
       return;
     }
 
     if (action === "pick-banner-art") {
-      appState.pendingArtTarget = { gameId: id, kind: "banner" };
+      appState.pendingArtTarget = {
+        gameId: id,
+        kind: "banner",
+        toast: shouldToast,
+      };
       openFilePicker(bannerArtPickerInput);
       return;
     }
@@ -295,7 +398,10 @@ export async function handleListClick(event) {
     if (action === "set-built-in-cover") {
       const nextCoverImage = String(coverSrc || "").trim();
       if (!nextCoverImage) {
-        showMessage(formMessage, t("games.messages.artUpdateFailed"), true);
+        showFeedback(t("games.messages.artUpdateFailed"), {
+          isError: true,
+          toast: shouldToast,
+        });
         return;
       }
 
@@ -306,12 +412,12 @@ export async function handleListClick(event) {
         artUpdatedAt: now,
         updatedAt: now,
       });
-      showMessage(
-        formMessage,
+      showFeedback(
         t("games.messages.artUpdated", {
           kindLabel: t("games.add.coverLabel"),
           title: game.title,
-        })
+        }),
+        { toast: shouldToast }
       );
       await appState.renderApp();
       return;
@@ -326,25 +432,35 @@ export async function handleListClick(event) {
         artUpdatedAt: now,
         updatedAt: now,
       });
-      showMessage(formMessage, t("games.messages.clearedArt", { title: game.title }));
+      showFeedback(t("games.messages.clearedArt", { title: game.title }), {
+        toast: shouldToast,
+      });
       await appState.renderApp();
       return;
     }
 
     if (action === "download-card") {
       await downloadCompletionCard(game);
-      showMessage(formMessage, t("games.messages.savedCard", { title: game.title }));
+      showFeedback(t("games.messages.savedCard", { title: game.title }), {
+        toast: shouldToast,
+      });
       return;
     }
 
     if (action === "set-status") {
       if (!isValidStatus(status)) {
-        showMessage(formMessage, t("games.messages.statusNotSupported"), true);
+        showFeedback(t("games.messages.statusNotSupported"), {
+          isError: true,
+          toast: shouldToast,
+        });
         return;
       }
 
       if (status === GAME_STATUSES.COMPLETED && !isGameCompletable(game)) {
-        showMessage(formMessage, t("games.messages.cannotComplete"), true);
+        showFeedback(t("games.messages.cannotComplete"), {
+          isError: true,
+          toast: shouldToast,
+        });
         return;
       }
 
@@ -354,17 +470,16 @@ export async function handleListClick(event) {
       if (status === GAME_STATUSES.COMPLETED) {
         const sessions = await getAllSessions(appState.db);
         const sessionStats = buildSessionStats(sessions);
-        showMessage(
-          formMessage,
-          buildCompletionMessage(updatedGame, sessionStats)
-        );
+        showFeedback(buildCompletionMessage(updatedGame, sessionStats), {
+          toast: shouldToast,
+        });
       } else {
-        showMessage(
-          formMessage,
+        showFeedback(
           t("games.messages.movedStatus", {
             title: game.title,
             statusLabel: getStatusLabel(updatedGame.status),
-          })
+          }),
+          { toast: shouldToast }
         );
       }
 
@@ -372,16 +487,18 @@ export async function handleListClick(event) {
     }
   } catch (error) {
     if (isCropCancelError(error)) {
-      showMessage(formMessage, t("games.add.cropCancelled"), true);
+      showFeedback(t("games.add.cropCancelled"), {
+        isError: true,
+        toast: shouldToast,
+      });
       return;
     }
 
     console.error("Failed to update game:", error);
-    showMessage(
-      formMessage,
-      getErrorMessage(error, t("games.messages.updateFailed")),
-      true
-    );
+    showFeedback(getErrorMessage(error, t("games.messages.updateFailed")), {
+      isError: true,
+      toast: shouldToast,
+    });
   }
 }
 
@@ -402,7 +519,10 @@ export async function handleArtPickerChange(kind) {
     const game = games.find((entry) => entry.id === activeTarget.gameId);
 
     if (!game) {
-      showMessage(formMessage, t("games.messages.notFound"), true);
+      showFeedback(t("games.messages.notFound"), {
+        isError: true,
+        toast: Boolean(activeTarget?.toast),
+      });
       return;
     }
 
@@ -417,28 +537,53 @@ export async function handleArtPickerChange(kind) {
       updatedAt: now,
     });
 
-    showMessage(
-      formMessage,
+    showFeedback(
       t("games.messages.artUpdated", {
         kindLabel:
           kind === "cover"
             ? t("games.add.coverLabel")
             : t("games.add.bannerLabel"),
         title: game.title,
-      })
+      }),
+      { toast: Boolean(activeTarget?.toast) }
     );
     await appState.renderApp();
   } catch (error) {
     if (isCropCancelError(error)) {
-      showMessage(formMessage, t("games.add.cropCancelled"), true);
+      showFeedback(t("games.add.cropCancelled"), {
+        isError: true,
+        toast: Boolean(activeTarget?.toast),
+      });
       return;
     }
 
     console.error("Failed to update art:", error);
-    showMessage(
-      formMessage,
-      getErrorMessage(error, t("games.messages.artUpdateFailed")),
-      true
-    );
+    showFeedback(getErrorMessage(error, t("games.messages.artUpdateFailed")), {
+      isError: true,
+      toast: Boolean(activeTarget?.toast),
+    });
   }
+}
+
+async function getGameById(gameId) {
+  const safeGameId = String(gameId || "").trim();
+  if (!safeGameId) return null;
+
+  const games = (await getAllGames(appState.db)).map((game) =>
+    normalizeGameRecord(game)
+  );
+  return games.find((entry) => entry.id === safeGameId) || null;
+}
+
+function showFeedback(message, { isError = false, toast = false } = {}) {
+  if (toast) {
+    showToast(message, {
+      tone: isError ? "error" : "success",
+      placement: "top",
+      replace: true,
+    });
+    return;
+  }
+
+  showMessage(formMessage, message, isError);
 }

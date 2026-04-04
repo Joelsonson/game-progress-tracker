@@ -28,6 +28,7 @@ import {
   getGameRewardText,
   getGameObjectiveText,
   getStatusMeta,
+  canLogSessionForGame,
   isGameCompletable,
   renderCoverVisual,
 } from "../../core/formatters.js";
@@ -1030,7 +1031,7 @@ export function renderGameStateHighlight(game) {
   return "";
 }
 
-export function renderGameActions(game) {
+export function renderGameStatusActions(game) {
   const actions = [];
 
   if (game.status === GAME_STATUSES.BACKLOG) {
@@ -1146,12 +1147,6 @@ export function renderGameActions(game) {
         className: "secondary-button",
       })
     );
-    actions.push(
-      createActionButton("download-card", game.id, {
-        label: t("tracker.actionsMenu.downloadCard"),
-        className: "secondary-button action-success",
-      })
-    );
   }
 
   if (game.status === GAME_STATUSES.DROPPED) {
@@ -1167,33 +1162,6 @@ export function renderGameActions(game) {
         label: t("tracker.actionsMenu.restart"),
         nextStatus: GAME_STATUSES.IN_PROGRESS,
         className: "primary-button",
-      })
-    );
-  }
-
-  actions.push(
-    createActionButton("pick-cover-art", game.id, {
-      label: game.coverImage
-        ? t("tracker.actionsMenu.changeCover")
-        : t("tracker.actionsMenu.addCover"),
-      className: "secondary-button",
-    })
-  );
-
-  actions.push(
-    createActionButton("pick-banner-art", game.id, {
-      label: game.bannerImage
-        ? t("tracker.actionsMenu.changeBanner")
-        : t("tracker.actionsMenu.addBanner"),
-      className: "secondary-button",
-    })
-  );
-
-  if (game.coverImage || game.bannerImage) {
-    actions.push(
-      createActionButton("clear-art", game.id, {
-        label: t("tracker.actionsMenu.clearArt"),
-        className: "secondary-button action-danger",
       })
     );
   }
@@ -1235,8 +1203,8 @@ export function renderGameActionSheet(game) {
             <h3 class="game-action-sheet-title">${escapeHtml(game.title)}</h3>
             ${mainBadge}
             <span class="badge badge-status ${statusMeta.badgeClass}">${escapeHtml(
-    statusMeta.label
-  )}</span>
+              statusMeta.label
+            )}</span>
           </div>
           <p class="game-action-sheet-meta">
             ${escapeHtml(getGameActionSheetMetaText(game, getPlatformText(game)))}
@@ -1244,24 +1212,223 @@ export function renderGameActionSheet(game) {
         </div>
       </div>
 
-      <div class="game-actions game-actions-sheet" aria-label="${escapeAttribute(
-        `${t("tracker.actions")} ${game.title}`
-      )}">
-        ${renderGameActions(game)}
-      </div>
+      ${renderGameActionSessionPanel(game)}
 
-      <div class="game-action-sheet-builtins">
+      ${renderGameActionDisclosure({
+        title: t("tracker.actionSheetSections.changeStatusTitle"),
+        body: t("tracker.actionSheetSections.changeStatusBody"),
+        content: `
+          <div class="game-actions game-actions-sheet" aria-label="${escapeAttribute(
+            `${t("tracker.actions")} ${game.title}`
+          )}">
+            ${renderGameStatusActions(game)}
+          </div>
+        `,
+      })}
+
+      ${renderGameActionDisclosure({
+        title: t("tracker.actionSheetSections.editGoalTitle"),
+        body: t("tracker.actionSheetSections.editGoalBody"),
+        content: renderGameEditPanel(game),
+      })}
+    </div>
+  `;
+}
+
+function renderGameActionSessionPanel(game) {
+  if (!canLogSessionForGame(game)) {
+    return `
+      <section class="game-action-sheet-panel game-action-sheet-panel-muted">
+        <div class="game-action-sheet-panel-header">
+          <div>
+            <p class="eyebrow">${escapeHtml(
+              t("tracker.actionSheetSections.logSessionTitle")
+            )}</p>
+            <p class="game-action-sheet-panel-copy">
+              ${escapeHtml(t("tracker.actionSheetSections.logSessionLockedBody"))}
+            </p>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  const gameId = escapeAttribute(game.id);
+
+  return `
+    <section class="game-action-sheet-panel">
+      <div class="game-action-sheet-panel-header">
         <div>
-          <p class="eyebrow">${escapeHtml(t("games.add.defaultCoverLabel"))}</p>
-          <p class="game-action-sheet-meta">
-            ${escapeHtml(t("games.add.defaultCoverHint"))}
+          <p class="eyebrow">${escapeHtml(
+            t("tracker.actionSheetSections.logSessionTitle")
+          )}</p>
+          <p class="game-action-sheet-panel-copy">
+            ${escapeHtml(t("tracker.actionSheetSections.logSessionBody"))}
           </p>
         </div>
-        <div class="built-in-cover-button-grid">
-          ${renderBuiltInCoverActionButtons(game)}
+      </div>
+
+      <form class="stack-form game-action-session-form" data-game-session-form>
+        <input type="hidden" name="gameId" value="${gameId}" />
+
+        <div class="game-action-compact-grid">
+          <div class="field">
+            <label for="gameActionMinutes-${gameId}">${escapeHtml(
+              t("sessions.minutesLabel")
+            )}</label>
+            <input
+              id="gameActionMinutes-${gameId}"
+              name="minutes"
+              type="number"
+              min="1"
+              step="1"
+              placeholder="${escapeAttribute(t("sessions.minutesPlaceholder"))}"
+              required
+            />
+          </div>
+
+          <div class="field game-action-field-wide">
+            <label for="gameActionNote-${gameId}">${escapeHtml(
+              t("sessions.noteLabel")
+            )}</label>
+            <textarea
+              id="gameActionNote-${gameId}"
+              name="note"
+              rows="2"
+              placeholder="${escapeAttribute(t("sessions.notePlaceholder"))}"
+            ></textarea>
+          </div>
+        </div>
+
+        <label class="checkbox-row">
+          <input type="checkbox" name="meaningfulProgress" />
+          <span>${escapeHtml(t("sessions.meaningfulLabel"))}</span>
+        </label>
+
+        <p class="game-action-feedback" data-game-action-feedback></p>
+
+        <button type="submit" class="primary-button">
+          ${escapeHtml(t("sessions.submit"))}
+        </button>
+      </form>
+    </section>
+  `;
+}
+
+function renderGameActionDisclosure({ title, body, content }) {
+  return `
+    <details class="game-action-sheet-section">
+      <summary class="game-action-sheet-summary">
+        <div class="game-action-sheet-summary-copy">
+          <h4>${escapeHtml(title)}</h4>
+          <p>${escapeHtml(body)}</p>
+        </div>
+      </summary>
+      <div class="game-action-sheet-section-body">
+        ${content}
+      </div>
+    </details>
+  `;
+}
+
+function renderGameEditPanel(game) {
+  const gameId = escapeAttribute(game.id);
+  const currentObjective = escapeHtml(getGameObjectiveText(game));
+
+  return `
+    <form class="stack-form game-action-edit-form" data-game-edit-form>
+      <input type="hidden" name="gameId" value="${gameId}" />
+
+      <div class="field">
+        <label for="gameEditTitle-${gameId}">${escapeHtml(
+          t("games.add.titleLabel")
+        )}</label>
+        <input
+          id="gameEditTitle-${gameId}"
+          name="title"
+          type="text"
+          value="${escapeAttribute(game.title)}"
+          required
+        />
+      </div>
+
+      <div class="field">
+        <label for="gameEditObjective-${gameId}">${escapeHtml(
+          t("games.add.objectiveLabel")
+        )}</label>
+        <textarea
+          id="gameEditObjective-${gameId}"
+          name="currentObjective"
+          rows="3"
+          placeholder="${escapeAttribute(t("games.add.objectivePlaceholder"))}"
+        >${currentObjective}</textarea>
+      </div>
+
+      <p class="game-action-feedback" data-game-action-feedback></p>
+
+      <button type="submit" class="primary-button">
+        ${escapeHtml(t("tracker.actionSheetSections.saveGoalDetails"))}
+      </button>
+    </form>
+
+    <details class="game-action-sheet-subsection">
+      <summary class="game-action-sheet-subsummary">
+        ${escapeHtml(t("tracker.actionSheetSections.cardImageTitle"))}
+      </summary>
+      <div class="game-action-sheet-subsection-body">
+        <div class="game-actions game-actions-sheet">
+          ${createActionButton("pick-cover-art", game.id, {
+            label: game.coverImage
+              ? t("tracker.actionsMenu.changeCover")
+              : t("tracker.actionsMenu.addCover"),
+            className: "secondary-button",
+          })}
+        </div>
+
+        <details class="game-action-sheet-subsection game-action-sheet-subsection-nested">
+          <summary class="game-action-sheet-subsummary">
+            ${escapeHtml(t("tracker.actionSheetSections.useBuiltInCover"))}
+          </summary>
+          <div class="game-action-sheet-subsection-body">
+            <div class="built-in-cover-button-grid">
+              ${renderBuiltInCoverActionButtons(game)}
+            </div>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <details class="game-action-sheet-subsection">
+      <summary class="game-action-sheet-subsummary">
+        ${escapeHtml(t("tracker.actionSheetSections.bannerImageTitle"))}
+      </summary>
+      <div class="game-action-sheet-subsection-body">
+        <div class="game-actions game-actions-sheet">
+          ${createActionButton("pick-banner-art", game.id, {
+            label: game.bannerImage
+              ? t("tracker.actionsMenu.changeBanner")
+              : t("tracker.actionsMenu.addBanner"),
+            className: "secondary-button",
+          })}
+          ${
+            game.coverImage || game.bannerImage
+              ? createActionButton("clear-art", game.id, {
+                  label: t("tracker.actionsMenu.clearArt"),
+                  className: "secondary-button action-danger",
+                })
+              : ""
+          }
+          ${
+            game.status === GAME_STATUSES.COMPLETED
+              ? createActionButton("download-card", game.id, {
+                  label: t("tracker.actionsMenu.downloadCard"),
+                  className: "secondary-button action-success",
+                })
+              : ""
+          }
         </div>
       </div>
-    </div>
+    </details>
   `;
 }
 

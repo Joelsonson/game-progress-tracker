@@ -132,6 +132,22 @@ const translations = {
       actionSheetEyebrow: "Tracker actions",
       actionSheetBody: "Choose what to do next.",
       actionSheetDone: "Done",
+      actionSheetSections: {
+        logSessionTitle: "Log a session",
+        logSessionBody: "Save progress for this goal without leaving the sheet.",
+        logSessionLockedBody:
+          "Move this goal into In Progress before logging from here.",
+        changeStatusTitle: "Change status",
+        changeStatusBody:
+          "Pause it, move it, finish it, or make it your Focus Goal.",
+        editGoalTitle: "Edit goal details",
+        editGoalBody:
+          "Update the title, current objective, and artwork when you need to.",
+        saveGoalDetails: "Save goal details",
+        cardImageTitle: "Card image",
+        bannerImageTitle: "Banner image",
+        useBuiltInCover: "Use built-in card image",
+      },
       actionSheetMeta: ({ platform, difficulty, rewardXp }) =>
         `${platform} • ${difficulty} • +${rewardXp} XP completion reward`,
       actionSheetMetaNoReward: ({ platform, difficulty }) =>
@@ -329,6 +345,7 @@ const translations = {
         makeMainRestricted: "Only in-progress goals can be your Focus Goal.",
         nowMain: ({ title }) => `"${title}" is now your Focus Goal.`,
         clearedArt: ({ title }) => `Cleared images for "${title}".`,
+        detailsUpdated: ({ title }) => `Updated details for "${title}".`,
         savedCard: ({ title }) => `Saved a completion card for "${title}".`,
         statusNotSupported: "That status change is not supported.",
         movedStatus: ({ title, statusLabel }) =>
@@ -818,6 +835,22 @@ const translations = {
       actionSheetEyebrow: "トラッカー操作",
       actionSheetBody: "次に何をするか選んでください。",
       actionSheetDone: "完了",
+      actionSheetSections: {
+        logSessionTitle: "セッションを記録",
+        logSessionBody: "この画面を離れずに、この目標の進捗を記録できます。",
+        logSessionLockedBody:
+          "ここから記録するには、この目標を「進行中」にしてください。",
+        changeStatusTitle: "状態を変更",
+        changeStatusBody:
+          "一時停止、移動、完了、フォーカス目標への設定を行えます。",
+        editGoalTitle: "目標の詳細を編集",
+        editGoalBody:
+          "タイトル、現在の目標、画像を必要なときに更新できます。",
+        saveGoalDetails: "目標の詳細を保存",
+        cardImageTitle: "カード画像",
+        bannerImageTitle: "バナー画像",
+        useBuiltInCover: "内蔵カード画像を使う",
+      },
       actionSheetMeta: ({ platform, difficulty, rewardXp }) =>
         `${platform} • ${difficulty} • 完了報酬 +${rewardXp} XP`,
       actionSheetMetaNoReward: ({ platform, difficulty }) =>
@@ -1014,6 +1047,7 @@ const translations = {
         makeMainRestricted: "フォーカス目標にできるのは進行中の目標だけです。",
         nowMain: ({ title }) => `「${title}」をフォーカス目標にしました。`,
         clearedArt: ({ title }) => `「${title}」の画像を削除しました。`,
+        detailsUpdated: ({ title }) => `「${title}」の詳細を更新しました。`,
         savedCard: ({ title }) => `「${title}」の完了カードを保存しました。`,
         statusNotSupported: "その状態変更はサポートされていません。",
         movedStatus: ({ title, statusLabel }) =>
