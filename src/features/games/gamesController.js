@@ -223,6 +223,10 @@ export async function handleAddGame(event) {
   }
 
   try {
+    if (!appState.builtInCoverImageOptions.length) {
+      await primeBuiltInCoverImageOptions();
+    }
+
     const uploadedCoverImage = await optimizeUploadedImage(
       coverImageInput.files?.[0],
       "cover"

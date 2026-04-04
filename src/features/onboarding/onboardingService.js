@@ -78,14 +78,14 @@ export const ONBOARDING_STEPS = [
   {
     id: ONBOARDING_STEP_IDS.TRACKER,
     kind: "spotlight",
-    screenId: "tracker",
-    target: "tracker-panel",
+    screenId: "character",
+    target: "character-panel",
     locksBodyScroll: true,
     sprite: ONBOARDING_SPRITE,
-    eyebrowKey: "onboarding.steps.tracker.eyebrow",
-    titleKey: "onboarding.steps.tracker.title",
-    bodyKey: "onboarding.steps.tracker.body",
-    detailKey: "onboarding.steps.tracker.detail",
+    eyebrowKey: "onboarding.steps.character.eyebrow",
+    titleKey: "onboarding.steps.character.title",
+    bodyKey: "onboarding.steps.character.body",
+    detailKey: "onboarding.steps.character.detail",
   },
 ];
 

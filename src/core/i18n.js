@@ -610,20 +610,20 @@ const translations = {
             "As soon as a session is saved, the guide will take you to the payoff.",
         },
         homeJourney: {
-          eyebrow: "See the payoff",
+          eyebrow: "Journey tab",
           title: "Your progress keeps me moving",
           body:
-            "Tracking and logging sessions against your goal keeps me going. Check the Journey and Character tabs to help me progress.",
+            "Tracking and logging sessions against your goals keeps me going. Here in the Journey tab you'll need to make important decisions that could mean life or death for me.",
           detail:
-            "This is the emotional payoff screen after you keep logging.",
+            "What you do in real life feeds the road I survive on here.",
         },
-        tracker: {
-          eyebrow: "Keep things tidy",
-          title: "Manage your goals here",
+        character: {
+          eyebrow: "Character tab",
+          title: "Level up IRL and in game",
           body:
-            "Tracker is where you review goals, update status, and keep the run organized.",
+            "As you make progress in real life, I gain XP too. Manage my stats, inventory, health and hunger here to keep me alive.",
           detail:
-            "If you want to review this flow again, open Settings and launch the onboarding anytime.",
+            "This is where your real-life progress turns into survival prep.",
         },
       },
     },
@@ -1310,20 +1310,20 @@ const translations = {
             "セッションが保存されると、次に進捗の見返りが見える画面へ移動します。",
         },
         homeJourney: {
-          eyebrow: "見返りを見る",
+          eyebrow: "Journeyタブ",
           title: "あなたの進捗で私が進める",
           body:
-            "目標を追いかけてセッションを記録すると、私の旅も進みます。Journey と Character タブも見てみてください。",
+            "目標を追いかけてセッションを記録すると、私は進み続けられます。Journeyタブでは、生き延びるために時には命に関わる判断もしなければなりません。",
           detail:
-            "記録を続けたくなる理由を一番感じやすい場所です。",
+            "現実での積み重ねが、そのままこの旅路の選択と結果につながります。",
         },
-        tracker: {
-          eyebrow: "整理する場所",
-          title: "目標一覧はここで管理する",
+        character: {
+          eyebrow: "Characterタブ",
+          title: "現実でもゲームでもレベルアップ",
           body:
-            "トラッカーでは、目標の見直し、状態変更、一覧の整理をまとめて行えます。",
+            "現実で進捗を出すほど、私もXPを獲得します。ここでステータス、持ち物、体力、空腹を管理して生き延びさせてください。",
           detail:
-            "この流れをまた見たくなったら、設定からいつでもオンボーディングを開けます。",
+            "次の旅路に備えるための準備画面です。",
         },
       },
     },
