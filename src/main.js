@@ -148,12 +148,14 @@ const APP_BOOT_SPLASH_FAILSAFE_MS = 2600;
 const JOURNEY_SYNC_TIMEOUT_MS = 1800;
 
 async function init() {
+  setBootPhase("opening local data");
   const bootSplashFailsafeId = window.setTimeout(() => {
     dismissAppBootSplash({ immediate: true });
   }, APP_BOOT_SPLASH_FAILSAFE_MS);
 
   try {
     appState.db = await openDB();
+    setBootPhase("preparing interface");
     appState.renderApp = renderApp;
     appState.themePreference = getStoredThemePreference();
     appState.locale = getStoredLocalePreference();
@@ -162,13 +164,16 @@ async function init() {
     await repairGamesIfNeeded();
     bindEvents();
     setActiveScreen(getPreferredScreenId());
+    setBootPhase("rendering screens");
     await renderApp();
     window.clearTimeout(bootSplashFailsafeId);
+    markBootReady();
     dismissAppBootSplash();
     await maybeAutoStartOnboarding();
   } catch (error) {
     window.clearTimeout(bootSplashFailsafeId);
     console.error("Failed to initialize app:", error);
+    markBootFailed(error);
     dismissAppBootSplash({ immediate: true });
     showMessage(formMessage, t("messages.initError"), true);
   }
@@ -413,6 +418,7 @@ function dismissAppBootSplash({ immediate = false } = {}) {
 }
 
 export async function renderApp() {
+  setBootPhase("loading saved goals");
   const [gamesRaw, sessionsRaw, idleJourneyRaw, focusedGoalsRaw] = await Promise.all([
     getAllGames(appState.db),
     getAllSessions(appState.db),
@@ -426,6 +432,7 @@ export async function renderApp() {
   const sortedGames = sortGames(games);
   const sessionStats = buildSessionStats(sessions);
   const xpSummary = buildXpSummary(sortedGames, sessions);
+  setBootPhase("syncing journey");
   const idleJourney = await syncJourneyStateSafely(
     idleJourneyRaw,
     sortedGames,
@@ -435,6 +442,7 @@ export async function renderApp() {
   const journeySupplies = buildJourneySupplies(sortedGames, sessions, idleJourney);
   appState.latestIdleJourney = idleJourney;
 
+  setBootPhase("drawing screens");
   renderHomeOverview(
     sortedGames,
     sessions,
@@ -466,6 +474,7 @@ export async function renderApp() {
     games: sortedGames,
     sessions,
   });
+  setBootPhase("ready");
 }
 
 async function syncJourneyStateSafely(rawState, games, sessions, xpSummary) {
@@ -502,6 +511,37 @@ function waitForMs(durationMs) {
   return new Promise((resolve) => {
     window.setTimeout(resolve, Math.max(0, durationMs));
   });
+}
+
+function setBootPhase(phase) {
+  try {
+    window.__setJourneyLogBootPhase?.(phase);
+  } catch (error) {
+    // Ignore boot watchdog update failures.
+  }
+}
+
+function markBootReady() {
+  try {
+    window.__markJourneyLogReady?.();
+  } catch (error) {
+    // Ignore boot watchdog update failures.
+  }
+}
+
+function markBootFailed(error) {
+  const message =
+    error instanceof Error && error.message
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : "";
+
+  try {
+    window.__markJourneyLogFailed?.(message);
+  } catch (watchdogError) {
+    // Ignore boot watchdog update failures.
+  }
 }
 
 function handleThemePreferenceChange(event) {

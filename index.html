@@ -11,8 +11,11 @@
         const themePreference = storedThemePreference === "light" || storedThemePreference === "dark" || storedThemePreference === "system"
           ? storedThemePreference
           : "dark";
+        const prefersDarkSystem = typeof window.matchMedia === "function"
+          ? window.matchMedia("(prefers-color-scheme: dark)").matches
+          : false;
         const isDark = themePreference === "dark"
-          || (themePreference === "system" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
+          || (themePreference === "system" && prefersDarkSystem);
 
         if (themePreference === "system") {
           document.documentElement.removeAttribute("data-theme");
@@ -20,9 +23,10 @@
           document.documentElement.setAttribute("data-theme", themePreference);
         }
 
-        document
-          .querySelector('meta[name="theme-color"]')
-          ?.setAttribute("content", isDark ? "#242424" : "#f8f4f1");
+        const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+        if (themeColorMeta) {
+          themeColorMeta.setAttribute("content", isDark ? "#242424" : "#f8f4f1");
+        }
       } catch (error) {
         document.documentElement.setAttribute("data-theme", "dark");
       }
@@ -34,11 +38,11 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
     />
-    <link rel="stylesheet" href="./styles/tokens.css?v=20260404f" />
-    <link rel="stylesheet" href="./styles/base.css?v=20260404f" />
-    <link rel="stylesheet" href="./styles/layout.css?v=20260404f" />
-    <link rel="stylesheet" href="./styles/components.css?v=20260404f" />
-    <link rel="stylesheet" href="./styles/screens.css?v=20260404f" />
+    <link rel="stylesheet" href="./styles/tokens.css?v=20260404h" />
+    <link rel="stylesheet" href="./styles/base.css?v=20260404h" />
+    <link rel="stylesheet" href="./styles/layout.css?v=20260404h" />
+    <link rel="stylesheet" href="./styles/components.css?v=20260404h" />
+    <link rel="stylesheet" href="./styles/screens.css?v=20260404h" />
   </head>
   <body>
     <div id="appBootSplash" class="app-boot-splash" aria-live="polite">
@@ -66,6 +70,123 @@
         </div>
       </section>
     </div>
+
+    <div id="appBootFallbackNotice" class="app-boot-fallback-notice" hidden>
+      <div class="app-boot-fallback-copy">
+        <strong>Startup is taking longer than expected.</strong>
+        <p id="appBootFallbackMessage">
+          The app is still trying to load in the background.
+        </p>
+      </div>
+      <button type="button" class="secondary-button" onclick="window.location.reload()">
+        Reload
+      </button>
+    </div>
+
+    <script>
+      (() => {
+        const bootState = {
+          phase: "starting",
+          ready: false,
+        };
+
+        function getSplash() {
+          return document.getElementById("appBootSplash");
+        }
+
+        function getNotice() {
+          return document.getElementById("appBootFallbackNotice");
+        }
+
+        function getMessage() {
+          return document.getElementById("appBootFallbackMessage");
+        }
+
+        function hideSplash() {
+          const splash = getSplash();
+          if (!splash || splash.hidden) return;
+
+          splash.classList.add("is-ready");
+          splash.hidden = true;
+          if (document.body && document.body.classList) {
+            document.body.classList.remove("has-overlay");
+          }
+        }
+
+        function showNotice(message) {
+          const notice = getNotice();
+          const messageEl = getMessage();
+          if (messageEl && message) {
+            messageEl.textContent = message;
+          }
+          if (notice) {
+            notice.hidden = false;
+          }
+        }
+
+        window.__setJourneyLogBootPhase = (phase) => {
+          bootState.phase = String(phase || "").trim() || bootState.phase;
+        };
+
+        window.__markJourneyLogReady = () => {
+          bootState.ready = true;
+          const notice = getNotice();
+          if (notice) {
+            notice.hidden = true;
+          }
+        };
+
+        window.__markJourneyLogFailed = (message) => {
+          if (bootState.ready) return;
+
+          const safeMessage = String(message || "").trim();
+          showNotice(
+            safeMessage ||
+              `Startup paused during ${bootState.phase}. The app may still finish loading in the background.`
+          );
+          hideSplash();
+        };
+
+        window.addEventListener(
+          "error",
+          (event) => {
+            if (bootState.ready) return;
+
+            const errorMessage =
+              (event && event.error && event.error.message) ||
+              (event && event.message) ||
+              "";
+
+            window.__markJourneyLogFailed(errorMessage);
+          },
+          true
+        );
+
+        window.addEventListener(
+          "unhandledrejection",
+          (event) => {
+            if (bootState.ready) return;
+
+            const reason = event && "reason" in event ? event.reason : null;
+            const errorMessage =
+              reason && typeof reason === "object" && "message" in reason
+                ? reason.message
+                : String(reason || "");
+
+            window.__markJourneyLogFailed(errorMessage);
+          },
+          true
+        );
+
+        window.setTimeout(() => {
+          if (bootState.ready) return;
+
+          window.__markJourneyLogFailed(
+            `Startup paused during ${bootState.phase}. The app is still trying to load.`
+          );
+        }, 3800);
+      })();
+    </script>
 
     <main class="app-shell">
       <header class="hero">
@@ -882,6 +1003,6 @@
     </div>
     <div id="toastViewport" class="toast-viewport" aria-live="polite" aria-atomic="true"></div>
 
-    <script type="module" src="./src/main.js?v=20260404g"></script>
+    <script type="module" src="./src/main.js?v=20260404h"></script>
   </body>
 </html>
