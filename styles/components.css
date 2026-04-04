@@ -2182,6 +2182,11 @@
   line-height: 1.56;
 }
 
+.journey-boss-reward-head {
+  display: grid;
+  gap: 4px;
+}
+
 .journey-boss-outcome-grid {
   display: grid;
   gap: 10px;
@@ -2217,6 +2222,28 @@
   color: var(--muted);
   font-size: 0.82rem;
   line-height: 1.45;
+}
+
+.journey-boss-reward-card.is-positive {
+  background:
+    linear-gradient(180deg, rgba(52, 211, 153, 0.14), rgba(var(--surface-rgb), 0.8)),
+    rgba(var(--panel-rgb), 0.72);
+  border-color: rgba(52, 211, 153, 0.22);
+}
+
+.journey-boss-reward-card.is-positive strong {
+  color: var(--success);
+}
+
+.journey-boss-reward-card.is-neutral {
+  background:
+    linear-gradient(180deg, rgba(var(--accent-rgb), 0.14), rgba(var(--surface-rgb), 0.8)),
+    rgba(var(--panel-rgb), 0.72);
+  border-color: rgba(var(--accent-rgb), 0.22);
+}
+
+.journey-boss-reward-card.is-neutral strong {
+  color: var(--accent-2);
 }
 
 .journey-outcome-choice-text {

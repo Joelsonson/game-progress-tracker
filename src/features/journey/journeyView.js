@@ -49,6 +49,7 @@ import {
   getSupportedJourneyBossBattleIndexes,
   getJourneyStoryLevelState,
   getJourneyStatusLabel,
+  getJourneyWeaponMeta,
   getJourneyWeaponInventory,
   getJourneyZoneName,
   getRecoveryText,
@@ -1251,6 +1252,7 @@ function renderJourneyBossOutcomePanel(resolution, beforeState, afterState) {
   const outcomeTone = getJourneyBossOutcomeTone(resolution.outcomeMeta);
   const outcomeTitle = resolution.outcomeMeta || "Battle resolved";
   const summaryCards = buildJourneyBossOutcomeCards(beforeState, afterState, resolution);
+  const rewardCards = buildJourneyBossRewardCards(beforeState, afterState);
 
   return `
     <p class="journey-overline">Battle result</p>
@@ -1259,7 +1261,6 @@ function renderJourneyBossOutcomePanel(resolution, beforeState, afterState) {
         ${escapeHtml(outcomeTitle)}
       </span>
     </div>
-    ${renderJourneyRollSummaryBlock(resolution, { compact: true })}
     <p class="journey-boss-outcome-copy">${escapeHtml(
       resolution.resultText || t("journeyUi.modals.roadAnswered")
     )}</p>
@@ -1271,6 +1272,31 @@ function renderJourneyBossOutcomePanel(resolution, beforeState, afterState) {
               .map(
                 (card) => `
                   <article class="journey-boss-outcome-card">
+                    <span>${escapeHtml(card.label)}</span>
+                    <strong>${escapeHtml(card.primary)}</strong>
+                    ${card.secondary ? `<small>${escapeHtml(card.secondary)}</small>` : ""}
+                  </article>
+                `
+              )
+              .join("")}
+          </div>
+        `
+        : ""
+    }
+    ${
+      rewardCards.length
+        ? `
+          <div class="journey-boss-reward-head">
+            <p class="journey-overline">Rewards secured</p>
+            <p class="journey-boss-outcome-kicker">What changed from the full battle, not just the last exchange.</p>
+          </div>
+          <div class="journey-boss-outcome-grid">
+            ${rewardCards
+              .map(
+                (card) => `
+                  <article class="journey-boss-outcome-card journey-boss-reward-card ${escapeAttribute(
+                    card.tone || ""
+                  )}">
                     <span>${escapeHtml(card.label)}</span>
                     <strong>${escapeHtml(card.primary)}</strong>
                     ${card.secondary ? `<small>${escapeHtml(card.secondary)}</small>` : ""}
@@ -1348,6 +1374,111 @@ function buildJourneyBossOutcomeCards(beforeState, afterState, resolution) {
       label: "Aftermath",
       primary: aftermathDetails[0],
       secondary: aftermathDetails.slice(1).join(" • "),
+    });
+  }
+
+  return cards;
+}
+
+function buildJourneyBossRewardCards(beforeState, afterState) {
+  if (!beforeState || !afterState) {
+    return [];
+  }
+
+  const cards = [];
+  const beforeWeapons = new Set([
+    ...(beforeState.inventoryWeaponKeys || []),
+    ...(beforeState.pendingWeaponKeys || []),
+  ]);
+  const afterInventory = new Set(afterState.inventoryWeaponKeys || []);
+  const afterPending = new Set(afterState.pendingWeaponKeys || []);
+  const gainedWeapons = [
+    ...(afterState.inventoryWeaponKeys || []),
+    ...(afterState.pendingWeaponKeys || []),
+  ].filter((weaponKey) => !beforeWeapons.has(weaponKey));
+
+  for (const weaponKey of gainedWeapons) {
+    const weaponMeta = getJourneyWeaponMeta(weaponKey);
+    if (!weaponMeta) continue;
+
+    const addedToInventory = afterInventory.has(weaponKey);
+    const equipped = addedToInventory && afterState.equippedWeaponKey === weaponKey;
+    const tierLabel = getJourneyWeaponTier(weaponKey, weaponMeta.tier);
+    cards.push({
+      label: "Weapon found",
+      primary: getJourneyWeaponLabel(weaponKey, weaponMeta.label),
+      secondary: addedToInventory
+        ? equipped
+          ? "Equipped and ready for the next stretch."
+          : `${tierLabel} weapon added to your inventory.`
+        : afterPending.has(weaponKey)
+          ? "Bag full. It is waiting on the Character screen until you keep or replace a weapon."
+          : `${tierLabel} weapon secured.`,
+      tone: "is-positive",
+    });
+  }
+
+  if (beforeState.bagKey !== afterState.bagKey) {
+    const bagMeta = getJourneyBagMeta(afterState.bagKey);
+    cards.push({
+      label: "Bag upgrade",
+      primary: getJourneyBagLabel(afterState.bagKey, bagMeta.label),
+      secondary: `${bagMeta.weaponSlots} weapon slot${
+        bagMeta.weaponSlots === 1 ? "" : "s"
+      } available.`,
+      tone: "is-positive",
+    });
+  }
+
+  const bonusSkillPointDelta =
+    Math.round(Number(afterState.bonusSkillPoints) || 0) -
+    Math.round(Number(beforeState.bonusSkillPoints) || 0);
+  if (bonusSkillPointDelta > 0) {
+    cards.push({
+      label: "Skill points",
+      primary: formatJourneyDelta(bonusSkillPointDelta),
+      secondary: "Ready to spend from your Character build.",
+      tone: "is-positive",
+    });
+  }
+
+  const rationDelta =
+    Math.round(Number(afterState.bonusRations) || 0) -
+    Math.round(Number(beforeState.bonusRations) || 0);
+  if (rationDelta > 0) {
+    cards.push({
+      label: "Rations",
+      primary: formatJourneyDelta(rationDelta),
+      secondary: "Stored for the next stretch.",
+      tone: "is-positive",
+    });
+  }
+
+  const tonicDelta =
+    Math.round(Number(afterState.bonusTonics) || 0) -
+    Math.round(Number(beforeState.bonusTonics) || 0);
+  if (tonicDelta > 0) {
+    cards.push({
+      label: "Tonics",
+      primary: formatJourneyDelta(tonicDelta),
+      secondary: "Held in reserve for recovery.",
+      tone: "is-positive",
+    });
+  }
+
+  const beforeBonusIds = new Set(
+    (beforeState.permanentBonuses || []).map((entry) => entry.id)
+  );
+  const gainedBonuses = (afterState.permanentBonuses || []).filter(
+    (entry) => !beforeBonusIds.has(entry.id)
+  );
+  for (const bonus of gainedBonuses) {
+    const statLabel = getJourneyStatLabel(bonus.statKey);
+    cards.push({
+      label: "Boon gained",
+      primary: bonus.title,
+      secondary: `${statLabel} ${formatSignedNumber(bonus.amount)}`,
+      tone: bonus.amount > 0 ? "is-positive" : "is-neutral",
     });
   }
 
