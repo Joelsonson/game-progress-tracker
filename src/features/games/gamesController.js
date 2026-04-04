@@ -2,11 +2,15 @@ import { isMainEligibleStatus, normalizeGameRecord } from "../../data/db.js";
 import { addGame, getAllGames, setMainGame, updateGame, updateGames } from "../../data/gamesRepo.js";
 import { getAllSessions } from "../../data/sessionsRepo.js";
 import {
-  builtInCoverPickerEl,
+  bannerImagePreviewEl,
+  bannerImagePreviewImageEl,
   bannerArtPickerInput,
   bannerImageInput,
+  builtInCoverLibraryModal,
   coverArtPickerInput,
   coverImageInput,
+  coverImagePreviewEl,
+  coverImagePreviewImageEl,
   difficultyRewardPreview,
   formMessage,
   gameActionsBodyEl,
@@ -14,11 +18,13 @@ import {
   gameActionsModal,
   gameActionsTitleEl,
   gameForm,
-  gameDifficultyInputs,
+  gameDifficultyRangeInput,
+  gameDifficultySelectorEl,
+  gameDifficultyValueInput,
   gameStatusInput,
-  getDefaultCoverImageInputs,
   notesInput,
   platformInput,
+  selectedBuiltInCoverImageInput,
   titleInput,
 } from "../../core/dom.js";
 import {
@@ -35,9 +41,9 @@ import {
   buildGameForStatus,
   buildSessionStats,
   enforceMainGameRules,
-  getDifficultyPreviewText,
   getErrorMessage,
   getGameCompletionXp,
+  getGameDifficultyLabel,
   getStatusLabel,
   hasGameChanged,
   isCropCancelError,
@@ -46,14 +52,35 @@ import {
 } from "../../core/formatters.js";
 import { t } from "../../core/i18n.js";
 import { appState } from "../../core/state.js";
-import { openFilePicker, scrollDeck, showMessage, showToast } from "../../core/ui.js";
+import {
+  openFilePicker,
+  scrollDeck,
+  showMessage,
+  showToast,
+  syncBodyScrollLock,
+} from "../../core/ui.js";
 import { downloadCompletionCard } from "../art/completionCard.js";
 import { optimizeUploadedImage } from "../art/imageCropper.js";
-import { notifyOnboardingGoalSaved } from "../onboarding/onboardingController.js";
+import {
+  notifyOnboardingGoalSaved,
+  notifyOnboardingSessionSaved,
+} from "../onboarding/onboardingController.js";
 import { saveSessionEntry } from "../sessions/sessionsController.js";
 import { renderBuiltInCoverPicker, renderGameActionSheet } from "./gamesView.js";
 
 let builtInCoverDiscoveryPromise = null;
+const GAME_DIFFICULTY_ORDER = [
+  GAME_DIFFICULTIES.NOT_APPLICABLE,
+  GAME_DIFFICULTIES.VERY_EASY,
+  GAME_DIFFICULTIES.EASY,
+  GAME_DIFFICULTIES.STANDARD,
+  GAME_DIFFICULTIES.HARD,
+  GAME_DIFFICULTIES.VERY_HARD,
+];
+const addGoalPreviewObjectUrls = {
+  cover: "",
+  banner: "",
+};
 
 export function openGameActionsSheet(game) {
   if (!gameActionsModal || !gameActionsBodyEl || !gameActionsTitleEl || !gameActionsMetaEl) {
@@ -221,6 +248,86 @@ export async function primeBuiltInCoverImageOptions({ force = false } = {}) {
   return builtInCoverDiscoveryPromise;
 }
 
+export function openBuiltInCoverLibraryModal() {
+  if (!builtInCoverLibraryModal) return;
+
+  void primeBuiltInCoverImageOptions();
+  builtInCoverLibraryModal.hidden = false;
+  syncBodyScrollLock();
+}
+
+export function closeBuiltInCoverLibraryModal() {
+  if (!builtInCoverLibraryModal) return;
+
+  builtInCoverLibraryModal.hidden = true;
+  syncBodyScrollLock();
+}
+
+export function handleBuiltInCoverLibraryModalClick(event) {
+  if (!(event.target instanceof HTMLElement)) return;
+  if (event.target.closest("[data-close-built-in-cover-library]")) {
+    closeBuiltInCoverLibraryModal();
+  }
+}
+
+export function handleBuiltInCoverLibraryChange(event) {
+  const input = event.target;
+
+  if (
+    !(input instanceof HTMLInputElement) ||
+    input.name !== "builtInCoverLibraryOption"
+  ) {
+    return;
+  }
+
+  if (selectedBuiltInCoverImageInput) {
+    selectedBuiltInCoverImageInput.value = String(input.value || "").trim();
+  }
+
+  if (coverImageInput) {
+    coverImageInput.value = "";
+  }
+
+  renderBuiltInCoverPicker();
+  syncAddGameArtPreviews();
+  closeBuiltInCoverLibraryModal();
+}
+
+export function handleAddGameArtInputChange(event) {
+  if (!(event.target instanceof HTMLInputElement)) {
+    return;
+  }
+
+  if (event.target === coverImageInput && coverImageInput?.files?.length) {
+    if (selectedBuiltInCoverImageInput) {
+      selectedBuiltInCoverImageInput.value = "";
+    }
+    renderBuiltInCoverPicker();
+  }
+
+  syncAddGameArtPreviews();
+}
+
+export function syncAddGameArtPreviews() {
+  syncAddGamePreview("cover", {
+    file: coverImageInput?.files?.[0] || null,
+    staticSrc: coverImageInput?.files?.length
+      ? ""
+      : String(selectedBuiltInCoverImageInput?.value || "").trim(),
+    shell: coverImagePreviewEl,
+    image: coverImagePreviewImageEl,
+    label: t("games.add.coverLabel"),
+  });
+
+  syncAddGamePreview("banner", {
+    file: bannerImageInput?.files?.[0] || null,
+    staticSrc: "",
+    shell: bannerImagePreviewEl,
+    image: bannerImagePreviewImageEl,
+    label: t("games.add.bannerLabel"),
+  });
+}
+
 export async function handleAddGame(event) {
   event.preventDefault();
 
@@ -285,6 +392,8 @@ export async function handleAddGame(event) {
     gameForm.reset();
     gameStatusInput.value = DEFAULT_GAME_STATUS;
     resetGameDifficultySelection();
+    renderBuiltInCoverPicker();
+    syncAddGameArtPreviews();
     syncGameDifficultyPresentation();
 
     if (newGame.status === GAME_STATUSES.COMPLETED) {
@@ -323,11 +432,10 @@ export async function handleAddGame(event) {
 }
 
 export function syncGameDifficultyPresentation() {
-  if (!difficultyRewardPreview) return;
-
   const difficulty = getSelectedGameDifficulty();
   const completedOption = gameStatusInput?.querySelector('option[value="completed"]');
   const canComplete = isGameCompletable(difficulty);
+  const selectedIndex = GAME_DIFFICULTY_ORDER.indexOf(difficulty);
 
   if (completedOption instanceof HTMLOptionElement) {
     completedOption.disabled = !canComplete;
@@ -337,19 +445,65 @@ export function syncGameDifficultyPresentation() {
     gameStatusInput.value = DEFAULT_GAME_STATUS;
   }
 
-  difficultyRewardPreview.textContent = getDifficultyPreviewText(difficulty);
+  if (gameDifficultyValueInput) {
+    gameDifficultyValueInput.value = difficulty;
+  }
+
+  if (gameDifficultyRangeInput) {
+    const safeIndex = selectedIndex >= 0 ? selectedIndex : getDefaultDifficultyIndex();
+    const progressPercent =
+      (safeIndex / Math.max(1, GAME_DIFFICULTY_ORDER.length - 1)) * 100;
+
+    gameDifficultyRangeInput.value = String(safeIndex);
+    gameDifficultyRangeInput.style.setProperty(
+      "--difficulty-progress",
+      `${progressPercent.toFixed(2)}%`
+    );
+    gameDifficultyRangeInput.setAttribute(
+      "aria-valuetext",
+      getGameDifficultyLabel(difficulty)
+    );
+  }
+
+  if (gameDifficultySelectorEl) {
+    const stops = gameDifficultySelectorEl.querySelectorAll("[data-difficulty-stop]");
+    for (const stop of stops) {
+      if (!(stop instanceof HTMLElement)) continue;
+      stop.classList.toggle("is-active", stop.dataset.difficultyStop === difficulty);
+    }
+  }
+
+  if (difficultyRewardPreview) {
+    difficultyRewardPreview.innerHTML = buildDifficultyPreviewMarkup(difficulty);
+  }
 }
 
 function getSelectedGameDifficulty() {
-  const selectedInput = gameForm?.querySelector('input[name="gameDifficulty"]:checked');
-  return isValidGameDifficulty(selectedInput?.value)
-    ? selectedInput.value
-    : DEFAULT_GAME_DIFFICULTY;
+  const fallbackIndex = Number.parseInt(gameDifficultyRangeInput?.value || "", 10);
+  const nextDifficulty =
+    GAME_DIFFICULTY_ORDER[
+      Number.isFinite(fallbackIndex) ? Math.max(0, Math.min(fallbackIndex, GAME_DIFFICULTY_ORDER.length - 1)) : getDefaultDifficultyIndex()
+    ];
+
+  if (isValidGameDifficulty(nextDifficulty)) {
+    return nextDifficulty;
+  }
+
+  const currentValue = String(gameDifficultyValueInput?.value || "").trim();
+  if (isValidGameDifficulty(currentValue)) {
+    return currentValue;
+  }
+
+  return DEFAULT_GAME_DIFFICULTY;
 }
 
 function resetGameDifficultySelection() {
-  for (const input of gameDifficultyInputs) {
-    input.checked = input.value === DEFAULT_GAME_DIFFICULTY;
+  if (gameDifficultyRangeInput) {
+    gameDifficultyRangeInput.value = String(getDefaultDifficultyIndex());
+  }
+
+  if (gameDifficultyValueInput) {
+    gameDifficultyValueInput.value = DEFAULT_GAME_DIFFICULTY;
   }
 }
 
@@ -358,10 +512,7 @@ function isValidGameDifficulty(value) {
 }
 
 function getSelectedBundledCoverImage() {
-  const selectedInput = getDefaultCoverImageInputs().find((input) => input.checked);
-  const selectedValue = selectedInput?.value || "";
-
-  return String(selectedValue || "").trim();
+  return String(selectedBuiltInCoverImageInput?.value || "").trim();
 }
 
 function getRandomBuiltInCoverImage() {
@@ -375,6 +526,57 @@ function getRandomBuiltInCoverImage() {
 
   const randomIndex = Math.floor(Math.random() * options.length);
   return String(options[randomIndex]?.src || "").trim();
+}
+
+function getDefaultDifficultyIndex() {
+  const defaultIndex = GAME_DIFFICULTY_ORDER.indexOf(DEFAULT_GAME_DIFFICULTY);
+  return defaultIndex >= 0 ? defaultIndex : 0;
+}
+
+function buildDifficultyPreviewMarkup(difficulty) {
+  const label = getGameDifficultyLabel(difficulty);
+  const rewardValue = isGameCompletable(difficulty)
+    ? `+${getGameCompletionXp({ difficulty })} XP`
+    : t("games.add.noRewardValue");
+
+  return `
+    <div class="difficulty-preview-pill">
+      <span class="difficulty-preview-label">${label}</span>
+      <strong class="difficulty-preview-value">${rewardValue}</strong>
+    </div>
+  `;
+}
+
+function syncAddGamePreview(kind, { file, staticSrc, shell, image, label }) {
+  if (!(shell instanceof HTMLElement) || !(image instanceof HTMLImageElement)) {
+    return;
+  }
+
+  const nextStaticSrc = String(staticSrc || "").trim();
+  const source = file instanceof File ? URL.createObjectURL(file) : nextStaticSrc;
+  const previousObjectUrl = addGoalPreviewObjectUrls[kind];
+
+  if (previousObjectUrl) {
+    URL.revokeObjectURL(previousObjectUrl);
+    addGoalPreviewObjectUrls[kind] = "";
+  }
+
+  if (file instanceof File) {
+    addGoalPreviewObjectUrls[kind] = source;
+  }
+
+  if (source) {
+    image.hidden = false;
+    image.src = source;
+    image.alt = label;
+    shell.classList.add("is-filled");
+    return;
+  }
+
+  image.hidden = true;
+  image.removeAttribute("src");
+  image.alt = "";
+  shell.classList.remove("is-filled");
 }
 
 export async function handleListClick(event) {

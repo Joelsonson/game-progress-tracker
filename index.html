@@ -34,11 +34,11 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
     />
-    <link rel="stylesheet" href="./styles/tokens.css?v=20260404e" />
-    <link rel="stylesheet" href="./styles/base.css?v=20260404e" />
-    <link rel="stylesheet" href="./styles/layout.css?v=20260404e" />
-    <link rel="stylesheet" href="./styles/components.css?v=20260404e" />
-    <link rel="stylesheet" href="./styles/screens.css?v=20260404e" />
+    <link rel="stylesheet" href="./styles/tokens.css?v=20260404f" />
+    <link rel="stylesheet" href="./styles/base.css?v=20260404f" />
+    <link rel="stylesheet" href="./styles/layout.css?v=20260404f" />
+    <link rel="stylesheet" href="./styles/components.css?v=20260404f" />
+    <link rel="stylesheet" href="./styles/screens.css?v=20260404f" />
   </head>
   <body>
     <div id="appBootSplash" class="app-boot-splash" aria-live="polite">
@@ -174,7 +174,7 @@
                 aria-selected="false"
                 tabindex="-1"
               >
-                <span data-i18n="sessions.tabs.newGame">New Goal +</span>
+                <span data-i18n="sessions.tabs.newGame">Add a Goal</span>
               </button>
               <button
                 type="button"
@@ -312,50 +312,47 @@
                 <p class="field-hint" data-i18n="games.add.difficultyHint">
                   Pick how demanding the finish line feels. Harder completions pay out more when you mark them done.
                 </p>
-                <div id="gameDifficultySelector" class="difficulty-selector" role="radiogroup">
-                  <input id="gameDifficultyNotApplicable" type="radio" name="gameDifficulty" value="not-applicable" />
-                  <label class="difficulty-option" for="gameDifficultyNotApplicable">
-                    <span data-i18n="difficulty.notApplicable">No finish line</span>
-                    <strong data-i18n="games.add.noClearReward">No finish line</strong>
-                  </label>
-
-                  <input id="gameDifficultyVeryEasy" type="radio" name="gameDifficulty" value="very-easy" />
-                  <label class="difficulty-option" for="gameDifficultyVeryEasy">
-                    <span data-i18n="difficulty.veryEasy">Very Easy</span>
-                    <strong>+60 XP</strong>
-                  </label>
-
-                  <input id="gameDifficultyEasy" type="radio" name="gameDifficulty" value="easy" />
-                  <label class="difficulty-option" for="gameDifficultyEasy">
-                    <span data-i18n="difficulty.easy">Easy</span>
-                    <strong>+80 XP</strong>
-                  </label>
-
+                <div id="gameDifficultySelector" class="difficulty-slider-shell">
                   <input
-                    id="gameDifficultyStandard"
-                    type="radio"
+                    id="gameDifficultyValue"
                     name="gameDifficulty"
+                    type="hidden"
                     value="standard"
-                    checked
                   />
-                  <label class="difficulty-option" for="gameDifficultyStandard">
-                    <span data-i18n="difficulty.standard">Standard</span>
-                    <strong>+100 XP</strong>
-                  </label>
-
-                  <input id="gameDifficultyHard" type="radio" name="gameDifficulty" value="hard" />
-                  <label class="difficulty-option" for="gameDifficultyHard">
-                    <span data-i18n="difficulty.hard">Hard</span>
-                    <strong>+125 XP</strong>
-                  </label>
-
-                  <input id="gameDifficultyVeryHard" type="radio" name="gameDifficulty" value="very-hard" />
-                  <label class="difficulty-option" for="gameDifficultyVeryHard">
-                    <span data-i18n="difficulty.veryHard">Very Hard</span>
-                    <strong>+150 XP</strong>
-                  </label>
+                  <div class="difficulty-slider-track-shell">
+                    <input
+                      id="gameDifficultyRange"
+                      class="difficulty-range"
+                      type="range"
+                      min="0"
+                      max="5"
+                      step="1"
+                      value="3"
+                      aria-describedby="difficultyRewardPreview"
+                    />
+                  </div>
+                  <div class="difficulty-stop-row" aria-hidden="true">
+                    <span class="difficulty-stop" data-difficulty-stop="not-applicable" data-i18n="difficulty.notApplicable">
+                      No finish line
+                    </span>
+                    <span class="difficulty-stop" data-difficulty-stop="very-easy" data-i18n="difficulty.veryEasy">
+                      Very Easy
+                    </span>
+                    <span class="difficulty-stop" data-difficulty-stop="easy" data-i18n="difficulty.easy">
+                      Easy
+                    </span>
+                    <span class="difficulty-stop" data-difficulty-stop="standard" data-i18n="difficulty.standard">
+                      Standard
+                    </span>
+                    <span class="difficulty-stop" data-difficulty-stop="hard" data-i18n="difficulty.hard">
+                      Hard
+                    </span>
+                    <span class="difficulty-stop" data-difficulty-stop="very-hard" data-i18n="difficulty.veryHard">
+                      Very Hard
+                    </span>
+                  </div>
                 </div>
-                <p id="difficultyRewardPreview" class="difficulty-preview"></p>
+                <div id="difficultyRewardPreview" class="difficulty-preview" aria-live="polite"></div>
               </fieldset>
 
               <div class="field">
@@ -370,32 +367,60 @@
               </div>
 
               <div class="art-upload-grid">
-                <div class="field">
-                  <label data-i18n="games.add.defaultCoverLabel">
-                    Built-in card image
-                  </label>
-                  <div id="builtInCoverPicker" class="built-in-cover-grid"></div>
-                  <p class="field-hint" data-i18n="games.add.defaultCoverHint">
-                    Pick a bundled card image if you do not want to upload one.
-                  </p>
-                </div>
-
-                <div class="field">
-                  <label for="coverImage" data-i18n="games.add.coverLabel">Card image</label>
+                <div class="field art-preview-field">
+                  <label for="coverImage" data-i18n="games.add.coverLabel">Card Image (main image)</label>
+                  <input
+                    id="selectedBuiltInCoverImage"
+                    name="selectedBuiltInCoverImage"
+                    type="hidden"
+                    value=""
+                  />
+                  <div id="coverImagePreview" class="add-art-preview-shell is-card">
+                    <img
+                      id="coverImagePreviewImage"
+                      class="add-art-preview-media"
+                      alt=""
+                      hidden
+                    />
+                    <div class="add-art-preview-placeholder">
+                        <span data-i18n="games.add.coverPreviewEmpty">No card image selected yet</span>
+                    </div>
+                  </div>
                   <input
                     id="coverImage"
                     name="coverImage"
                     type="file"
                     accept="image/*"
                   />
+                  <div class="add-art-actions">
+                    <button
+                      id="openBuiltInCoverLibraryButton"
+                      type="button"
+                      class="secondary-button add-art-library-button"
+                      data-i18n="games.add.selectBuiltInCover"
+                    >
+                      Select from in-app library
+                    </button>
+                  </div>
                   <p class="field-hint" data-i18n="games.add.coverHint">
                     Portrait images look best. Recommended upload: 900×1200 or larger.
                     The app crops it to a 3:4 card frame after upload.
                   </p>
                 </div>
 
-                <div class="field">
-                  <label for="bannerImage" data-i18n="games.add.bannerLabel">Banner image</label>
+                <div class="field art-preview-field">
+                  <label for="bannerImage" data-i18n="games.add.bannerLabel">Banner Image (background image)</label>
+                  <div id="bannerImagePreview" class="add-art-preview-shell is-banner">
+                    <img
+                      id="bannerImagePreviewImage"
+                      class="add-art-preview-media"
+                      alt=""
+                      hidden
+                    />
+                    <div class="add-art-preview-placeholder">
+                      <span data-i18n="games.add.bannerPreviewEmpty">No banner image selected yet</span>
+                    </div>
+                  </div>
                   <input
                     id="bannerImage"
                     name="bannerImage"
@@ -583,6 +608,40 @@
               <p id="settingsMessage" class="form-message"></p>
             </article>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="builtInCoverLibraryModal" class="settings-modal built-in-cover-library-modal" hidden>
+      <div class="settings-modal-backdrop" data-close-built-in-cover-library></div>
+      <div
+        class="settings-modal-dialog built-in-cover-library-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="builtInCoverLibraryTitle"
+      >
+        <div class="settings-modal-header">
+          <div>
+            <p class="eyebrow" data-i18n="games.add.builtInLibraryEyebrow">In-app card library</p>
+            <h2 id="builtInCoverLibraryTitle" data-i18n="games.add.builtInLibraryTitle">
+              Select a card image
+            </h2>
+            <p class="muted-text" data-i18n="games.add.builtInLibraryBody">
+              Choose a built-in image for this goal.
+            </p>
+          </div>
+          <button
+            id="builtInCoverLibraryCloseButton"
+            type="button"
+            class="secondary-button icon-button"
+            data-close-built-in-cover-library
+            aria-label="Close built-in card library"
+          >
+            ✕
+          </button>
+        </div>
+        <div class="settings-modal-body">
+          <div id="builtInCoverPicker" class="built-in-cover-grid"></div>
         </div>
       </div>
     </div>
@@ -823,6 +882,6 @@
     </div>
     <div id="toastViewport" class="toast-viewport" aria-live="polite" aria-atomic="true"></div>
 
-    <script type="module" src="./src/main.js?v=20260404e"></script>
+    <script type="module" src="./src/main.js?v=20260404f"></script>
   </body>
 </html>

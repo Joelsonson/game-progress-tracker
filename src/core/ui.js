@@ -1,5 +1,6 @@
 import {
   artCropModal,
+  builtInCoverLibraryModal,
   characterSkillModalRoot,
   journeyEventModal,
   journeyOutcomeModal,
@@ -112,6 +113,7 @@ export function syncBodyScrollLock() {
     appState.cropSession ||
     characterSkillModalRoot?.firstElementChild ||
     (settingsModal && !settingsModal.hidden) ||
+    (builtInCoverLibraryModal && !builtInCoverLibraryModal.hidden) ||
     (journeyEventModal && !journeyEventModal.hidden) ||
     (journeyOutcomeModal && !journeyOutcomeModal.hidden) ||
     (artCropModal && !artCropModal.hidden)

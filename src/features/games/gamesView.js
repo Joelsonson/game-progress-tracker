@@ -5,6 +5,7 @@ import {
   homeOverviewEl,
   listSummaryEl,
   mainQuestPanelEl,
+  selectedBuiltInCoverImageInput,
 } from "../../core/dom.js";
 import {
   CARD_TIER_META,
@@ -1485,6 +1486,7 @@ function renderBuiltInCoverActionButtons(game) {
 
 function renderBuiltInCoverPickerOptions() {
   const noneLabel = t("games.add.defaultCoverNone");
+  const selectedCoverSrc = String(selectedBuiltInCoverImageInput?.value || "").trim();
   const loadingMarkup =
     appState.builtInCoverImageOptionsLoading &&
     !appState.builtInCoverImageOptions.length
@@ -1507,8 +1509,9 @@ function renderBuiltInCoverPickerOptions() {
           id="${escapeAttribute(inputId)}"
           class="built-in-cover-input"
           type="radio"
-          name="defaultCoverImage"
+          name="builtInCoverLibraryOption"
           value="${escapeAttribute(option.src)}"
+          ${selectedCoverSrc === option.src ? "checked" : ""}
         />
         <label class="built-in-cover-option" for="${escapeAttribute(inputId)}">
           <img
@@ -1526,9 +1529,9 @@ function renderBuiltInCoverPickerOptions() {
       id="defaultCoverImageNone"
       class="built-in-cover-input"
       type="radio"
-      name="defaultCoverImage"
+      name="builtInCoverLibraryOption"
       value=""
-      checked
+      ${selectedCoverSrc ? "" : "checked"}
     />
     <label class="built-in-cover-option is-empty" for="defaultCoverImageNone">
       <span>${escapeHtml(noneLabel)}</span>

@@ -150,9 +150,9 @@ const translations = {
         editGoalBody:
           "Update the title, current objective, and artwork when you need to.",
         saveGoalDetails: "Save goal details",
-        cardImageTitle: "Card image",
-        bannerImageTitle: "Banner image",
-        useBuiltInCover: "Use built-in card image",
+        cardImageTitle: "Card Image (main image)",
+        bannerImageTitle: "Banner Image (background image)",
+        useBuiltInCover: "Select from in-app library",
       },
       actionSheetMeta: ({ platform, difficulty, rewardXp }) =>
         `${platform} • ${difficulty} • +${rewardXp} XP completion reward`,
@@ -257,7 +257,7 @@ const translations = {
     sessions: {
       tabs: {
         log: "Log Session",
-        newGame: "New Goal +",
+        newGame: "Add a Goal",
         history: "Session History",
       },
       logTitle: "Log a progress session",
@@ -331,10 +331,17 @@ const translations = {
         defaultCoverOption3: "Built-in cover 3",
         defaultCoverOption4: "Built-in cover 4",
         defaultCoverOptionLabel: ({ index }) => `Built-in cover ${index}`,
-        coverLabel: "Card image",
+        builtInLibraryEyebrow: "In-app card library",
+        builtInLibraryTitle: "Select a card image",
+        builtInLibraryBody: "Choose a built-in image for this goal.",
+        selectBuiltInCover: "Select from in-app library",
+        coverPreviewEmpty: "No card image selected yet",
+        bannerPreviewEmpty: "No banner image selected yet",
+        noRewardValue: "No completion reward",
+        coverLabel: "Card Image (main image)",
         coverHint:
           "Portrait images look best. Recommended upload: 900×1200 or larger. The app crops it to a 3:4 card frame after upload.",
-        bannerLabel: "Banner image",
+        bannerLabel: "Banner Image (background image)",
         bannerHint:
           "Wide images work best. Recommended upload: 1600×900 or larger. The app crops it to a 16:9 hero frame after upload.",
         submit: "Add goal",
@@ -860,9 +867,9 @@ const translations = {
         editGoalBody:
           "タイトル、現在の目標、画像を必要なときに更新できます。",
         saveGoalDetails: "目標の詳細を保存",
-        cardImageTitle: "カード画像",
-        bannerImageTitle: "バナー画像",
-        useBuiltInCover: "内蔵カード画像を使う",
+        cardImageTitle: "カード画像（メイン画像）",
+        bannerImageTitle: "バナー画像（背景画像）",
+        useBuiltInCover: "アプリ内ライブラリから選ぶ",
       },
       actionSheetMeta: ({ platform, difficulty, rewardXp }) =>
         `${platform} • ${difficulty} • 完了報酬 +${rewardXp} XP`,
@@ -966,7 +973,7 @@ const translations = {
     sessions: {
       tabs: {
         log: "記録する",
-        newGame: "目標追加 +",
+        newGame: "目標を追加",
         history: "履歴",
       },
       logTitle: "進捗セッションを記録",
@@ -1040,10 +1047,17 @@ const translations = {
         defaultCoverOption3: "内蔵カバー 3",
         defaultCoverOption4: "内蔵カバー 4",
         defaultCoverOptionLabel: ({ index }) => `内蔵カバー ${index}`,
-        coverLabel: "カード画像",
+        builtInLibraryEyebrow: "アプリ内カードライブラリ",
+        builtInLibraryTitle: "カード画像を選ぶ",
+        builtInLibraryBody: "この目標に使う内蔵画像を選択します。",
+        selectBuiltInCover: "アプリ内ライブラリから選ぶ",
+        coverPreviewEmpty: "カード画像はまだ選ばれていません",
+        bannerPreviewEmpty: "バナー画像はまだ選ばれていません",
+        noRewardValue: "完了報酬なし",
+        coverLabel: "カード画像（メイン画像）",
         coverHint:
           "縦長の画像がおすすめです。推奨: 900×1200以上。アップロード後に3:4カード枠へ切り抜かれます。",
-        bannerLabel: "バナー画像",
+        bannerLabel: "バナー画像（背景画像）",
         bannerHint:
           "横長の画像がおすすめです。推奨: 1600×900以上。アップロード後に16:9ヒーロー枠へ切り抜かれます。",
         submit: "追加する",

@@ -5,11 +5,16 @@ import { getAllSessions } from "./data/sessionsRepo.js";
 import {
   appBootSplash,
   bannerArtPickerInput,
+  bannerImageInput,
+  builtInCoverLibraryCloseButton,
+  builtInCoverLibraryModal,
+  builtInCoverPickerEl,
   characterSkillModalRoot,
   characterContentEl,
   clearDataButton,
   clearJourneyButton,
   coverArtPickerInput,
+  coverImageInput,
   cropCancelButton,
   cropConfirmButton,
   cropFocusXRange,
@@ -22,6 +27,8 @@ import {
   gameActionsBodyEl,
   gameActionsCloseButton,
   gameActionsModal,
+  gameDifficultyRangeInput,
+  gameStatusInput,
   gamesListEl,
   homeJourneyContentEl,
   homeOverviewEl,
@@ -39,6 +46,7 @@ import {
   journeyOutcomeModal,
   mobileQuickSwitchEl,
   onboardingOverlay,
+  openBuiltInCoverLibraryButton,
   openSettingsButton,
   replayOnboardingButton,
   screenNavButtons,
@@ -68,14 +76,20 @@ import { closeSettingsModal, openSettingsModal, showMessage, syncBodyScrollLock 
 import { handleClearData, handleExportData, handleImportData, handleResetJourneyData } from "./features/backup/backupController.js";
 import { cancelCropSelection, confirmCropSelection, handleCropControlInput, handleCropModalClick, resetCropControls } from "./features/art/imageCropper.js";
 import {
+  closeBuiltInCoverLibraryModal,
   closeGameActionsSheet,
   handleAddGame,
+  handleAddGameArtInputChange,
   handleArtPickerChange,
+  handleBuiltInCoverLibraryChange,
+  handleBuiltInCoverLibraryModalClick,
   handleGameActionsModalClick,
   handleGameActionsSubmit,
   handleListClick,
+  openBuiltInCoverLibraryModal,
   primeBuiltInCoverImageOptions,
   repairGamesIfNeeded,
+  syncAddGameArtPreviews,
   syncGameDifficultyPresentation,
 } from "./features/games/gamesController.js";
 import {
@@ -167,6 +181,12 @@ function bindEvents() {
   homeJourneyContentEl?.addEventListener("click", handleHomeJourneyClick);
   coverArtPickerInput.addEventListener("change", () => handleArtPickerChange("cover"));
   bannerArtPickerInput.addEventListener("change", () => handleArtPickerChange("banner"));
+  coverImageInput?.addEventListener("change", handleAddGameArtInputChange);
+  bannerImageInput?.addEventListener("change", handleAddGameArtInputChange);
+  openBuiltInCoverLibraryButton?.addEventListener("click", openBuiltInCoverLibraryModal);
+  builtInCoverLibraryModal?.addEventListener("click", handleBuiltInCoverLibraryModalClick);
+  builtInCoverLibraryCloseButton?.addEventListener("click", closeBuiltInCoverLibraryModal);
+  builtInCoverPickerEl?.addEventListener("change", handleBuiltInCoverLibraryChange);
 
   exportDataButton?.addEventListener("click", handleExportData);
   importDataButton?.addEventListener("click", () => importDataInput?.click());
@@ -185,9 +205,9 @@ function bindEvents() {
   onboardingOverlay?.addEventListener("click", (event) => {
     void handleOnboardingOverlayClick(event);
   });
-  document
-    .querySelector("#gameDifficultySelector")
-    ?.addEventListener("change", syncGameDifficultyPresentation);
+  gameDifficultyRangeInput?.addEventListener("input", syncGameDifficultyPresentation);
+  gameDifficultyRangeInput?.addEventListener("change", syncGameDifficultyPresentation);
+  gameStatusInput?.addEventListener("change", syncGameDifficultyPresentation);
 
   cropZoomRange?.addEventListener("input", handleCropControlInput);
   cropFocusXRange?.addEventListener("input", handleCropControlInput);
@@ -230,6 +250,11 @@ function handleGlobalKeyDown(event) {
 
   if (event.key === "Escape" && settingsModal && !settingsModal.hidden) {
     closeSettingsModal();
+    return;
+  }
+
+  if (event.key === "Escape" && builtInCoverLibraryModal && !builtInCoverLibraryModal.hidden) {
+    closeBuiltInCoverLibraryModal();
     return;
   }
 
@@ -413,6 +438,7 @@ export async function renderApp() {
   renderSessionGameOptions(sortedGames);
   renderGames(sortedGames, sessionStats);
   renderBuiltInCoverPicker();
+  syncAddGameArtPreviews();
   renderRecentSessions(sortedGames, sessions);
   syncSessionsTabUi();
   syncThemePreferenceInput();

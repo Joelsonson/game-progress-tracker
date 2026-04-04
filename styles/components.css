@@ -530,6 +530,14 @@
   margin-top: 0;
 }
 
+.built-in-cover-library-dialog {
+  width: min(760px, calc(100% - 24px));
+}
+
+.built-in-cover-library-modal .settings-modal-body {
+  padding-top: 10px;
+}
+
 .crop-modal[hidden] {
   display: none;
 }

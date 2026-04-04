@@ -2,19 +2,29 @@ export const gameForm = document.querySelector("#gameForm");
 export const titleInput = document.querySelector("#title");
 export const platformInput = document.querySelector("#platform");
 export const gameStatusInput = document.querySelector("#gameStatus");
-export const gameDifficultyInputs = Array.from(
-  document.querySelectorAll('input[name="gameDifficulty"]')
-);
+export const gameDifficultySelectorEl = document.querySelector("#gameDifficultySelector");
+export const gameDifficultyRangeInput = document.querySelector("#gameDifficultyRange");
+export const gameDifficultyValueInput = document.querySelector("#gameDifficultyValue");
 export const notesInput = document.querySelector("#notes");
 export const coverImageInput = document.querySelector("#coverImage");
+export const selectedBuiltInCoverImageInput = document.querySelector(
+  "#selectedBuiltInCoverImage"
+);
+export const coverImagePreviewEl = document.querySelector("#coverImagePreview");
+export const coverImagePreviewImageEl = document.querySelector(
+  "#coverImagePreviewImage"
+);
 export const builtInCoverPickerEl = document.querySelector("#builtInCoverPicker");
 export const bannerImageInput = document.querySelector("#bannerImage");
+export const bannerImagePreviewEl = document.querySelector("#bannerImagePreview");
+export const bannerImagePreviewImageEl = document.querySelector(
+  "#bannerImagePreviewImage"
+);
+export const openBuiltInCoverLibraryButton = document.querySelector(
+  "#openBuiltInCoverLibraryButton"
+);
 export const formMessage = document.querySelector("#formMessage");
 export const difficultyRewardPreview = document.querySelector("#difficultyRewardPreview");
-
-export function getDefaultCoverImageInputs() {
-  return Array.from(document.querySelectorAll('input[name="defaultCoverImage"]'));
-}
 
 export const sessionForm = document.querySelector("#sessionForm");
 export const sessionGameSelect = document.querySelector("#sessionGame");
@@ -78,6 +88,12 @@ export const openSettingsButton = document.querySelector("#openSettingsButton");
 export const settingsModal = document.querySelector("#settingsModal");
 export const settingsModalCloseButton = document.querySelector(
   "#settingsModalCloseButton"
+);
+export const builtInCoverLibraryModal = document.querySelector(
+  "#builtInCoverLibraryModal"
+);
+export const builtInCoverLibraryCloseButton = document.querySelector(
+  "#builtInCoverLibraryCloseButton"
 );
 export const mobileQuickSwitchEl = document.querySelector(".mobile-quick-switch");
 
