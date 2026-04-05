@@ -50,6 +50,8 @@
 
 #screenSessions {
   gap: 0;
+  position: relative;
+  padding-top: 40px;
 }
 
 .mobile-quick-switch {
@@ -265,24 +267,23 @@
 
 .sessions-tab-shell {
   padding: 0 6px;
-  margin-bottom: -18px;
   border-radius: 0;
 }
 
 .sessions-tab-bar {
-  min-height: 70px;
+  min-height: 68px;
   padding-left: 2px;
 }
 
 .sessions-tab-button {
   width: min(38vw, 128px);
-  min-height: 60px;
+  min-height: 58px;
   margin-left: -12px;
   padding: 12px 11px 17px;
 }
 
 .sessions-tab-button.is-active {
-  transform: translateY(10px);
+  transform: translateY(12px);
 }
 
 .sessions-panel {
