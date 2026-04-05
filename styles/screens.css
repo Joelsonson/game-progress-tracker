@@ -264,42 +264,30 @@
 }
 
 .sessions-tab-shell {
-  padding: 0;
-  margin-bottom: -14px;
+  padding: 0 6px;
+  margin-bottom: -18px;
   border-radius: 0;
 }
 
 .sessions-tab-bar {
-  min-height: 72px;
-  padding-right: 0;
+  min-height: 70px;
+  padding-left: 2px;
 }
 
 .sessions-tab-button {
-  width: min(39vw, 132px);
-  min-height: 62px;
-  margin-left: -20px;
-  padding: 13px 12px 14px;
-}
-
-.sessions-tab-button:first-child {
-  --bookmark-offset: 16px;
-}
-
-.sessions-tab-button:nth-child(2) {
-  --bookmark-offset: 9px;
-}
-
-.sessions-tab-button:nth-child(3) {
-  --bookmark-offset: 2px;
+  width: min(38vw, 128px);
+  min-height: 60px;
+  margin-left: -12px;
+  padding: 12px 11px 17px;
 }
 
 .sessions-tab-button.is-active {
-  transform: translateY(20px);
+  transform: translateY(10px);
 }
 
 .sessions-panel {
   border-radius: 26px;
-  padding-top: 24px;
+  padding-top: 28px;
 }
 
 .tracker-shell-panel > .section-header {
