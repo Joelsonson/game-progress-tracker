@@ -13,6 +13,8 @@ import {
   characterContentEl,
   clearDataButton,
   clearJourneyButton,
+  completionShowcaseCloseButton,
+  completionShowcaseModal,
   coverArtPickerInput,
   coverImageInput,
   cropCancelButton,
@@ -77,12 +79,14 @@ import { handleClearData, handleExportData, handleImportData, handleResetJourney
 import { cancelCropSelection, confirmCropSelection, handleCropControlInput, handleCropModalClick, resetCropControls } from "./features/art/imageCropper.js";
 import {
   closeBuiltInCoverLibraryModal,
+  closeCompletionShowcaseModal,
   closeGameActionsSheet,
   handleAddGame,
   handleAddGameArtInputChange,
   handleArtPickerChange,
   handleBuiltInCoverLibraryChange,
   handleBuiltInCoverLibraryModalClick,
+  handleCompletionShowcaseModalClick,
   handleGameActionsModalClick,
   handleGameActionsSubmit,
   handleListClick,
@@ -234,6 +238,8 @@ function bindEvents() {
   artCropModal?.addEventListener("click", handleCropModalClick);
   gameActionsModal?.addEventListener("click", handleGameActionsModalClick);
   gameActionsCloseButton?.addEventListener("click", closeGameActionsSheet);
+  completionShowcaseModal?.addEventListener("click", handleCompletionShowcaseModalClick);
+  completionShowcaseCloseButton?.addEventListener("click", closeCompletionShowcaseModal);
   journeyEventModal?.addEventListener("click", handleJourneyEventModalClick);
   journeyEventCloseButton?.addEventListener("click", closeJourneyEventModal);
   journeyOutcomeModal?.addEventListener("click", handleJourneyOutcomeModalClick);
@@ -281,6 +287,15 @@ function handleGlobalKeyDown(event) {
 
   if (event.key === "Escape" && gameActionsModal && !gameActionsModal.hidden) {
     closeGameActionsSheet();
+    return;
+  }
+
+  if (
+    event.key === "Escape" &&
+    completionShowcaseModal &&
+    !completionShowcaseModal.hidden
+  ) {
+    closeCompletionShowcaseModal();
     return;
   }
 

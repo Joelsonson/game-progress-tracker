@@ -2,6 +2,8 @@ import {
   artCropModal,
   builtInCoverLibraryModal,
   characterSkillModalRoot,
+  completionShowcaseModal,
+  gameActionsModal,
   journeyEventModal,
   journeyOutcomeModal,
   settingsModal,
@@ -114,6 +116,8 @@ export function syncBodyScrollLock() {
     characterSkillModalRoot?.firstElementChild ||
     (settingsModal && !settingsModal.hidden) ||
     (builtInCoverLibraryModal && !builtInCoverLibraryModal.hidden) ||
+    (gameActionsModal && !gameActionsModal.hidden) ||
+    (completionShowcaseModal && !completionShowcaseModal.hidden) ||
     (journeyEventModal && !journeyEventModal.hidden) ||
     (journeyOutcomeModal && !journeyOutcomeModal.hidden) ||
     (artCropModal && !artCropModal.hidden)

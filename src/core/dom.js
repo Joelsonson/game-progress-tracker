@@ -149,6 +149,15 @@ export const gameActionsBodyEl = document.querySelector("#gameActionsBody");
 export const gameActionsCloseButton = document.querySelector(
   "#gameActionsCloseButton"
 );
+export const completionShowcaseModal = document.querySelector(
+  "#completionShowcaseModal"
+);
+export const completionShowcaseBodyEl = document.querySelector(
+  "#completionShowcaseBody"
+);
+export const completionShowcaseCloseButton = document.querySelector(
+  "#completionShowcaseCloseButton"
+);
 export const toastViewport = document.querySelector("#toastViewport");
 export const appScreens = Array.from(document.querySelectorAll("[data-screen]"));
 export const screenNavButtons = Array.from(

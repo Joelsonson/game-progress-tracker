@@ -337,6 +337,10 @@
   scroll-snap-align: start;
 }
 
+.completion-showcase-dialog {
+  width: min(100%, 400px);
+}
+
 .summary-row {
   flex-wrap: nowrap;
   overflow-x: auto;
@@ -422,6 +426,22 @@
 .completion-card-banner {
   min-height: 108px;
   aspect-ratio: 16 / 9;
+}
+
+.completion-showcase-card {
+  border-radius: 28px;
+}
+
+.completion-showcase-card-inner {
+  padding: 12px;
+}
+
+.completion-showcase-art-frame {
+  min-height: min(50dvh, 340px);
+}
+
+.completion-showcase-stats {
+  gap: 8px;
 }
 
 .brand-title-main {

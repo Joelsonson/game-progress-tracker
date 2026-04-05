@@ -7,6 +7,8 @@ import {
   bannerArtPickerInput,
   bannerImageInput,
   builtInCoverLibraryModal,
+  completionShowcaseBodyEl,
+  completionShowcaseModal,
   coverArtPickerInput,
   coverImageInput,
   coverImagePreviewEl,
@@ -66,7 +68,11 @@ import {
   notifyOnboardingSessionSaved,
 } from "../onboarding/onboardingController.js";
 import { saveSessionEntry } from "../sessions/sessionsController.js";
-import { renderBuiltInCoverPicker, renderGameActionSheet } from "./gamesView.js";
+import {
+  renderBuiltInCoverPicker,
+  renderCompletionShowcase,
+  renderGameActionSheet,
+} from "./gamesView.js";
 
 let builtInCoverDiscoveryPromise = null;
 const GAME_DIFFICULTY_ORDER = [
@@ -92,7 +98,7 @@ export function openGameActionsSheet(game) {
   gameActionsMetaEl.hidden = true;
   gameActionsBodyEl.innerHTML = renderGameActionSheet(game);
   gameActionsModal.hidden = false;
-  document.body.classList.add("has-overlay");
+  syncBodyScrollLock();
 }
 
 export function closeGameActionsSheet() {
@@ -100,7 +106,38 @@ export function closeGameActionsSheet() {
 
   gameActionsModal.hidden = true;
   gameActionsBodyEl.innerHTML = "";
-  document.body.classList.remove("has-overlay");
+  syncBodyScrollLock();
+}
+
+export async function openCompletionShowcaseModal(game) {
+  if (!completionShowcaseModal || !completionShowcaseBodyEl) {
+    return;
+  }
+
+  const sessions = await getAllSessions(appState.db);
+  const sessionStats = buildSessionStats(sessions);
+
+  completionShowcaseBodyEl.innerHTML = renderCompletionShowcase(
+    game,
+    sessionStats.get(game.id)
+  );
+  completionShowcaseModal.hidden = false;
+  syncBodyScrollLock();
+}
+
+export function closeCompletionShowcaseModal() {
+  if (!completionShowcaseModal || !completionShowcaseBodyEl) return;
+
+  completionShowcaseModal.hidden = true;
+  completionShowcaseBodyEl.innerHTML = "";
+  syncBodyScrollLock();
+}
+
+export function handleCompletionShowcaseModalClick(event) {
+  if (!(event.target instanceof HTMLElement)) return;
+  if (event.target.closest("[data-close-completion-showcase]")) {
+    closeCompletionShowcaseModal();
+  }
 }
 
 export function handleGameActionsModalClick(event) {
@@ -603,7 +640,17 @@ export async function handleListClick(event) {
       return;
     }
 
+    if (action === "open-completion-showcase") {
+      await openCompletionShowcaseModal(game);
+      return;
+    }
+
     if (action === "open-game-actions") {
+      if (game.status === GAME_STATUSES.COMPLETED) {
+        await openCompletionShowcaseModal(game);
+        return;
+      }
+
       openGameActionsSheet(game);
       return;
     }

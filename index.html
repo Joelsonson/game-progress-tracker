@@ -991,6 +991,32 @@
       </div>
     </div>
 
+    <div id="completionShowcaseModal" class="completion-showcase-modal" hidden>
+      <div
+        class="completion-showcase-backdrop"
+        data-close-completion-showcase
+      ></div>
+
+      <div
+        class="completion-showcase-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="completionShowcaseTitle"
+      >
+        <button
+          id="completionShowcaseCloseButton"
+          type="button"
+          class="secondary-button completion-showcase-close"
+          data-close-completion-showcase
+          data-i18n="common.close"
+        >
+          Close
+        </button>
+
+        <div id="completionShowcaseBody" class="completion-showcase-body"></div>
+      </div>
+    </div>
+
     <div id="characterSkillModalRoot"></div>
     <div id="onboardingOverlay" class="onboarding-overlay" hidden>
       <div id="onboardingBackdrop" class="onboarding-backdrop"></div>
@@ -1003,6 +1029,6 @@
     </div>
     <div id="toastViewport" class="toast-viewport" aria-live="polite" aria-atomic="true"></div>
 
-    <script type="module" src="./src/main.js?v=20260404h"></script>
+    <script type="module" src="./src/main.js?v=20260406a"></script>
   </body>
 </html>

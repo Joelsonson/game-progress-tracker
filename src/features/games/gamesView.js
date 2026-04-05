@@ -351,6 +351,10 @@ function renderHomeGoalCapsule(game, stats, index = 0) {
   const holographicStyle = isCompleted
     ? ` style="${escapeAttribute(buildCompletedCapsuleStyle(game, tierMeta, index))}"`
     : "";
+  const action = isCompleted ? "open-completion-showcase" : "open-game-actions";
+  const ariaLabel = isCompleted
+    ? t("tracker.completionShowcase.openLabel", { title: game.title })
+    : t("tracker.manageCard");
 
   return `
     <article
@@ -360,8 +364,9 @@ function renderHomeGoalCapsule(game, stats, index = 0) {
       <button
         type="button"
         class="goal-capsule-button ${game.isMain ? "is-focus" : ""}${completedClass}"
-        data-action="open-game-actions"
+        data-action="${action}"
         data-id="${game.id}"
+        aria-label="${escapeAttribute(ariaLabel)}"
         ${holographicStyle}
       >
         ${renderHomeGoalCapsuleArt(game)}
@@ -868,17 +873,17 @@ export function renderCompletedDeckSection(section, sessionStats) {
 export function renderCompletedDeckItem(game, sessionStats) {
   return `
     <article class="completed-deck-item">
-      ${renderCompletionCard(game, sessionStats.get(game.id) || emptySessionStats())}
-      <div class="game-card-footer completed-card-actions">
-        <button
-          type="button"
-          class="secondary-button game-card-action-trigger"
-          data-action="open-game-actions"
-          data-id="${game.id}"
-        >
-          ${escapeHtml(t("tracker.manageCard"))}
-        </button>
-      </div>
+      <button
+        type="button"
+        class="completion-card-button"
+        data-action="open-completion-showcase"
+        data-id="${game.id}"
+        aria-label="${escapeAttribute(
+          t("tracker.completionShowcase.openLabel", { title: game.title })
+        )}"
+      >
+        ${renderCompletionCard(game, sessionStats.get(game.id) || emptySessionStats())}
+      </button>
     </article>
   `;
 }
@@ -1550,7 +1555,7 @@ export function renderCompletionCard(game, stats) {
   const bannerStyle = buildArtBackgroundStyle(game.bannerImage || game.coverImage);
 
   return `
-    <article class="completion-card ${tierMeta.className}">
+    <div class="completion-card ${tierMeta.className}">
       <div class="completion-card-banner"${bannerStyle}></div>
       <div class="completion-card-content">
         <div class="completion-card-top">
@@ -1613,6 +1618,78 @@ export function renderCompletionCard(game, stats) {
             : ""
         }
       </div>
+    </div>
+  `;
+}
+
+export function renderCompletionShowcase(game, statsInput) {
+  const stats = statsInput || emptySessionStats();
+  const tier = getCompletionTier(game, stats);
+  const tierMeta = CARD_TIER_META[tier];
+  const totalQuestXp =
+    stats.totalXp +
+    (game.status === GAME_STATUSES.COMPLETED ? getGameCompletionXp(game) : 0);
+  const artStyle = buildArtBackgroundStyle(game.bannerImage || game.coverImage);
+  const showcaseStyle = escapeAttribute(buildCompletionShowcaseStyle(game, tierMeta));
+  const metaChips = [
+    getPlatformText(game),
+    formatDate(game.completedAt || game.updatedAt),
+  ]
+    .filter(Boolean)
+    .map(
+      (value) =>
+        `<span class="completion-showcase-chip">${escapeHtml(value)}</span>`
+    )
+    .join("");
+
+  return `
+    <article class="completion-showcase-card ${tierMeta.className}" style="${showcaseStyle}">
+      <div class="completion-showcase-card-inner">
+        <header class="completion-showcase-header">
+          <div class="completion-showcase-nameplate">
+            <span class="completion-showcase-tier">${escapeHtml(tierMeta.label)}</span>
+            <h2 id="completionShowcaseTitle">${escapeHtml(game.title)}</h2>
+          </div>
+          <div class="completion-showcase-xp">
+            <span class="completion-showcase-xp-label">${escapeHtml(
+              t("tracker.completionShowcase.xpShort")
+            )}</span>
+            <strong>${totalQuestXp}</strong>
+          </div>
+        </header>
+
+        <div class="completion-showcase-art-shell"${artStyle}>
+          <div class="completion-showcase-art-frame">
+            ${renderCoverVisual(game, "completion-showcase-cover")}
+          </div>
+          <div class="completion-showcase-meta-row">
+            ${metaChips}
+          </div>
+        </div>
+
+        <div class="completion-showcase-stats">
+          <div class="completion-showcase-stat">
+            <span class="completion-showcase-stat-label">${escapeHtml(
+              t("tracker.completionShowcase.time")
+            )}</span>
+            <strong class="completion-showcase-stat-value">${formatMinutes(
+              stats.totalMinutes
+            )}</strong>
+          </div>
+          <div class="completion-showcase-stat">
+            <span class="completion-showcase-stat-label">${escapeHtml(
+              t("tracker.completionShowcase.sessions")
+            )}</span>
+            <strong class="completion-showcase-stat-value">${stats.sessionCount}</strong>
+          </div>
+          <div class="completion-showcase-stat">
+            <span class="completion-showcase-stat-label">${escapeHtml(
+              t("tracker.completionShowcase.meaningful")
+            )}</span>
+            <strong class="completion-showcase-stat-value">${stats.meaningfulCount}</strong>
+          </div>
+        </div>
+      </div>
     </article>
   `;
 }
@@ -1620,4 +1697,24 @@ export function renderCompletionCard(game, stats) {
 function getPlatformText(game) {
   const value = String(game?.platform || "").trim();
   return !value || value === "Unspecified" ? t("common.unspecified") : value;
+}
+
+function buildCompletionShowcaseStyle(game, tierMeta) {
+  const seed = hashString(`${game.id}:${game.title}:showcase`);
+  const sheenX = 12 + (seed % 58);
+  const sheenY = 16 + ((seed >> 3) % 44);
+  const glowX = 18 + ((seed >> 5) % 46);
+  const glowY = 14 + ((seed >> 7) % 52);
+  const drift = -18 + ((seed >> 9) % 36);
+
+  return [
+    `--completion-showcase-accent-a:${tierMeta?.accentA || "#c084fc"}`,
+    `--completion-showcase-accent-b:${tierMeta?.accentB || "#7c3aed"}`,
+    `--completion-showcase-accent-text:${tierMeta?.accentText || "#f8fafc"}`,
+    `--completion-showcase-sheen-x:${sheenX}%`,
+    `--completion-showcase-sheen-y:${sheenY}%`,
+    `--completion-showcase-glow-x:${glowX}%`,
+    `--completion-showcase-glow-y:${glowY}%`,
+    `--completion-showcase-drift:${drift}%`,
+  ].join(";");
 }

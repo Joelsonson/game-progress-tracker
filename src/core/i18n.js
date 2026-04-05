@@ -224,6 +224,13 @@ const translations = {
         meaningful: "Meaningful",
         mainGame: "Focus Goal",
       },
+      completionShowcase: {
+        openLabel: ({ title }) => `Open completion card for ${title}`,
+        xpShort: "XP",
+        time: "Time",
+        sessions: "Sessions",
+        meaningful: "Meaningful",
+      },
     },
     status: {
       backlog: {
@@ -955,6 +962,13 @@ const translations = {
         totalXp: "総XP",
         meaningful: "良い進捗",
         mainGame: "フォーカス目標",
+      },
+      completionShowcase: {
+        openLabel: ({ title }) => `${title} の完了カードを開く`,
+        xpShort: "XP",
+        time: "時間",
+        sessions: "回数",
+        meaningful: "進捗",
       },
     },
     status: {
