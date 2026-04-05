@@ -99,6 +99,11 @@ const JOURNEY_PORTRAIT_SPRITE = {
 };
 
 const JOURNEY_EVENT_DOCK_ICON = "./assets/journey/icons/Journey%20Icon.png";
+const CHARACTER_TAB_ICONS = {
+  [CHARACTER_TABS.STATS]: "./assets/journey/icons/Stats%20Icon.png",
+  [CHARACTER_TABS.INVENTORY]: "./assets/journey/icons/Inventory%20Icon.png",
+  [CHARACTER_TABS.EQUIPMENT]: "./assets/journey/icons/Equipment%20Icon.png",
+};
 
 const JOURNEY_BATTLE_ART = {
   0: {
@@ -1922,7 +1927,7 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
   appState.activeCharacterTab = activeCharacterTab;
 
   characterContentEl.innerHTML = `
-    ${renderCharacterTabBar(viewModel, activeCharacterTab)}
+    ${renderCharacterTabBar(activeCharacterTab)}
 
     <section
       id="characterTabPanel"
@@ -1939,28 +1944,19 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
   syncBodyScrollLock();
 }
 
-function renderCharacterTabBar(viewModel, activeCharacterTab) {
+function renderCharacterTabBar(activeCharacterTab) {
   const tabItems = [
     {
       id: CHARACTER_TABS.STATS,
       label: t("journeyUi.character.tabStats"),
-      meta: t("journeyUi.character.levelLabel", {
-        level: viewModel.journeyLevel,
-      }),
     },
     {
       id: CHARACTER_TABS.INVENTORY,
       label: t("journeyUi.character.tabInventory"),
-      meta: `${t("journeyUi.character.rations")} ${viewModel.supplies.availableRations} • ${t(
-        "journeyUi.character.tonics"
-      )} ${viewModel.supplies.availableTonics}`,
     },
     {
       id: CHARACTER_TABS.EQUIPMENT,
       label: t("journeyUi.character.tabEquipment"),
-      meta: `${t("journeyUi.character.weapons")} ${viewModel.weaponInventory.length} / ${
-        viewModel.bagMeta.weaponSlots
-      }`,
     },
   ];
 
@@ -1988,8 +1984,10 @@ function renderCharacterTabBar(viewModel, activeCharacterTab) {
                 tabindex="${activeCharacterTab === tab.id ? "0" : "-1"}"
               >
                 <span class="character-tab-button-content">
+                  <span class="character-tab-icon" aria-hidden="true">
+                    <img src="${CHARACTER_TAB_ICONS[tab.id]}" alt="" />
+                  </span>
                   <strong class="character-tab-label">${escapeHtml(tab.label)}</strong>
-                  <span class="character-tab-meta">${escapeHtml(tab.meta)}</span>
                 </span>
               </button>
             `
