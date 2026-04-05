@@ -999,18 +999,30 @@
     rgba(15, 23, 42, 0.62);
 }
 
-.journey-stat-value-block {
+.character-stat-card-head {
   display: grid;
-  justify-items: end;
-  gap: 2px;
+  gap: 4px;
+}
+
+.character-stat-card-topline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.character-stat-card-topline strong {
+  font-size: 1.28rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .journey-stat-roll-bonus {
-  color: var(--accent-2);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  justify-self: end;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .stat-source-row {
@@ -1261,6 +1273,7 @@
 .character-level-title-row {
   justify-content: flex-start;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .character-level-title-row strong {
@@ -1349,8 +1362,10 @@
   color: var(--accent-2);
   font-size: 1.35rem;
   font-weight: 700;
+  line-height: 1;
   cursor: pointer;
   flex: 0 0 auto;
+  padding: 0;
 }
 
 .character-level-up-button:hover {
@@ -1633,28 +1648,46 @@
   color: var(--text);
 }
 
+.character-radar-legend-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  justify-content: normal;
+  gap: 4px;
+}
+
+.character-radar-legend-summary-topline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.character-radar-legend-label {
+  line-height: 1.2;
+}
+
 .character-radar-legend-summary strong.is-boosted {
   color: var(--accent-blue-strong);
 }
 
 .character-radar-legend-summary-value {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
 }
 
-.character-radar-legend-summary-math {
-  display: grid;
-  justify-items: end;
-  gap: 2px;
+.character-radar-legend-summary-value strong {
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .character-radar-roll-bonus {
-  color: var(--accent-2);
+  justify-self: end;
+  color: var(--muted);
   font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .character-radar-legend-item.is-boosted {

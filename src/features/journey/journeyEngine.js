@@ -2586,10 +2586,8 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
           moves: [
             {
               key: "snapjaw:jaw-pin",
-              label: hasWeapon
-                ? "Pin the lower jaw and finish the rush"
-                : "Pin the lower jaw and break the rush",
-              preview: "A brutal end that risks everything on one clean stop.",
+              label: "Pin the lower jaw and stop the charge",
+              preview: "Catch the bite low and stop its last straight rush.",
               highlightWord: "Pin",
               statKey: "might",
               chanceBase: 0.34,
@@ -2600,16 +2598,16 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               selfDamage: { successBase: 11, failBase: 18, reductionPerStat: 0.45 },
               successText:
                 hasWeapon
-                  ? "You catch the lower jaw against stone, drive through the bind, and end the last clean line of the charge."
-                  : "You pin the lower jaw against the bank with everything you have and break the rush before it can snap shut again.",
+                  ? "You catch the lower jaw against the bank, drive through the bind, and stop the charge before the bite can close."
+                  : "You pin the lower jaw against the bank with everything you have and stop the charge before the bite can close.",
               failureText:
                 "You commit too early and the head bucks free. The answer comes back ugly and close enough to smell.",
             },
             {
               key: "snapjaw:stone-feint",
-              label: "Stand through the feint and turn its head to stone",
-              preview: "Nerve matters if the last lunge is only bait.",
-              highlightWord: "Stand",
+              label: "Hold through the fake lunge and slam its head into the stones",
+              preview: "Ignore the bait, wait for the real strike, and punish it.",
+              highlightWord: "Hold",
               statKey: "resolve",
               chanceBase: 0.4,
               chancePerStat: 0.045,
@@ -2618,17 +2616,17 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 25, successPerStat: 2.1, failBase: 10, failPerStat: 0.8 },
               selfDamage: { successBase: 8, failBase: 14, reductionPerStat: 0.6 },
               successText:
-                "You do not bite on the first twitch. When the real lunge comes, you turn the whole skull into the stones and steal the road with patience.",
+                "You do not bite on the fake lunge. When the real snap comes, you wrench the whole skull into the stones and steal the road with patience.",
               failureText:
-                "You hold for the real move, but the feint still steals enough of your timing to make the exchange hurt.",
+                "You wait for the real bite, but the fake lunge still steals enough of your timing to make the exchange hurt.",
             },
             {
               key: "snapjaw:spine-run",
               label: hasWeapon
-                ? "Ride the spine and cut the final line"
-                : "Ride the spine and hammer the final line",
-              preview: "A technical finish if you can stay above the jaws.",
-              highlightWord: "spine",
+                ? "Ride its back and cut behind the skull"
+                : "Ride its back and hammer behind the skull",
+              preview: "Climb over the snap and hit the base of the neck before it bucks you off.",
+              highlightWord: "Ride",
               statKey: "finesse",
               chanceBase: 0.38,
               chancePerStat: 0.05,
@@ -2638,8 +2636,8 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.56 },
               successText:
                 hasWeapon
-                  ? "You climb the roll of its back, stay ahead of the snap, and cut the final line before it can throw you clear."
-                  : "You scramble across its back, stay ahead of the snap, and hammer the weak line hard enough to finish the road.",
+                  ? "You scramble across its back, stay above the snapping jaws, and cut deep behind the skull before it can throw you clear."
+                  : "You scramble across its back, stay above the snapping jaws, and hammer the base of the neck hard enough to finish the road.",
               failureText:
                 "You almost stay above the turn, but the thrash throws you off early and the landing costs you.",
             },

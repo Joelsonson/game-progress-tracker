@@ -827,6 +827,11 @@ export function openJourneyEventModal(eventEntry) {
 
   journeyEventModal.hidden = false;
   syncBodyScrollLock();
+  window.requestAnimationFrame(() => {
+    resetJourneyEventDialogScroll({
+      focusBattleSummary: eventEntry?.kind === "boss" && Boolean(eventEntry?.battle?.lastCheckLabel),
+    });
+  });
 }
 
 export function closeJourneyEventModal() {
@@ -834,6 +839,38 @@ export function closeJourneyEventModal() {
   journeyEventModal.hidden = true;
   if (journeyEventBodyEl) journeyEventBodyEl.innerHTML = "";
   syncBodyScrollLock();
+}
+
+function resetJourneyEventDialogScroll({ focusBattleSummary = false } = {}) {
+  if (!journeyEventModal) return;
+
+  const dialog = journeyEventModal.querySelector(".journey-event-dialog");
+  if (!(dialog instanceof HTMLElement)) {
+    return;
+  }
+
+  if (!focusBattleSummary) {
+    dialog.scrollTop = 0;
+    return;
+  }
+
+  const summary = dialog.querySelector("[data-journey-battle-summary]");
+  if (!(summary instanceof HTMLElement)) {
+    dialog.scrollTop = 0;
+    return;
+  }
+
+  const dialogRect = dialog.getBoundingClientRect();
+  const summaryRect = summary.getBoundingClientRect();
+  const targetTop = Math.max(
+    0,
+    dialog.scrollTop + summaryRect.top - dialogRect.top - 18
+  );
+
+  dialog.scrollTo({
+    top: targetTop,
+    behavior: "smooth",
+  });
 }
 
 export function showJourneyEventThinking(choiceLabel, duration = 3200) {
@@ -1161,7 +1198,6 @@ function renderJourneyBossBattlePanel(eventEntry) {
   }
 
   const bossArt = getJourneyBossBattleArt(battle);
-  const loadoutLabel = battle.weaponLabel || "Unarmed";
   const exchangeSummary = renderJourneyBossBattleExchangeSummary(battle);
 
   return `
@@ -1171,7 +1207,6 @@ function renderJourneyBossBattlePanel(eventEntry) {
         <div class="journey-battle-status">
           <div class="journey-battle-chip-row">
             <span class="journey-chip is-active">Turn ${battle.turn} / ${battle.maxTurns}</span>
-            <span class="journey-chip">${escapeHtml(loadoutLabel)}</span>
           </div>
           ${exchangeSummary}
           ${renderJourneyBossBattleHealthCard({
@@ -1204,7 +1239,7 @@ function renderJourneyBossBattlePanel(eventEntry) {
 function renderJourneyBossBattleExchangeSummary(battle) {
   if (!battle?.lastCheckLabel) {
     return `
-      <div class="journey-battle-exchange-summary is-neutral">
+      <div class="journey-battle-exchange-summary is-neutral" data-journey-battle-summary>
         <strong>First clash</strong>
         <span>No roll yet. Pick your opening move.</span>
       </div>
@@ -1218,7 +1253,7 @@ function renderJourneyBossBattleExchangeSummary(battle) {
   return `
     <div class="journey-battle-exchange-summary ${
       battle.lastCheckSuccess ? "is-success" : "is-failure"
-    }">
+    }" data-journey-battle-summary>
       <strong>${escapeHtml(
         battle.lastCheckSuccess
           ? t("journeyUi.modals.checkSucceeded", { label: battle.lastCheckLabel })
@@ -2271,12 +2306,12 @@ function renderJourneyStatCards(viewModel) {
       <article class="journey-stat-card character-stat-card-item ${
         hasClassBonus ? "has-class-bonus" : ""
       } ${hasWeaponBonus ? "has-weapon-bonus" : ""}">
-        <div class="stat-row">
-          <h4>${escapeHtml(statMeta.label)}</h4>
-          <div class="journey-stat-value-block">
+        <div class="character-stat-card-head">
+          <div class="character-stat-card-topline">
+            <h4>${escapeHtml(statMeta.label)}</h4>
             <strong>${breakdown.total}</strong>
-            <span class="journey-stat-roll-bonus">${escapeHtml(rollBonusText)}</span>
           </div>
+          <span class="journey-stat-roll-bonus">${escapeHtml(rollBonusText)}</span>
         </div>
         <div class="journey-inline-row stat-source-row">
           <span class="journey-chip">${escapeHtml(
@@ -2342,24 +2377,24 @@ function renderCharacterLevelPanel(viewModel) {
                   )}</span>`
                 : ""
             }
+            ${
+              viewModel.unspentSkillPoints > 0
+                ? `
+                    <button
+                      type="button"
+                      class="character-level-up-button"
+                      data-journey-action="open-skill-modal"
+                      aria-label="${escapeAttribute(
+                        t("journeyUi.character.spendSkillPoints")
+                      )}"
+                    >
+                      +
+                    </button>
+                  `
+                : ""
+            }
           </div>
         </div>
-        ${
-          viewModel.unspentSkillPoints > 0
-            ? `
-                <button
-                  type="button"
-                  class="character-level-up-button"
-                  data-journey-action="open-skill-modal"
-                  aria-label="${escapeAttribute(
-                    t("journeyUi.character.spendSkillPoints")
-                  )}"
-                >
-                  +
-                </button>
-              `
-            : ""
-        }
       </div>
       <div class="journey-progress-track character-level-progress">
         <div
@@ -2910,18 +2945,18 @@ function renderCharacterRadarLegendItem(entry) {
   return `
     <details class="character-radar-legend-item ${hasExternalBoost ? "is-boosted" : ""}">
       <summary class="character-radar-legend-summary">
-        <span>${escapeHtml(entry.label)}</span>
-        <div class="character-radar-legend-summary-value">
-          <div class="character-radar-legend-summary-math">
+        <div class="character-radar-legend-summary-topline">
+          <strong class="character-radar-legend-label">${escapeHtml(entry.label)}</strong>
+          <div class="character-radar-legend-summary-value">
             <strong class="${hasExternalBoost ? "is-boosted" : ""}">${entry.value}</strong>
-            ${
-              rollBonusText
-                ? `<small class="character-radar-roll-bonus">${escapeHtml(rollBonusText)}</small>`
-                : ""
-            }
-          </div>
           <span class="character-chevron" aria-hidden="true">⌄</span>
+          </div>
         </div>
+        ${
+          rollBonusText
+            ? `<small class="character-radar-roll-bonus">${escapeHtml(rollBonusText)}</small>`
+            : ""
+        }
       </summary>
       ${
         breakdown
