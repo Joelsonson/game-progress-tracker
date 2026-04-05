@@ -1831,6 +1831,10 @@ export function resolveJourneyBossBattleTurn(
   battle.lastBossDamage = Math.round(bossHpBefore - battle.bossHp);
   battle.lastHeroDamage = Math.round(hpBefore - state.currentHp);
   battle.weaponLabel = journeyStats?.equippedWeaponMeta?.label || "";
+  battle.weaponAttackType = getJourneyBossBattleWeaponAttackType(journeyStats);
+  battle.heroAttackLabel = getJourneyBossBattleDamageLabel(
+    battle.weaponAttackType
+  );
   battle.heroBattleNote = buildJourneyBossBattleLoadoutNote(state.bossIndex, journeyStats);
   battle.lastCheckLabel = JOURNEY_STAT_META[statKey].label;
   battle.lastCheckSuccess = success;
@@ -1877,6 +1881,10 @@ export function resolveJourneyBossBattleTurn(
     lastBossDamage: Math.round(bossHpBefore - battle.bossHp),
     lastHeroDamage: Math.round(hpBefore - state.currentHp),
     weaponLabel: journeyStats?.equippedWeaponMeta?.label || "",
+    weaponAttackType: getJourneyBossBattleWeaponAttackType(journeyStats),
+    heroAttackLabel: getJourneyBossBattleDamageLabel(
+      getJourneyBossBattleWeaponAttackType(journeyStats)
+    ),
     heroBattleNote: buildJourneyBossBattleLoadoutNote(state.bossIndex, journeyStats),
     lastCheckLabel: JOURNEY_STAT_META[statKey].label,
     lastCheckSuccess: success,
@@ -2078,6 +2086,10 @@ function buildJourneyStretchBossBattleEvent(
         lastBossDamage: Math.max(0, Math.round(Number(existingBattle.lastBossDamage) || 0)),
         lastHeroDamage: Math.max(0, Math.round(Number(existingBattle.lastHeroDamage) || 0)),
         weaponLabel: journeyStats?.equippedWeaponMeta?.label || "",
+        weaponAttackType: getJourneyBossBattleWeaponAttackType(journeyStats),
+        heroAttackLabel: getJourneyBossBattleDamageLabel(
+          getJourneyBossBattleWeaponAttackType(journeyStats)
+        ),
         heroBattleNote: buildJourneyBossBattleLoadoutNote(state.bossIndex, journeyStats),
         lastCheckLabel: String(existingBattle.lastCheckLabel || "").trim(),
         lastCheckSuccess: Boolean(existingBattle.lastCheckSuccess),
@@ -2104,6 +2116,10 @@ function buildJourneyStretchBossBattleEvent(
         lastBossDamage: 0,
         lastHeroDamage: 0,
         weaponLabel: journeyStats?.equippedWeaponMeta?.label || "",
+        weaponAttackType: getJourneyBossBattleWeaponAttackType(journeyStats),
+        heroAttackLabel: getJourneyBossBattleDamageLabel(
+          getJourneyBossBattleWeaponAttackType(journeyStats)
+        ),
         heroBattleNote: buildJourneyBossBattleLoadoutNote(state.bossIndex, journeyStats),
         lastCheckLabel: "",
         lastCheckSuccess: false,
@@ -2227,6 +2243,41 @@ function buildJourneyBossBattleLoadoutNote(bossIndex, journeyStats) {
       : "You are fighting without a proper weapon, so space and timing matter more than ever.";
 }
 
+function getJourneyBossBattleWeaponAttackType(journeyStats = null) {
+  return normalizeJourneyWeaponAttackType(
+    journeyStats?.equippedWeaponMeta?.attackType
+  );
+}
+
+function resolveJourneyBossBattleWeaponText(attackType, armedText, unarmedText) {
+  if (!attackType) {
+    return unarmedText;
+  }
+
+  if (typeof armedText === "string") {
+    return armedText;
+  }
+
+  if (!armedText || typeof armedText !== "object") {
+    return unarmedText;
+  }
+
+  return (
+    armedText[attackType] ||
+    armedText.slash ||
+    armedText.pierce ||
+    armedText.strike ||
+    unarmedText
+  );
+}
+
+function getJourneyBossBattleDamageLabel(attackType) {
+  if (attackType === "slash") return "You slashed for";
+  if (attackType === "pierce") return "You pierced for";
+  if (attackType === "strike") return "You struck for";
+  return "You smashed for";
+}
+
 function resolveJourneyBossBattleVictory(
   state,
   journeyStats,
@@ -2303,7 +2354,13 @@ function resolveJourneyBossBattleLoss(state, journeyStats, atDate, boss) {
 }
 
 function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
-  const hasWeapon = Boolean(journeyStats?.equippedWeaponMeta);
+  const weaponAttackType = getJourneyBossBattleWeaponAttackType(journeyStats);
+  const weaponText = (armedText, unarmedText) =>
+    resolveJourneyBossBattleWeaponText(
+      weaponAttackType,
+      armedText,
+      unarmedText
+    );
 
   if (bossIndex === 0) {
     return {
@@ -2324,11 +2381,23 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
           moves: [
             {
               key: "boar:shoulder-cut",
-              label: hasWeapon
-                ? "Slide wide and cut behind the shoulder"
-                : "Slide wide and smash into its shoulder",
+              label: weaponText(
+                {
+                  slash: "Slide wide and cut behind the shoulder",
+                  pierce: "Slide wide and drive the point behind the shoulder",
+                  strike: "Slide wide and crack into its shoulder",
+                },
+                "Slide wide and smash into its shoulder"
+              ),
               preview: "Use footwork and timing to punish the charge.",
-              highlightWord: hasWeapon ? "cut" : "smash",
+              highlightWord: weaponText(
+                {
+                  slash: "cut",
+                  pierce: "point",
+                  strike: "crack",
+                },
+                "smash"
+              ),
               statKey: "finesse",
               chanceBase: 0.38,
               chancePerStat: 0.05,
@@ -2337,19 +2406,40 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 27, successPerStat: 2.3, failBase: 10, failPerStat: 0.8 },
               selfDamage: { successBase: 8, failBase: 16, reductionPerStat: 0.55 },
               successText:
-                hasWeapon
-                  ? "You slip outside the tusks and cut deep behind the shoulder before the boar can turn."
-                  : "You slip outside the tusks and hammer into its shoulder before the boar can turn.",
+                weaponText(
+                  {
+                    slash:
+                      "You slip outside the tusks and cut deep behind the shoulder before the boar can turn.",
+                    pierce:
+                      "You slip outside the tusks and drive the point deep behind the shoulder before the boar can turn.",
+                    strike:
+                      "You slip outside the tusks and crack hard into its shoulder before the boar can turn.",
+                  },
+                  "You slip outside the tusks and hammer into its shoulder before the boar can turn."
+                ),
               failureText:
-                hasWeapon
-                  ? "You almost clear the tusks, but the boar clips you and your hit lands shallow."
-                  : "You almost clear the tusks, but the boar clips you and your hit glances off.",
+                weaponText(
+                  {
+                    slash:
+                      "You almost clear the tusks, but the boar clips you and your cut lands shallow.",
+                    pierce:
+                      "You almost clear the tusks, but the boar clips you and your thrust lands shallow.",
+                    strike:
+                      "You almost clear the tusks, but the boar clips you and your blow lands glancing.",
+                  },
+                  "You almost clear the tusks, but the boar clips you and your hit glances off."
+                ),
             },
             {
               key: "boar:brace-thrust",
-              label: hasWeapon
-                ? "Brace low and drive straight into the charge"
-                : "Brace low and crash into the charge",
+              label: weaponText(
+                {
+                  slash: "Brace low and rip across the charge",
+                  pierce: "Brace low and drive straight into the charge",
+                  strike: "Brace low and smash straight into the charge",
+                },
+                "Brace low and crash into the charge"
+              ),
               preview: "Meet force with force and try to stop it cold.",
               highlightWord: "Brace",
               statKey: "might",
@@ -2360,19 +2450,33 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 31, successPerStat: 2.5, failBase: 12, failPerStat: 1 },
               selfDamage: { successBase: 10, failBase: 18, reductionPerStat: 0.48 },
               successText:
-                hasWeapon
-                  ? "You plant your feet and drive your weapon in hard enough to send the boar screaming past."
-                  : "You plant your feet and slam into the rush hard enough to throw the boar off line.",
+                weaponText(
+                  {
+                    slash:
+                      "You plant your feet and rip a hard line across the charge, sending the boar screaming past.",
+                    pierce:
+                      "You plant your feet and drive your weapon in hard enough to send the boar screaming past.",
+                    strike:
+                      "You plant your feet and smash into the rush hard enough to send the boar reeling past.",
+                  },
+                  "You plant your feet and slam into the rush hard enough to throw the boar off line."
+                ),
               failureText:
-                hasWeapon
-                  ? "The impact lands uglier than planned. You hurt it, but the charge tears through your guard."
-                  : "The impact lands uglier than planned. You check the rush, but it tears through your guard anyway.",
+                weaponText(
+                  "The impact lands uglier than planned. You hurt it, but the charge tears through your guard.",
+                  "The impact lands uglier than planned. You check the rush, but it tears through your guard anyway."
+                ),
             },
             {
               key: "boar:root-feint",
-              label: hasWeapon
-                ? "Bait it across the roots and strike when it stumbles"
-                : "Bait it across the roots and hit when it stumbles",
+              label: weaponText(
+                {
+                  slash: "Bait it across the roots and cut when it stumbles",
+                  pierce: "Bait it across the roots and thrust when it stumbles",
+                  strike: "Bait it across the roots and smash when it stumbles",
+                },
+                "Bait it across the roots and hit when it stumbles"
+              ),
               preview: "Keep your nerve and make the ground fight for you.",
               highlightWord: "Bait",
               statKey: "resolve",
@@ -2383,9 +2487,17 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 24, successPerStat: 2.1, failBase: 9, failPerStat: 0.7 },
               selfDamage: { successBase: 7, failBase: 14, reductionPerStat: 0.58 },
               successText:
-                hasWeapon
-                  ? "You hold your nerve, the boar hits the roots wrong, and you strike as it loses its footing."
-                  : "You hold your nerve, the boar hits the roots wrong, and you crash into it as it loses its footing.",
+                weaponText(
+                  {
+                    slash:
+                      "You hold your nerve, the boar hits the roots wrong, and you cut as it loses its footing.",
+                    pierce:
+                      "You hold your nerve, the boar hits the roots wrong, and you thrust as it loses its footing.",
+                    strike:
+                      "You hold your nerve, the boar hits the roots wrong, and you smash as it loses its footing.",
+                  },
+                  "You hold your nerve, the boar hits the roots wrong, and you crash into it as it loses its footing."
+                ),
               failureText:
                 "You wait a beat too long and the boar blows through the trap before you can turn it.",
             },
@@ -2399,11 +2511,23 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
           moves: [
             {
               key: "boar:eye-dust",
-              label: hasWeapon
-                ? "Kick dirt high and strike through the opening"
-                : "Kick dirt high and drive in while it blinks",
+              label: weaponText(
+                {
+                  slash: "Kick dirt high and cut through the opening",
+                  pierce: "Kick dirt high and thrust through the opening",
+                  strike: "Kick dirt high and smash through the opening",
+                },
+                "Kick dirt high and drive in while it blinks"
+              ),
               preview: "Create a split-second blind spot and use it.",
-              highlightWord: hasWeapon ? "strike" : "blinks",
+              highlightWord: weaponText(
+                {
+                  slash: "cut",
+                  pierce: "thrust",
+                  strike: "smash",
+                },
+                "blinks"
+              ),
               statKey: "finesse",
               chanceBase: 0.36,
               chancePerStat: 0.05,
@@ -2412,9 +2536,14 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 25, successPerStat: 2.2, failBase: 10, failPerStat: 0.8 },
               selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.55 },
               successText:
-                hasWeapon
-                  ? "Dirt flashes into its face and your strike lands in the opening."
-                  : "Dirt flashes into its face and you drive in before it can recover.",
+                weaponText(
+                  {
+                    slash: "Dirt flashes into its face and your cut lands in the opening.",
+                    pierce: "Dirt flashes into its face and your thrust lands in the opening.",
+                    strike: "Dirt flashes into its face and your smash lands in the opening.",
+                  },
+                  "Dirt flashes into its face and you drive in before it can recover."
+                ),
               failureText:
                 "The dirt buys less than you hoped, and the boar shoulders you backward.",
             },
@@ -2462,11 +2591,23 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
           moves: [
             {
               key: "boar:hamstring-finish",
-              label: hasWeapon
-                ? "Cut low and take its drive away"
-                : "Sweep low and take its drive away",
+              label: weaponText(
+                {
+                  slash: "Cut low and take its drive away",
+                  pierce: "Thrust low and take its drive away",
+                  strike: "Smash low and take its drive away",
+                },
+                "Sweep low and take its drive away"
+              ),
               preview: "A technical finish aimed at ending the charge for good.",
-              highlightWord: hasWeapon ? "Cut" : "Sweep",
+              highlightWord: weaponText(
+                {
+                  slash: "Cut",
+                  pierce: "Thrust",
+                  strike: "Smash",
+                },
+                "Sweep"
+              ),
               statKey: "finesse",
               chanceBase: 0.37,
               chancePerStat: 0.05,
@@ -2475,9 +2616,17 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 29, successPerStat: 2.3, failBase: 11, failPerStat: 0.8 },
               selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.56 },
               successText:
-                hasWeapon
-                  ? "You go low at the right moment and tear the drive out of its back leg."
-                  : "You go low at the right moment and smash through its leg, stealing the rush.",
+                weaponText(
+                  {
+                    slash:
+                      "You go low at the right moment and tear the drive out of its back leg.",
+                    pierce:
+                      "You go low at the right moment and punch through the drive in its back leg.",
+                    strike:
+                      "You go low at the right moment and crack through its leg, stealing the rush.",
+                  },
+                  "You go low at the right moment and smash through its leg, stealing the rush."
+                ),
               failureText:
                 "You go low, but not low enough. The boar clips you hard on the way through.",
             },
@@ -2540,9 +2689,14 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
           moves: [
             {
               key: "snapjaw:root-step",
-              label: hasWeapon
-                ? "Step the roots and cut behind the jaw"
-                : "Step the roots and strike behind the jaw",
+              label: weaponText(
+                {
+                  slash: "Step the roots and cut behind the jaw",
+                  pierce: "Step the roots and drive behind the jaw",
+                  strike: "Step the roots and crack behind the jaw",
+                },
+                "Step the roots and strike behind the jaw"
+              ),
               preview: "Beat the burst with footwork and punish the lunge.",
               highlightWord: "roots",
               statKey: "finesse",
@@ -2553,17 +2707,30 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 26, successPerStat: 2.2, failBase: 10, failPerStat: 0.7 },
               selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.58 },
               successText:
-                hasWeapon
-                  ? "You skip across the roots, let the jaws close on nothing, and cut deep along the hinge before it can turn."
-                  : "You skip across the roots, let the jaws close on nothing, and hammer the hinge before it can turn.",
+                weaponText(
+                  {
+                    slash:
+                      "You skip across the roots, let the jaws close on nothing, and cut deep along the hinge before it can turn.",
+                    pierce:
+                      "You skip across the roots, let the jaws close on nothing, and drive deep along the hinge before it can turn.",
+                    strike:
+                      "You skip across the roots, let the jaws close on nothing, and crack the hinge before it can turn.",
+                  },
+                  "You skip across the roots, let the jaws close on nothing, and hammer the hinge before it can turn."
+                ),
               failureText:
                 "The roots help, but not enough. The snap clips you on the retreat and your answer lands shallow.",
             },
             {
               key: "snapjaw:jaw-brace",
-              label: hasWeapon
-                ? "Brace the snap and drive it off the bank"
-                : "Brace the snap and shove it off the bank",
+              label: weaponText(
+                {
+                  slash: "Brace the snap and hew it off the bank",
+                  pierce: "Brace the snap and drive it off the bank",
+                  strike: "Brace the snap and smash it off the bank",
+                },
+                "Brace the snap and shove it off the bank"
+              ),
               preview: "Meet the bite with force before it owns the shoreline.",
               highlightWord: "Brace",
               statKey: "might",
@@ -2574,9 +2741,17 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 31, successPerStat: 2.4, failBase: 11, failPerStat: 0.8 },
               selfDamage: { successBase: 11, failBase: 18, reductionPerStat: 0.45 },
               successText:
-                hasWeapon
-                  ? "You jam the bite short, drive your weight through the bind, and send the Mossback skidding sideways through the reeds."
-                  : "You slam the lower jaw aside with both hands and shoulder the whole beast off the clean line.",
+                weaponText(
+                  {
+                    slash:
+                      "You jam the bite short, hack through the bind, and send the Mossback skidding sideways through the reeds.",
+                    pierce:
+                      "You jam the bite short, drive your weight through the bind, and send the Mossback skidding sideways through the reeds.",
+                    strike:
+                      "You jam the bite short, smash through the bind, and send the Mossback skidding sideways through the reeds.",
+                  },
+                  "You slam the lower jaw aside with both hands and shoulder the whole beast off the clean line."
+                ),
               failureText:
                 "You meet the rush too square. The impact still hurts it, but the bank gives under you and the recoil costs blood.",
             },
@@ -2593,7 +2768,17 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 24, successPerStat: 2.1, failBase: 9, failPerStat: 0.7 },
               selfDamage: { successBase: 7, failBase: 14, reductionPerStat: 0.6 },
               successText:
-                "You hold until the water tells the truth, step clear at the last instant, and rake the exposed neck as it overshoots.",
+                weaponText(
+                  {
+                    slash:
+                      "You hold until the water tells the truth, step clear at the last instant, and rake the exposed neck as it overshoots.",
+                    pierce:
+                      "You hold until the water tells the truth, step clear at the last instant, and punch into the exposed neck as it overshoots.",
+                    strike:
+                      "You hold until the water tells the truth, step clear at the last instant, and crack the exposed neck as it overshoots.",
+                  },
+                  "You hold until the water tells the truth, step clear at the last instant, and rake the exposed neck as it overshoots."
+                ),
               failureText:
                 "You read the ripple a beat too late. The dodge is ugly, and your counter is more survival than punishment.",
             },
@@ -2624,9 +2809,14 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
             },
             {
               key: "snapjaw:root-line",
-              label: hasWeapon
-                ? "Run the root line and cut from its blind side"
-                : "Run the root line and strike from its blind side",
+              label: weaponText(
+                {
+                  slash: "Run the root line and cut from its blind side",
+                  pierce: "Run the root line and thrust from its blind side",
+                  strike: "Run the root line and smash from its blind side",
+                },
+                "Run the root line and strike from its blind side"
+              ),
               preview: "Use the bank's exposed roots to stay off the jaw line.",
               highlightWord: "blind",
               statKey: "finesse",
@@ -2637,15 +2827,30 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 26, successPerStat: 2.2, failBase: 10, failPerStat: 0.8 },
               selfDamage: { successBase: 7, failBase: 14, reductionPerStat: 0.6 },
               successText:
-                hasWeapon
-                  ? "You dance the exposed roots, slip outside the head turn, and cut a red line where its eye cannot follow."
-                  : "You dance the exposed roots, slip outside the head turn, and hammer the blind side before it can whip back.",
+                weaponText(
+                  {
+                    slash:
+                      "You dance the exposed roots, slip outside the head turn, and cut a red line where its eye cannot follow.",
+                    pierce:
+                      "You dance the exposed roots, slip outside the head turn, and drive a red line where its eye cannot follow.",
+                    strike:
+                      "You dance the exposed roots, slip outside the head turn, and hammer the blind side before it can whip back.",
+                  },
+                  "You dance the exposed roots, slip outside the head turn, and hammer the blind side before it can whip back."
+                ),
               failureText:
                 "One wet root rolls under you at the wrong instant, and the beast's head swing nearly takes you into the creek with it.",
             },
             {
               key: "snapjaw:glare-flash",
-              label: "Flash the waterline and strike on the recoil",
+              label: weaponText(
+                {
+                  slash: "Flash the waterline and cut on the recoil",
+                  pierce: "Flash the waterline and thrust on the recoil",
+                  strike: "Flash the waterline and smash on the recoil",
+                },
+                "Flash the waterline and strike on the recoil"
+              ),
               preview: "Turn light, spray, and surprise into one clean opening.",
               highlightWord: "Flash",
               statKey: "arcana",
@@ -2681,16 +2886,31 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 31, successPerStat: 2.5, failBase: 11, failPerStat: 0.9 },
               selfDamage: { successBase: 11, failBase: 18, reductionPerStat: 0.45 },
               successText:
-                hasWeapon
-                  ? "You catch the lower jaw against the bank, drive through the bind, and stop the charge before the bite can close."
-                  : "You pin the lower jaw against the bank with everything you have and stop the charge before the bite can close.",
+                weaponText(
+                  {
+                    slash:
+                      "You catch the lower jaw against the bank, hack through the bind, and stop the charge before the bite can close.",
+                    pierce:
+                      "You catch the lower jaw against the bank, drive through the bind, and stop the charge before the bite can close.",
+                    strike:
+                      "You catch the lower jaw against the bank, smash through the bind, and stop the charge before the bite can close.",
+                  },
+                  "You pin the lower jaw against the bank with everything you have and stop the charge before the bite can close."
+                ),
               failureText:
                 "You commit too early and the head bucks free. The answer comes back ugly and close enough to smell.",
             },
             {
               key: "snapjaw:stone-feint",
               label: "Hold through the fake lunge and slam its head into the stones",
-              preview: "Ignore the bait, wait for the real strike, and punish it.",
+              preview: weaponText(
+                {
+                  slash: "Ignore the bait, wait for the real cut, and punish it.",
+                  pierce: "Ignore the bait, wait for the real thrust, and punish it.",
+                  strike: "Ignore the bait, wait for the real smash, and punish it.",
+                },
+                "Ignore the bait, wait for the real strike, and punish it."
+              ),
               highlightWord: "Hold",
               statKey: "resolve",
               chanceBase: 0.4,
@@ -2706,9 +2926,14 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
             },
             {
               key: "snapjaw:spine-run",
-              label: hasWeapon
-                ? "Ride its back and cut behind the skull"
-                : "Ride its back and hammer behind the skull",
+              label: weaponText(
+                {
+                  slash: "Ride its back and cut behind the skull",
+                  pierce: "Ride its back and drive behind the skull",
+                  strike: "Ride its back and hammer behind the skull",
+                },
+                "Ride its back and hammer behind the skull"
+              ),
               preview: "Climb over the snap and hit the base of the neck before it bucks you off.",
               highlightWord: "Ride",
               statKey: "finesse",
@@ -2719,9 +2944,17 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 28, successPerStat: 2.3, failBase: 10, failPerStat: 0.8 },
               selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.56 },
               successText:
-                hasWeapon
-                  ? "You scramble across its back, stay above the snapping jaws, and cut deep behind the skull before it can throw you clear."
-                  : "You scramble across its back, stay above the snapping jaws, and hammer the base of the neck hard enough to finish the road.",
+                weaponText(
+                  {
+                    slash:
+                      "You scramble across its back, stay above the snapping jaws, and cut deep behind the skull before it can throw you clear.",
+                    pierce:
+                      "You scramble across its back, stay above the snapping jaws, and drive deep behind the skull before it can throw you clear.",
+                    strike:
+                      "You scramble across its back, stay above the snapping jaws, and hammer the base of the neck hard enough to finish the road.",
+                  },
+                  "You scramble across its back, stay above the snapping jaws, and hammer the base of the neck hard enough to finish the road."
+                ),
               failureText:
                 "You almost stay above the turn, but the thrash throws you off early and the landing costs you.",
             },
@@ -2754,11 +2987,23 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
           moves: [
             {
               key: "ambusher:rail-cut",
-              label: hasWeapon
-                ? "Use the broken rail for cover and cut in hard"
-                : "Use the broken rail for cover and crash in hard",
+              label: weaponText(
+                {
+                  slash: "Use the broken rail for cover and cut in hard",
+                  pierce: "Use the broken rail for cover and drive in hard",
+                  strike: "Use the broken rail for cover and smash in hard",
+                },
+                "Use the broken rail for cover and crash in hard"
+              ),
               preview: "Advance under cover before the next shot can settle.",
-              highlightWord: hasWeapon ? "cut" : "crash",
+              highlightWord: weaponText(
+                {
+                  slash: "cut",
+                  pierce: "drive",
+                  strike: "smash",
+                },
+                "crash"
+              ),
               statKey: "finesse",
               chanceBase: 0.38,
               chancePerStat: 0.05,
@@ -2767,13 +3012,29 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 26, successPerStat: 2.2, failBase: 10, failPerStat: 0.8 },
               selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.56 },
               successText:
-                hasWeapon
-                  ? "You slip behind the shattered rail, spoil the shot, and cut across the ambusher's leading side before they can reset."
-                  : "You slip behind the shattered rail, spoil the shot, and crash into the ambusher's leading side before they can reset.",
+                weaponText(
+                  {
+                    slash:
+                      "You slip behind the shattered rail, spoil the shot, and cut across the ambusher's leading side before they can reset.",
+                    pierce:
+                      "You slip behind the shattered rail, spoil the shot, and drive across the ambusher's leading side before they can reset.",
+                    strike:
+                      "You slip behind the shattered rail, spoil the shot, and smash into the ambusher's leading side before they can reset.",
+                  },
+                  "You slip behind the shattered rail, spoil the shot, and crash into the ambusher's leading side before they can reset."
+                ),
               failureText:
-                hasWeapon
-                  ? "You close most of the distance, but the arrow still clips you and your cut lands without full weight."
-                  : "You close most of the distance, but the arrow still clips you and your hit lands without full weight.",
+                weaponText(
+                  {
+                    slash:
+                      "You close most of the distance, but the arrow still clips you and your cut lands without full weight.",
+                    pierce:
+                      "You close most of the distance, but the arrow still clips you and your thrust lands without full weight.",
+                    strike:
+                      "You close most of the distance, but the arrow still clips you and your blow lands without full weight.",
+                  },
+                  "You close most of the distance, but the arrow still clips you and your hit lands without full weight."
+                ),
             },
             {
               key: "ambusher:bull-through",
@@ -2819,9 +3080,14 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
           moves: [
             {
               key: "ambusher:hook-bind",
-              label: hasWeapon
-                ? "Bind the hook and cut through the opening"
-                : "Bind the hook and crash through the opening",
+              label: weaponText(
+                {
+                  slash: "Bind the hook and cut through the opening",
+                  pierce: "Bind the hook and drive through the opening",
+                  strike: "Bind the hook and smash through the opening",
+                },
+                "Bind the hook and crash through the opening"
+              ),
               preview: "Beat the polearm at close range before it can control your feet.",
               highlightWord: "Bind",
               statKey: "might",
@@ -2832,9 +3098,17 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 29, successPerStat: 2.3, failBase: 10, failPerStat: 0.8 },
               selfDamage: { successBase: 10, failBase: 17, reductionPerStat: 0.48 },
               successText:
-                hasWeapon
-                  ? "You catch the hooked shaft in the bind, wrench it off line, and cut through the gap before the ambusher can recover."
-                  : "You catch the hooked shaft in the bind, wrench it off line, and crash through the gap before the ambusher can recover.",
+                weaponText(
+                  {
+                    slash:
+                      "You catch the hooked shaft in the bind, wrench it off line, and cut through the gap before the ambusher can recover.",
+                    pierce:
+                      "You catch the hooked shaft in the bind, wrench it off line, and drive through the gap before the ambusher can recover.",
+                    strike:
+                      "You catch the hooked shaft in the bind, wrench it off line, and smash through the gap before the ambusher can recover.",
+                  },
+                  "You catch the hooked shaft in the bind, wrench it off line, and crash through the gap before the ambusher can recover."
+                ),
               failureText:
                 "You get the bind, but not the leverage. The hook still tears your stance sideways and the counter lands ugly.",
             },
@@ -2851,15 +3125,30 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 26, successPerStat: 2.2, failBase: 10, failPerStat: 0.8 },
               selfDamage: { successBase: 7, failBase: 14, reductionPerStat: 0.6 },
               successText:
-                hasWeapon
-                  ? "You skim the slick boards, slip past the hooked reach, and cut across the ambusher's blind side before they can pivot."
-                  : "You skim the slick boards, slip past the hooked reach, and hammer the ambusher from the blind side before they can pivot.",
+                weaponText(
+                  {
+                    slash:
+                      "You skim the slick boards, slip past the hooked reach, and cut across the ambusher's blind side before they can pivot.",
+                    pierce:
+                      "You skim the slick boards, slip past the hooked reach, and drive across the ambusher's blind side before they can pivot.",
+                    strike:
+                      "You skim the slick boards, slip past the hooked reach, and hammer the ambusher from the blind side before they can pivot.",
+                  },
+                  "You skim the slick boards, slip past the hooked reach, and hammer the ambusher from the blind side before they can pivot."
+                ),
               failureText:
                 "A wet board skids under you at the wrong instant, and the ambusher punishes the stumble before you can recover the line.",
             },
             {
               key: "ambusher:bridge-rhythm",
-              label: "Feel the bridge sway and strike on its rhythm",
+              label: weaponText(
+                {
+                  slash: "Feel the bridge sway and cut on its rhythm",
+                  pierce: "Feel the bridge sway and thrust on its rhythm",
+                  strike: "Feel the bridge sway and smash on its rhythm",
+                },
+                "Feel the bridge sway and strike on its rhythm"
+              ),
               preview: "Let the whole crossing tell you when the opening is real.",
               highlightWord: "rhythm",
               statKey: "arcana",
@@ -2901,9 +3190,14 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
             },
             {
               key: "ambusher:hold-feint",
-              label: hasWeapon
-                ? "Hold through the feint and cut the true opening"
-                : "Hold through the feint and break the true opening",
+              label: weaponText(
+                {
+                  slash: "Hold through the feint and cut the true opening",
+                  pierce: "Hold through the feint and drive the true opening",
+                  strike: "Hold through the feint and break the true opening",
+                },
+                "Hold through the feint and break the true opening"
+              ),
               preview: "Patience beats a dirty finisher if your nerve holds.",
               highlightWord: "Hold",
               statKey: "resolve",
@@ -2914,17 +3208,30 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 25, successPerStat: 2.1, failBase: 10, failPerStat: 0.8 },
               selfDamage: { successBase: 8, failBase: 14, reductionPerStat: 0.6 },
               successText:
-                hasWeapon
-                  ? "You refuse the bait, wait out the feint, and cut the real opening the instant the ambusher overcommits."
-                  : "You refuse the bait, wait out the feint, and break the real opening the instant the ambusher overcommits.",
+                weaponText(
+                  {
+                    slash:
+                      "You refuse the bait, wait out the feint, and cut the real opening the instant the ambusher overcommits.",
+                    pierce:
+                      "You refuse the bait, wait out the feint, and drive the real opening the instant the ambusher overcommits.",
+                    strike:
+                      "You refuse the bait, wait out the feint, and break the real opening the instant the ambusher overcommits.",
+                  },
+                  "You refuse the bait, wait out the feint, and break the real opening the instant the ambusher overcommits."
+                ),
               failureText:
                 "You read the trick, but not fast enough. The real hit still gets into you before your answer lands.",
             },
             {
               key: "ambusher:shattered-bow",
-              label: hasWeapon
-                ? "Turn the shattered bow into a finishing opening"
-                : "Turn the shattered bow into a finishing break",
+              label: weaponText(
+                {
+                  slash: "Turn the shattered bow into a finishing opening",
+                  pierce: "Turn the shattered bow into a finishing thrust",
+                  strike: "Turn the shattered bow into a finishing break",
+                },
+                "Turn the shattered bow into a finishing break"
+              ),
               preview: "Use the wreckage of the fight before they can reset their reach.",
               highlightWord: "shattered",
               statKey: "finesse",
@@ -2935,9 +3242,17 @@ function getJourneyBossBattleProfile(bossIndex, boss, journeyStats = null) {
               bossDamage: { successBase: 28, successPerStat: 2.3, failBase: 10, failPerStat: 0.8 },
               selfDamage: { successBase: 8, failBase: 15, reductionPerStat: 0.56 },
               successText:
-                hasWeapon
-                  ? "You knock the ruined bow across their vision, slip under the hooked reach, and cut the finishing line before they can reclaim space."
-                  : "You knock the ruined bow across their vision, slip under the hooked reach, and hammer the finishing line before they can reclaim space.",
+                weaponText(
+                  {
+                    slash:
+                      "You knock the ruined bow across their vision, slip under the hooked reach, and cut the finishing line before they can reclaim space.",
+                    pierce:
+                      "You knock the ruined bow across their vision, slip under the hooked reach, and drive the finishing line before they can reclaim space.",
+                    strike:
+                      "You knock the ruined bow across their vision, slip under the hooked reach, and hammer the finishing line before they can reclaim space.",
+                  },
+                  "You knock the ruined bow across their vision, slip under the hooked reach, and hammer the finishing line before they can reclaim space."
+                ),
               failureText:
                 "The distraction buys almost enough. Almost is not clean on a bridge, and the counter catches you before the exchange fully breaks your way.",
             },
@@ -5574,6 +5889,13 @@ export function normalizeJourneyWeaponKey(weaponKey) {
   return matchingEntry?.[0] || "";
 }
 
+export function normalizeJourneyWeaponAttackType(attackType) {
+  const safeType = String(attackType || "").trim().toLowerCase();
+  return safeType === "slash" || safeType === "strike" || safeType === "pierce"
+    ? safeType
+    : "";
+}
+
 export function awardJourneyBag(state, bagKey) {
   const nextBagKey = normalizeJourneyBagKey(bagKey);
   const nextBagMeta = getJourneyBagMeta(nextBagKey);
@@ -5861,7 +6183,14 @@ export function settleJourneySupplyOverflow(state, games, sessions) {
 
 export function getJourneyVictoryWeaponReward(journeyLevel) {
   if (journeyLevel >= 7) {
-    return randomPick(["ember_rod", "warded_stave", "ruin_greatblade"]);
+    return randomPick([
+      "duelists_rapier",
+      "ember_rod",
+      "smokeglass_censer",
+      "mercywood_staff",
+      "wardens_arming_sword",
+      "ruin_greatblade",
+    ]);
   }
   if (journeyLevel >= 4) {
     return randomPick([
@@ -5869,8 +6198,14 @@ export function getJourneyVictoryWeaponReward(journeyLevel) {
       "hardened_boar_spear",
       "travelers_hatchet",
       "bandit_cut_machete",
+      "gutter_stiletto",
+      "soldiers_mace",
       "ashwood_bow",
       "ember_rod",
+      "warded_stave",
+      "duelists_rapier",
+      "smokeglass_censer",
+      "mercywood_staff",
     ]);
   }
   return randomPick([
@@ -5880,6 +6215,8 @@ export function getJourneyVictoryWeaponReward(journeyLevel) {
     "hardened_boar_spear",
     "travelers_hatchet",
     "bandit_cut_machete",
+    "gutter_stiletto",
+    "soldiers_mace",
   ]);
 }
 

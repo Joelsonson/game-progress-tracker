@@ -26,6 +26,7 @@ import {
   JOURNEY_MANASTONE_META,
   JOURNEY_STAT_KEYS,
   JOURNEY_STAT_META,
+  JOURNEY_WEAPON_META,
 } from "../../core/constants.js";
 import {
   clamp,
@@ -265,6 +266,16 @@ const JOURNEY_LOCALIZED_META = {
         tier: "上質",
         description: "粗い鋼だが、攻め気と素早い手に応えてくれる。",
       },
+      gutter_stiletto: {
+        label: "路地裏のスティレット",
+        tier: "上質",
+        description: "隙間、肋、逃げ道のために作られた細身の刃。",
+      },
+      soldiers_mace: {
+        label: "兵士のメイス",
+        tier: "上質",
+        description: "盾や兜、突進の終わり際を叩き割るための詰まった鉄。",
+      },
       ashwood_bow: {
         label: "アッシュウッドの弓",
         tier: "希少",
@@ -279,6 +290,26 @@ const JOURNEY_LOCALIZED_META = {
         label: "護符の杖",
         tier: "希少",
         description: "見た目以上に安定していて、防護の刻印を抱えている。",
+      },
+      duelists_rapier: {
+        label: "決闘士の細剣",
+        tier: "希少",
+        description: "姿勢、間合い、度胸に応える精密な細身の剣。",
+      },
+      smokeglass_censer: {
+        label: "煙硝ガラスの香炉",
+        tier: "希少",
+        description: "苦い薬香を残す、振り回して戦うための重い香炉。",
+      },
+      mercywood_staff: {
+        label: "慈木の杖",
+        tier: "希少",
+        description: "祈り紐と古い包帯が巻かれた、長くしなる杖。",
+      },
+      wardens_arming_sword: {
+        label: "守誓の片手剣",
+        tier: "英雄級",
+        description: "一線を保ち、最後を綺麗に決めるための騎士剣。",
       },
       ruin_greatblade: {
         label: "遺跡の大剣",
@@ -478,6 +509,35 @@ function getJourneyWeaponDescription(weaponKey, fallback = "") {
 
 function getJourneyWeaponTier(weaponKey, fallback = "") {
   return getJourneyLocalizedEntry("weapons", weaponKey, "tier", fallback);
+}
+
+function getJourneyWeaponAttackTypeLabel(weaponKey, fallback = "") {
+  const attackType = String(
+    JOURNEY_WEAPON_META[weaponKey]?.attackType || fallback || ""
+  ).trim();
+  if (!attackType) return "";
+
+  if (getCurrentLocale() === "ja") {
+    if (attackType === "slash") return "斬撃";
+    if (attackType === "strike") return "打撃";
+    if (attackType === "pierce") return "刺突";
+  }
+
+  if (attackType === "slash") return "Slash";
+  if (attackType === "strike") return "Strike";
+  if (attackType === "pierce") return "Pierce";
+  return attackType;
+}
+
+function getJourneyBattleAttackLabel(battle) {
+  const directLabel = String(battle?.heroAttackLabel || "").trim();
+  if (directLabel) return directLabel;
+
+  const attackType = String(battle?.weaponAttackType || "").trim();
+  if (attackType === "slash") return "You slashed for";
+  if (attackType === "pierce") return "You pierced for";
+  if (attackType === "strike") return "You struck for";
+  return "You smashed for";
 }
 
 function getJourneyStarterItemLabel(item) {
@@ -1262,6 +1322,7 @@ function renderJourneyBossBattlePanel(eventEntry) {
 
   const bossArt = getJourneyBossBattleArt(battle);
   const exchangeSummary = renderJourneyBossBattleExchangeSummary(battle);
+  const heroAttackLabel = getJourneyBattleAttackLabel(battle);
 
   return `
     <div class="journey-event-panel journey-battle-panel">
@@ -1279,7 +1340,7 @@ function renderJourneyBossBattlePanel(eventEntry) {
             max: battle.bossMaxHp,
             tone: "boss",
             lastDamage: battle.lastBossDamage,
-            damageLabel: "You hit for",
+            damageLabel: heroAttackLabel,
           })}
           ${renderJourneyBossBattleHealthCard({
             label: "You",
@@ -1300,6 +1361,8 @@ function renderJourneyBossBattlePanel(eventEntry) {
 }
 
 function renderJourneyBossBattleExchangeSummary(battle) {
+  const heroAttackLabel = getJourneyBattleAttackLabel(battle);
+
   if (!battle?.lastCheckLabel) {
     return `
       <div class="journey-battle-exchange-summary is-neutral" data-journey-battle-summary>
@@ -1336,7 +1399,7 @@ function renderJourneyBossBattleExchangeSummary(battle) {
             )}</span>`
           : ""
       }
-      <span>You hit for ${Math.max(0, Math.round(Number(battle.lastBossDamage) || 0))} and took ${Math.max(
+      <span>${escapeHtml(heroAttackLabel)} ${Math.max(0, Math.round(Number(battle.lastBossDamage) || 0))} and took ${Math.max(
         0,
         Math.round(Number(battle.lastHeroDamage) || 0)
       )}.</span>
@@ -2264,6 +2327,12 @@ function renderCharacterInventoryTab(viewModel) {
 
 function renderCharacterEquipmentTab(viewModel) {
   const equippedWeaponBonuses = viewModel.journeyStats.equippedWeaponMeta?.bonuses;
+  const equippedWeaponTypeLabel = viewModel.journeyStats.equippedWeaponMeta
+    ? getJourneyWeaponAttackTypeLabel(
+        viewModel.state.equippedWeaponKey,
+        viewModel.journeyStats.equippedWeaponMeta.attackType
+      )
+    : "";
   const equippedWeaponBonusMarkup = renderWeaponBonusChips(equippedWeaponBonuses);
   const equippedManastoneLabel = viewModel.equippedManastone
     ? getJourneyManastoneLabel(
@@ -2296,9 +2365,16 @@ function renderCharacterEquipmentTab(viewModel) {
                 : t("journeyUi.character.stillUnarmed")
             )}</p>
             ${
-              equippedWeaponBonusMarkup
+              equippedWeaponBonusMarkup || equippedWeaponTypeLabel
                 ? `
                     <div class="journey-inline-row stat-source-row">
+                      ${
+                        equippedWeaponTypeLabel
+                          ? `<span class="journey-chip is-weapon">${escapeHtml(
+                              equippedWeaponTypeLabel
+                            )}</span>`
+                          : ""
+                      }
                       ${equippedWeaponBonusMarkup}
                     </div>
                   `
@@ -2809,6 +2885,11 @@ function renderCharacterSkillModal(viewModel) {
 }
 
 function renderJourneyWeaponCard(weapon) {
+  const attackTypeLabel = getJourneyWeaponAttackTypeLabel(
+    weapon.key,
+    weapon.meta.attackType
+  );
+
   return `
     <article class="journey-log-entry journey-weapon-card ${
       weapon.equipped ? "is-equipped" : ""
@@ -2818,6 +2899,13 @@ function renderJourneyWeaponCard(weapon) {
         <span class="journey-chip">${escapeHtml(
           getJourneyWeaponTier(weapon.key, weapon.meta.tier)
         )}</span>
+        ${
+          attackTypeLabel
+            ? `<span class="journey-chip is-weapon">${escapeHtml(
+                attackTypeLabel
+              )}</span>`
+            : ""
+        }
         ${
           weapon.equipped
             ? `<span class="journey-chip is-active">${escapeHtml(
@@ -2928,6 +3016,10 @@ function renderJourneyManastoneCard(manastone, options = {}) {
 
 function renderJourneyPendingWeaponCard(weapon, currentWeapons, weaponSlots) {
   const canKeep = currentWeapons.length < weaponSlots;
+  const attackTypeLabel = getJourneyWeaponAttackTypeLabel(
+    weapon.key,
+    weapon.meta.attackType
+  );
 
   return `
     <article class="journey-log-entry journey-weapon-card is-pending">
@@ -2939,6 +3031,13 @@ function renderJourneyPendingWeaponCard(weapon, currentWeapons, weaponSlots) {
         <span class="journey-chip">${escapeHtml(
           getJourneyWeaponTier(weapon.key, weapon.meta.tier)
         )}</span>
+        ${
+          attackTypeLabel
+            ? `<span class="journey-chip is-weapon">${escapeHtml(
+                attackTypeLabel
+              )}</span>`
+            : ""
+        }
       </div>
       <p class="muted-text">${escapeHtml(
         getJourneyWeaponDescription(weapon.key, weapon.meta.description)

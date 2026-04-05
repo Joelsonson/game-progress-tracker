@@ -118,6 +118,8 @@ function normalizeJourneyBattleState(rawBattle) {
     lastBossDamage: clampBattleValue(rawBattle.lastBossDamage, 0, 999, 0),
     lastHeroDamage: clampBattleValue(rawBattle.lastHeroDamage, 0, 999, 0),
     weaponLabel: String(rawBattle.weaponLabel || "").trim(),
+    weaponAttackType: String(rawBattle.weaponAttackType || "").trim(),
+    heroAttackLabel: String(rawBattle.heroAttackLabel || "").trim(),
     heroBattleNote: String(rawBattle.heroBattleNote || "").trim(),
     lastCheckLabel: String(rawBattle.lastCheckLabel || "").trim(),
     lastCheckSuccess: Boolean(rawBattle.lastCheckSuccess),
