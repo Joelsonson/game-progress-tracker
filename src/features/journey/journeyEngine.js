@@ -13,6 +13,8 @@ import {
   JOURNEY_DEBUG_HISTORY_LIMIT,
   JOURNEY_FLAG_KEYS,
   JOURNEY_LOG_LIMIT,
+  JOURNEY_LEGACY_CLASS_TO_MANASTONE,
+  JOURNEY_MANASTONE_META,
   JOURNEY_PENDING_EVENT_LIMIT,
   JOURNEY_RECENT_EVENT_LIMIT,
   JOURNEY_STARTING_SKILL_POINTS,
@@ -146,6 +148,12 @@ export async function syncJourneyState(rawState, games, sessions, xpSummary) {
 export function normalizeJourneyState(rawState = null) {
   const nowIso = new Date().toISOString();
   const source = rawState && typeof rawState === "object" ? rawState : {};
+  const sourceVersion = Math.max(0, Math.floor(Number(source.version) || 0));
+  const shouldMigrateLegacyClasses =
+    sourceVersion < 10 &&
+    !Array.isArray(source.inventoryManastoneKeys) &&
+    !Array.isArray(source.identifiedManastoneKeys) &&
+    !source.equippedManastoneKey;
   const legacyClearedRoads = buildLegacyClearedRoadHistory(source.log, nowIso);
   const legacyRetreatHistory = buildLegacyRetreatHistory(source.log, nowIso);
   const allocatedStats = JOURNEY_STAT_KEYS.reduce((accumulator, key) => {
@@ -169,20 +177,77 @@ export function normalizeJourneyState(rawState = null) {
         .filter(Boolean)
     : [];
 
-  const unlockedClassSet = new Set(
-    Array.isArray(source.unlockedClasses) ? source.unlockedClasses : []
+  const legacyUnlockedClasses =
+    shouldMigrateLegacyClasses && Array.isArray(source.unlockedClasses)
+      ? source.unlockedClasses
+      : [];
+  const inventoryManastoneSet = new Set(
+    Array.isArray(source.inventoryManastoneKeys) ? source.inventoryManastoneKeys : []
   );
-  unlockedClassSet.add(JOURNEY_BASE_CLASS);
-  if (JOURNEY_CLASS_META[source.classType]) {
-    unlockedClassSet.add(source.classType);
+  const explicitEquippedManastoneKey = normalizeJourneyManastoneKey(
+    source.equippedManastoneKey
+  );
+  if (explicitEquippedManastoneKey) {
+    inventoryManastoneSet.add(explicitEquippedManastoneKey);
   }
-
+  for (const classKey of legacyUnlockedClasses) {
+    const legacyManastoneKey = getJourneyManastoneKeyForClass(classKey);
+    if (legacyManastoneKey) {
+      inventoryManastoneSet.add(legacyManastoneKey);
+    }
+  }
+  const legacyEquippedManastoneKey = shouldMigrateLegacyClasses
+    ? getJourneyManastoneKeyForClass(source.classType)
+    : "";
+  if (legacyEquippedManastoneKey) {
+    inventoryManastoneSet.add(legacyEquippedManastoneKey);
+  }
+  const inventoryManastoneKeys = [
+    ...new Set(
+      [...inventoryManastoneSet]
+        .map((entry) => normalizeJourneyManastoneKey(entry))
+        .filter(Boolean)
+    ),
+  ];
+  const identifiedManastoneSet = new Set(
+    Array.isArray(source.identifiedManastoneKeys) ? source.identifiedManastoneKeys : []
+  );
+  for (const classKey of legacyUnlockedClasses) {
+    const legacyManastoneKey = getJourneyManastoneKeyForClass(classKey);
+    if (legacyManastoneKey) {
+      identifiedManastoneSet.add(legacyManastoneKey);
+    }
+  }
+  if (legacyEquippedManastoneKey) {
+    identifiedManastoneSet.add(legacyEquippedManastoneKey);
+  }
+  const requestedEquippedManastoneKey = normalizeJourneyManastoneKey(
+    source.equippedManastoneKey || legacyEquippedManastoneKey
+  );
+  const equippedManastoneKey = inventoryManastoneKeys.includes(
+    requestedEquippedManastoneKey
+  )
+    ? requestedEquippedManastoneKey
+    : "";
+  const identifiedManastoneKeys = [
+    ...new Set(
+      [...identifiedManastoneSet, equippedManastoneKey]
+        .map((entry) => normalizeJourneyManastoneKey(entry))
+        .filter((entry) => inventoryManastoneKeys.includes(entry))
+    ),
+  ];
+  const unlockedClassSet = new Set([JOURNEY_BASE_CLASS]);
+  for (const manastoneKey of inventoryManastoneKeys) {
+    const manastoneMeta = getJourneyManastoneMeta(manastoneKey);
+    if (manastoneMeta?.classKey && JOURNEY_CLASS_META[manastoneMeta.classKey]) {
+      unlockedClassSet.add(manastoneMeta.classKey);
+    }
+  }
   const unlockedClasses = [...unlockedClassSet].filter(
     (classKey) => JOURNEY_CLASS_META[classKey]
   );
-  const classType = unlockedClasses.includes(source.classType)
-    ? source.classType
-    : JOURNEY_BASE_CLASS;
+  const classType =
+    getJourneyManastoneMeta(equippedManastoneKey)?.classKey || JOURNEY_BASE_CLASS;
   const inferredBoarDefeat =
     storyFlags.boarDefeated || Math.max(0, Math.floor(Number(source.bossIndex) || 0)) > 0;
   const inferredWeapon =
@@ -227,9 +292,12 @@ export function normalizeJourneyState(rawState = null) {
     inferredWeapon || keptWeaponKeys.length > 0 || pendingWeaponKeys.length > 0;
 
   return {
-    version: 9,
+    version: 10,
     classType,
     unlockedClasses,
+    inventoryManastoneKeys,
+    identifiedManastoneKeys,
+    equippedManastoneKey,
     allocatedStats,
     storyFlags,
     statModifiers,
@@ -1415,6 +1483,19 @@ export function buildJourneyOutcomeItems(beforeState, afterState, resolution = n
     });
   }
 
+  const beforeManastones = new Set(beforeState.inventoryManastoneKeys || []);
+  const gainedManastones = (afterState.inventoryManastoneKeys || []).filter(
+    (manastoneKey) => !beforeManastones.has(manastoneKey)
+  );
+  for (const manastoneKey of gainedManastones) {
+    const manastoneMeta = getJourneyManastoneMeta(manastoneKey);
+    if (!manastoneMeta) continue;
+    items.push({
+      label: `Manastone: ${manastoneMeta.label}`,
+      className: "is-positive",
+    });
+  }
+
   if (beforeState.bagKey !== afterState.bagKey) {
     items.push({
       label: `Bag: ${getJourneyBagMeta(afterState.bagKey).label}`,
@@ -1422,9 +1503,12 @@ export function buildJourneyOutcomeItems(beforeState, afterState, resolution = n
     });
   }
 
-  if (beforeState.classType !== afterState.classType) {
+  if (
+    beforeState.equippedManastoneKey !== afterState.equippedManastoneKey &&
+    afterState.equippedManastoneKey
+  ) {
     items.push({
-      label: `Class: ${JOURNEY_CLASS_META[afterState.classType].label}`,
+      label: `Channelled: ${JOURNEY_CLASS_META[afterState.classType].label}`,
       className: "is-neutral",
     });
   }
@@ -3285,29 +3369,47 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
     pushCandidate(
       "aid:healer",
       7 + state.aidUrgency * 2,
-      () => ({
-        title: "A road healer finds you",
-        teaser: "Someone finally notices how rough a state you are in.",
-        detail:
-          "A traveling healer reins in beside you, takes one long look, and decides you are too close to collapsing to be left alone.",
-        createdAt: eventTime,
-        choices: [
-          createJourneyGuaranteedChoice({
-            label: "Take the healer's aid",
-            preview: "Let the treatment land and get back on your feet.",
-            resultText:
-              "The healer cleans the worst of the damage, binds you properly, and presses a tonic and trail food into your hands before sending you back to the road.",
-            effects: {
-              hp: 22,
-              hunger: 8,
-              bonusTonics: 1,
-              bonusRations: 1,
-              storyXp: 10,
-            },
-          }),
-        ],
-        autoResolve: true,
-      }),
+      () => {
+        const grantsHealerStone =
+          journeyLevel >= 5 && !hasJourneyClassUnlocked(state, "healer");
+
+        return {
+          title: "A road healer finds you",
+          teaser: grantsHealerStone
+            ? "The healer notices more than your wounds and draws out an emerald set in wrapped silver."
+            : "Someone finally notices how rough a state you are in.",
+          detail: grantsHealerStone
+            ? "A traveling healer reins in beside you, takes one long look, and decides you are too close to collapsing to be left alone. While binding your injuries, she produces an emerald manastone from beneath her sleeve and says some blessings only choose people who have already learned how badly the road can hurt."
+            : "A traveling healer reins in beside you, takes one long look, and decides you are too close to collapsing to be left alone.",
+          createdAt: eventTime,
+          choices: [
+            createJourneyGuaranteedChoice({
+              label: "Take the healer's aid",
+              preview: "Let the treatment land and get back on your feet.",
+              resultText: grantsHealerStone
+                ? "The healer cleans the worst of the damage, binds you properly, and closes your fingers around the emerald before sending you back to the road."
+                : "The healer cleans the worst of the damage, binds you properly, and presses a tonic and trail food into your hands before sending you back to the road.",
+              effects: grantsHealerStone
+                ? {
+                    hp: 22,
+                    hunger: 8,
+                    bonusTonics: 1,
+                    bonusRations: 1,
+                    storyXp: 12,
+                    manastoneKey: "emerald_manastone",
+                  }
+                : {
+                    hp: 22,
+                    hunger: 8,
+                    bonusTonics: 1,
+                    bonusRations: 1,
+                    storyXp: 10,
+                  },
+            }),
+          ],
+          autoResolve: true,
+        };
+      },
       "aid",
       true
     );
@@ -3315,29 +3417,47 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
     pushCandidate(
       "aid:herbalist",
       6 + state.aidUrgency,
-      () => ({
-        title: "A traveling herbalist waves you over",
-        teaser: "She has a sharp eye for exhaustion and a pack full of remedies.",
-        detail:
-          "An herbalist sorting roots by the roadside sees you limping, waves you in without bargaining, and starts putting together exactly the kind of help your body has been begging for.",
-        createdAt: eventTime,
-        choices: [
-          createJourneyGuaranteedChoice({
-            label: "Take the herbalist's help",
-            preview: "Drink, eat, and listen while she patches the worst of it.",
-            resultText:
-              "She talks you through what to eat, what to avoid, and which salve to keep for later. By the time you leave, the ache is quieter and your pack is heavier with useful supplies.",
-            effects: {
-              hp: 10,
-              hunger: 16,
-              bonusRations: 2,
-              bonusTonics: 1,
-              storyXp: 10,
-            },
-          }),
-        ],
-        autoResolve: true,
-      }),
+      () => {
+        const grantsApothecaryStone =
+          journeyLevel >= 4 && !hasJourneyClassUnlocked(state, "apothecary");
+
+        return {
+          title: "A traveling herbalist waves you over",
+          teaser: grantsApothecaryStone
+            ? "She has a sharp eye for exhaustion and an amber stone tied into her charm-braid."
+            : "She has a sharp eye for exhaustion and a pack full of remedies.",
+          detail: grantsApothecaryStone
+            ? "An herbalist sorting roots by the roadside sees you limping, waves you in without bargaining, and starts mixing exactly the kind of help your body has been begging for. When you prove you can follow every warning she gives, she unknots a resin-gold manastone from her braid and says some blessings belong with people who respect the difference between cure and poison."
+            : "An herbalist sorting roots by the roadside sees you limping, waves you in without bargaining, and starts putting together exactly the kind of help your body has been begging for.",
+          createdAt: eventTime,
+          choices: [
+            createJourneyGuaranteedChoice({
+              label: "Take the herbalist's help",
+              preview: "Drink, eat, and listen while she patches the worst of it.",
+              resultText: grantsApothecaryStone
+                ? "She talks you through what to eat, what to avoid, and which salve to keep for later. Before you leave, she knots the amber manastone into your palm and tells you not to waste what it teaches."
+                : "She talks you through what to eat, what to avoid, and which salve to keep for later. By the time you leave, the ache is quieter and your pack is heavier with useful supplies.",
+              effects: grantsApothecaryStone
+                ? {
+                    hp: 10,
+                    hunger: 16,
+                    bonusRations: 2,
+                    bonusTonics: 1,
+                    storyXp: 12,
+                    manastoneKey: "amber_manastone",
+                  }
+                : {
+                    hp: 10,
+                    hunger: 16,
+                    bonusRations: 2,
+                    bonusTonics: 1,
+                    storyXp: 10,
+                  },
+            }),
+          ],
+          autoResolve: true,
+        };
+      },
       "aid",
       true
     );
@@ -4128,29 +4248,29 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
     );
   }
 
-  if (journeyLevel >= 3 && state.storyFlags.boarDefeated && !hasJourneyClassUnlocked(state, "warrior")) {
-    pushCandidate("class:warrior-guard", 4, () => ({
+  if (journeyLevel >= 3 && state.storyFlags.boarDefeated && !hasJourneyClassUnlocked(state, "soldier")) {
+    pushCandidate("class:soldier-watchfire", 4, () => ({
           title: "A guard by a roadside fire",
-          teaser: "He notices how you hold yourself and offers a little training.",
+          teaser: "He notices your stance, then studies the ruby set into his old signet.",
           detail:
-            "You come across a tired local guard warming his hands beside a watchfire. After hearing about the boar, he laughs once and says you still grip your weapon like someone who expects it to apologize.",
+            "You come across a tired local guard warming his hands beside a watchfire. After hearing about the boar, he turns a cracked ruby mounted in an iron signet and says stones like that used to be given to people who could hold the line without folding.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
-              label: "Match his stance and hold it",
-              preview: "Meet the lesson directly and let the bruises come.",
-              highlightWord: "Match",
+              label: "Match his guard and hold the line",
+              preview: "Let him test whether the stone has any reason to answer you.",
+              highlightWord: "line",
               statKey: "might",
               chanceBase: 0.24,
               chancePerStat: 0.09,
               successText:
-                "You meet every correction with force instead of flinching. By the time the fire burns low, the guard nods once and says you finally look like a warrior.",
+                "You meet every correction without giving ground. At the end of it, the ruby flares warm in the guard's palm, and he presses the stone into your hand with a grim nod.",
               failureText:
-                "You can feel the shape of the lesson, but not hold it. The guard still leaves you with hard advice and a few new bruises.",
+                "You understand the lesson, but the stone stays dark. The guard still leaves you with hard advice and a few new bruises.",
               successEffects: {
                 hp: -4,
                 storyXp: 20,
-                unlockClass: "warrior",
+                manastoneKey: "ruby_manastone",
               },
               failureEffects: {
                 hp: -6,
@@ -4158,20 +4278,20 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Absorb the drill and keep rising",
-              preview: "Treat stubborn endurance as its own kind of weapon.",
+              label: "Take the blows and rise anyway",
+              preview: "Show the stone you know how to endure a soldier's lesson.",
               highlightWord: "rising",
               statKey: "vitality",
               chanceBase: 0.28,
               chancePerStat: 0.08,
               successText:
-                "He knocks you down until your body learns not to stay there. The lesson sinks in through sheer repetition and pain.",
+                "He knocks you down until your body remembers how to come back up before your pride can. When the drill ends, he gives you the ruby and tells you the land can judge the rest.",
               failureText:
-                "You last longer than he expects, but not long enough to earn the full lesson. The practice still leaves a mark.",
+                "You last longer than he expects, but not long enough to wake the stone. The practice still leaves its mark.",
               successEffects: {
                 hp: -3,
                 storyXp: 18,
-                unlockClass: "warrior",
+                manastoneKey: "ruby_manastone",
               },
               failureEffects: {
                 hp: -5,
@@ -4179,20 +4299,20 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Study the rhythm behind each strike",
-              preview: "Look past the strength and read the intent.",
+              label: "Read the discipline behind each correction",
+              preview: "Show him you understand what the stone is actually measuring.",
               highlightWord: "rhythm",
               statKey: "resolve",
               chanceBase: 0.29,
               chancePerStat: 0.07,
               successText:
-                "You stop reacting to each blow and start understanding the cadence beneath them. The guard notices, and the lesson finally clicks into place.",
+                "You stop reacting to each strike and start answering the intent beneath it. The guard notices, then leaves the ruby signet stone in your hand as if returning something that was only ever on loan.",
               failureText:
-                "You catch part of what he means, but only part. The rest will have to wait for another road and another fire.",
+                "You catch part of what he means, but not enough to stir the gem. The rest will have to wait for another road and another fire.",
               successEffects: {
                 bonusRations: 1,
                 storyXp: 18,
-                unlockClass: "warrior",
+                manastoneKey: "ruby_manastone",
               },
               failureEffects: {
                 hunger: -2,
@@ -4204,30 +4324,30 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
     );
   }
 
-  if (journeyLevel >= 4 && state.storyFlags.boarDefeated && !hasJourneyClassUnlocked(state, "mage")) {
-    pushCandidate("class:mage-shrine", 3, () => ({
+  if (journeyLevel >= 4 && state.storyFlags.boarDefeated && !hasJourneyClassUnlocked(state, "arcanist")) {
+    pushCandidate("class:arcanist-shrine", 3, () => ({
           title: "A whispering shrine",
-          teaser: "The stones hum when you get close.",
+          teaser: "The stones hum around a sapphire hidden in the springlight.",
           detail:
-            "You find half-buried stones circling a shallow spring. When you reach toward the water, the air tightens around your hand as if the world itself is paying attention.",
+            "You find half-buried stones circling a shallow spring. In the water rests a sapphire the size of a thumbnail, untouched by moss or silt. When you reach toward it, the whole ring of stone tightens around your hand as if waiting to see whether you can bear the attention.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
-              label: "Trace the current through the spring",
-              preview: "Follow the strange feeling instead of recoiling from it.",
+              label: "Trace the current around the sapphire",
+              preview: "Follow the shrine's strange logic until the stone answers.",
               highlightWord: "Trace",
               statKey: "arcana",
               chanceBase: 0.22,
               chancePerStat: 0.1,
               successText:
-                "You stop fighting the sensation and let the shrine's strange logic pass through you. When you leave, magic feels less like rumor and more like grammar.",
+                "You stop fighting the sensation and let the shrine's strange logic pass through you. When you lift the sapphire free, it feels less like treasure and more like a sealed instruction.",
               failureText:
-                "You brush the edge of understanding before the current slips away. Even the incomplete lesson changes how the air feels around your hands.",
+                "You brush the edge of understanding before the current slips away. The sapphire remains beyond you, but even the incomplete lesson changes how the air feels around your hands.",
               successEffects: {
                 hunger: -3,
                 storyXp: 22,
                 bonusTonics: 1,
-                unlockClass: "mage",
+                manastoneKey: "sapphire_manastone",
               },
               failureEffects: {
                 hp: -2,
@@ -4236,20 +4356,20 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Endure the pressure and keep hold",
-              preview: "Treat the shrine like something to survive, then master.",
+              label: "Endure the pressure and close your hand around it",
+              preview: "Survive the shrine's refusal until it lets you keep the gem.",
               highlightWord: "Endure",
               statKey: "vitality",
               chanceBase: 0.24,
               chancePerStat: 0.09,
               successText:
-                "The force of the shrine presses through you like cold iron, but you hold on until the pattern settles. What remains is the first hard shape of a mage's discipline.",
+                "The force of the shrine presses through you like cold iron, but you hold on until the pattern settles. When the pain finally loosens, the sapphire is waiting in your palm.",
               failureText:
-                "The pressure throws you back before the lesson finishes. You recover, shaken but changed.",
+                "The pressure throws you back before the stone will yield. You recover, shaken but empty-handed.",
               successEffects: {
                 hp: 6,
                 storyXp: 19,
-                unlockClass: "mage",
+                manastoneKey: "sapphire_manastone",
               },
               failureEffects: {
                 hp: -4,
@@ -4257,20 +4377,20 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Center your breath and wait",
-              preview: "Let steadiness do what force cannot.",
+              label: "Center your breath and let the shrine choose",
+              preview: "Meet the place with patience until the stone decides whether to trust you.",
               highlightWord: "Center",
               statKey: "resolve",
               chanceBase: 0.27,
               chancePerStat: 0.08,
               successText:
-                "You quiet yourself until the shrine stops feeling distant. The answer arrives softly, but it stays, leaving you with a mage's first certainty.",
+                "You quiet yourself until the shrine stops feeling distant. The sapphire rises through the water without splash or ripple and settles into your waiting hand.",
               failureText:
                 "You find stillness for a moment, then lose it. The shrine gives you only a passing blessing before the silence breaks.",
               successEffects: {
                 hp: 8,
                 storyXp: 18,
-                unlockClass: "mage",
+                manastoneKey: "sapphire_manastone",
               },
               failureEffects: {
                 hp: 2,
@@ -4282,28 +4402,28 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
     );
   }
 
-  if (journeyLevel >= 3 && state.storyFlags.foundWeapon && !hasJourneyClassUnlocked(state, "thief")) {
-    pushCandidate("class:thief-forager", 4, () => ({
+  if (journeyLevel >= 3 && state.storyFlags.foundWeapon && !hasJourneyClassUnlocked(state, "rogue")) {
+    pushCandidate("class:rogue-forager", 4, () => ({
           title: "A quiet forager on the trail",
-          teaser: "You did not hear her arrive, which is probably the lesson.",
+          teaser: "You did not hear her arrive, and the onyx at her throat is somehow quieter still.",
           detail:
-            "A local forager steps out from behind a fallen tree with a basket of roots and herbs. She looks amused that you never noticed her approach.",
+            "A local forager steps out from behind a fallen tree with a basket of roots and herbs. She looks amused that you never noticed her approach, then taps an onyx pendant and says some stones prefer people who understand silence before power.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
               label: "Shadow the way she circles you",
-              preview: "Learn by copying what you almost missed.",
+              preview: "Learn the route her feet are taking before the stone decides.",
               highlightWord: "Shadow",
               statKey: "finesse",
               chanceBase: 0.23,
               chancePerStat: 0.1,
               successText:
-                "You mirror her footwork just well enough that she stops laughing and starts teaching. By the end, silence feels like something you can wear.",
+                "You mirror her footwork just well enough that she stops laughing and starts nodding. Before she leaves, she unthreads the onyx from her cord and flicks it into your hand.",
               failureText:
-                "You try to match her steps and spend half the attempt announcing yourself to the forest. She still offers advice, but not the deeper trick of it.",
+                "You try to match her steps and spend half the attempt announcing yourself to the forest. She still offers advice, but keeps the onyx where it is.",
               successEffects: {
                 storyXp: 18,
-                unlockClass: "thief",
+                manastoneKey: "onyx_manastone",
               },
               failureEffects: {
                 storyXp: 0,
@@ -4311,19 +4431,19 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
             }),
             createJourneyStatChoice({
               label: "Notice the route hidden in her basket",
-              preview: "Read what she gathered and what that says about the land.",
+              preview: "Read what she gathered and prove you can see the path behind the path.",
               highlightWord: "Notice",
               statKey: "arcana",
               chanceBase: 0.26,
               chancePerStat: 0.08,
               successText:
-                "You identify more from the roots and leaves than she expected. Impressed, she trades the full lesson for your sharp eye.",
+                "You identify more from the roots and leaves than she expected. Impressed, she says the onyx would rather travel with someone observant than someone merely quiet.",
               failureText:
-                "You spot a few clues, but not enough to earn the real teaching. She sends you onward with only a safer route and a smirk.",
+                "You spot a few clues, but not enough to earn the stone. She sends you onward with only a safer route and a smirk.",
               successEffects: {
                 distance: 10,
                 storyXp: 17,
-                unlockClass: "thief",
+                manastoneKey: "onyx_manastone",
               },
               failureEffects: {
                 distance: 6,
@@ -4331,20 +4451,20 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Wait until she decides you are worth teaching",
-              preview: "Give away nothing, then let patience do the rest.",
+              label: "Wait until she decides you are worth trusting",
+              preview: "Hold your tongue and let patience bargain for the onyx.",
               highlightWord: "Wait",
               statKey: "resolve",
               chanceBase: 0.3,
               chancePerStat: 0.07,
               successText:
-                "You do not rush the exchange, and eventually she answers stillness with trust. Her lesson is brief, precise, and exactly the one you needed.",
+                "You do not rush the exchange, and eventually she answers stillness with trust. Her lesson is brief, precise, and ends with the onyx resting in your palm.",
               failureText:
-                "You stay guarded too long and the moment cools. She leaves you with directions, but not with her best secrets.",
+                "You stay guarded too long and the moment cools. She leaves you with directions, but not with her best secret.",
               successEffects: {
                 bonusRations: 1,
                 storyXp: 17,
-                unlockClass: "thief",
+                manastoneKey: "onyx_manastone",
               },
               failureEffects: {
                 storyXp: 0,
@@ -4593,6 +4713,82 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
         "normal",
         true
     );
+
+    if (journeyLevel >= 5 && !hasJourneyClassUnlocked(state, "duelist")) {
+      pushCandidate("class:duelist-lantern-vigil", 3, () => ({
+            title: "A duelist's vigil among the lanterns",
+            teaser: "One lantern hangs beside a practice blade and a garnet no mourner claimed.",
+            detail:
+              "Set slightly apart from the other memorials is a lantern hung beside a weather-stained dueling blade. Beneath the soot-dark glass rests a deep garnet manastone tied in red cord, with a brass strip etched in old script: let this pass to the next traveler who understands challenge without cruelty.",
+            createdAt: eventTime,
+            choices: [
+              createJourneyStatChoice({
+                label: "Mirror the old footwork in the dust",
+                preview: "Answer the dead duelist with balance instead of bravado.",
+                highlightWord: "footwork",
+                statKey: "finesse",
+                chanceBase: 0.23,
+                chancePerStat: 0.09,
+                successText:
+                  "You repeat the remembered steps until the lantern flame straightens and the garnet taps once against the glass. When you open the housing, the manastone drops into your palm as if the vigil had only been waiting for proper timing.",
+                failureText:
+                  "You catch the outline of the form, but not the heartbeat inside it. The lantern settles back into ordinary fire, and the garnet remains where it was.",
+                successEffects: {
+                  distance: 8,
+                  storyXp: 20,
+                  manastoneKey: "garnet_manastone",
+                },
+                failureEffects: {
+                  storyXp: 1,
+                },
+              }),
+              createJourneyStatChoice({
+                label: "Speak a vow to keep your blade clean",
+                preview: "Treat the vigil like witness, not performance.",
+                highlightWord: "vow",
+                statKey: "resolve",
+                chanceBase: 0.24,
+                chancePerStat: 0.08,
+                successText:
+                  "You speak softly into the lantern-light about the kind of fight you refuse to become. The red cord loosens on its own, leaving the garnet manastone waiting in your hand with surprising warmth.",
+                failureText:
+                  "Your words are honest, but not yet enough to move whatever old judgment keeps the vigil. The lantern hears you and offers quiet, but not the stone.",
+                successEffects: {
+                  hp: 8,
+                  storyXp: 19,
+                  manastoneKey: "garnet_manastone",
+                },
+                failureEffects: {
+                  storyXp: 1,
+                },
+              }),
+              createJourneyStatChoice({
+                label: "Practice until the steel stops sounding wild",
+                preview: "Show the memorial what discipline does to violence.",
+                highlightWord: "discipline",
+                statKey: "might",
+                chanceBase: 0.21,
+                chancePerStat: 0.1,
+                successText:
+                  "You work the blade through cut after cut until strength gives way to clean control. The garnet finally shakes free from its red cord, and you catch the manastone before it can strike the ground.",
+                failureText:
+                  "Power gets you through the motions, but not through the lesson. By the end your shoulders ache and the vigil keeps its trust to itself.",
+                successEffects: {
+                  hp: -2,
+                  storyXp: 21,
+                  manastoneKey: "garnet_manastone",
+                },
+                failureEffects: {
+                  hp: -5,
+                  storyXp: 1,
+                },
+              }),
+            ],
+          }),
+          "normal",
+          true
+      );
+    }
   }
 
   if (journeyPhase === "frontier" && journeyLevel >= 5) {
@@ -4693,6 +4889,84 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   }
 
   if (journeyPhase === "frontier" && journeyLevel >= 6) {
+    if (!hasJourneyClassUnlocked(state, "knight")) {
+      pushCandidate("class:knight-oath-cairn", 2, () => ({
+            title: "A sworn stone beneath the cairn",
+            teaser: "A diamond manastone waits where the first wardens left their hardest vows.",
+            detail:
+              "Set beneath one of the iron oath-rings is a diamond manastone wrapped in blackened cord. The weather-soft inscription beneath it says the first wardens left certain blessings for those willing to carry duty longer than comfort, and to carry it without applause.",
+            createdAt: eventTime,
+            choices: [
+              createJourneyStatChoice({
+                label: "Brace the oath-ring and endure its weight",
+                preview: "Meet the cairn with the kind of strength that does not flinch once it commits.",
+                highlightWord: "weight",
+                statKey: "vitality",
+                chanceBase: 0.2,
+                chancePerStat: 0.08,
+                successText:
+                  "The ring bites into your hands and shoulders, but you keep it aloft until the strain becomes something steadier. When you lower it again, the diamond manastone has come loose from its cord and settles against your palm.",
+                failureText:
+                  "You hold for a moment, then the old weight rolls through you and forces your hands open. The cairn leaves you aching and empty-handed.",
+                successEffects: {
+                  hp: -3,
+                  storyXp: 22,
+                  manastoneKey: "diamond_manastone",
+                },
+                failureEffects: {
+                  hp: -8,
+                  storyXp: 2,
+                },
+              }),
+              createJourneyStatChoice({
+                label: "Speak the burden you would carry for others",
+                preview: "Give the cairn a promise that sounds like duty, not vanity.",
+                highlightWord: "burden",
+                statKey: "resolve",
+                chanceBase: 0.22,
+                chancePerStat: 0.08,
+                successText:
+                  "You speak into the wind until the words stop sounding like performance and start sounding like truth. The old cord frays apart, and the diamond manastone drops into your hand as if the cairn has accepted the answer.",
+                failureText:
+                  "The vow reaches the stones, but it does not quite root there. The wind carries it away, leaving you thoughtful but unchanged.",
+                successEffects: {
+                  hp: 7,
+                  storyXp: 21,
+                  manastoneKey: "diamond_manastone",
+                },
+                failureEffects: {
+                  hp: 2,
+                  storyXp: 2,
+                },
+              }),
+              createJourneyStatChoice({
+                label: "Lift the stone free with steady hands",
+                preview: "Trust trained strength over hurried force.",
+                highlightWord: "steady",
+                statKey: "might",
+                chanceBase: 0.19,
+                chancePerStat: 0.09,
+                successText:
+                  "You work the old fastening loose without cracking the stone or the ring that has guarded it. When the diamond comes free, it feels less like loot than a responsibility passing from one hand to the next.",
+                failureText:
+                  "You force the metal too quickly and the ring snaps back hard enough to rattle bone. The diamond remains beneath the cairn, unmoved by impatience.",
+                successEffects: {
+                  distance: 7,
+                  storyXp: 23,
+                  manastoneKey: "diamond_manastone",
+                },
+                failureEffects: {
+                  hp: -6,
+                  storyXp: 2,
+                },
+              }),
+            ],
+          }),
+          "normal",
+          true
+      );
+    }
+
     pushCandidate("legend:oath-cairn", 1, () => ({
           title: "An oath-cairn of the first wardens",
           teaser: "The stones are too massive to have been stacked by ordinary hands.",
@@ -5100,6 +5374,14 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
       notes.push(`Bag found: ${bagRewardText}.`);
     }
   }
+  const manastoneRewardKey =
+    effects.manastoneKey || getJourneyManastoneKeyForClass(effects.unlockClass);
+  if (manastoneRewardKey) {
+    const manastoneRewardText = awardJourneyManastone(state, manastoneRewardKey);
+    if (manastoneRewardText) {
+      notes.push(manastoneRewardText);
+    }
+  }
   if (effects.permanentStatBonus) {
     const permanentBonusText = applyJourneyPermanentStatBonus(
       state,
@@ -5114,11 +5396,6 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
     if (effects.flags?.[flagKey] !== undefined) {
       state.storyFlags[flagKey] = Boolean(effects.flags[flagKey]);
     }
-  }
-
-  let unlockedText = "";
-  if (effects.unlockClass) {
-    unlockedText = unlockJourneyClass(state, effects.unlockClass, atIso);
   }
 
   const resultText = success ? choice.successText : choice.failureText;
@@ -5147,15 +5424,12 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
     storyXpDelta >= 0 &&
     !effects.weaponName &&
     !effects.bagKey &&
+    !effects.manastoneKey &&
     !effects.permanentStatBonus &&
     !effects.unlockClass
   ) {
     state.currentHunger = clamp(state.currentHunger - 3, 0, journeyStats.maxHunger);
     notes.push("The failed attempt still drained more out of you than you expected.");
-  }
-
-  if (unlockedText) {
-    notes.push(unlockedText);
   }
 
   const finalText = notes.length
@@ -5181,22 +5455,34 @@ function scaleJourneyEventHpDelta(delta) {
 }
 
 export function unlockJourneyClass(state, classKey, atIso) {
-  if (!JOURNEY_CLASS_META[classKey] || hasJourneyClassUnlocked(state, classKey)) {
+  const manastoneKey = getJourneyManastoneKeyForClass(classKey);
+  if (!manastoneKey) {
     return "";
   }
 
-  state.unlockedClasses = [...state.unlockedClasses, classKey];
-  state.classType = classKey;
-  addJourneyLog(
-    state,
-    `${JOURNEY_CLASS_META[classKey].label} unlocked.`,
-    atIso
-  );
-  return `${JOURNEY_CLASS_META[classKey].label} unlocked and equipped.`;
+  const rewardText = awardJourneyManastone(state, manastoneKey);
+  if (!rewardText) {
+    return "";
+  }
+
+  addJourneyLog(state, rewardText, atIso);
+  return rewardText;
 }
 
 export function hasJourneyClassUnlocked(state, classKey) {
   return state.unlockedClasses.includes(classKey);
+}
+
+export function getJourneyManastoneKeyForClass(classKey) {
+  const safeClassKey = String(classKey || "").trim();
+  return normalizeJourneyManastoneKey(
+    JOURNEY_LEGACY_CLASS_TO_MANASTONE[safeClassKey] || ""
+  );
+}
+
+export function getJourneyManastoneMeta(manastoneKey) {
+  const normalizedKey = normalizeJourneyManastoneKey(manastoneKey);
+  return normalizedKey ? JOURNEY_MANASTONE_META[normalizedKey] || null : null;
 }
 
 export function getJourneyBagMeta(bagKey) {
@@ -5206,6 +5492,31 @@ export function getJourneyBagMeta(bagKey) {
 export function getJourneyWeaponMeta(weaponKey) {
   const normalizedKey = normalizeJourneyWeaponKey(weaponKey);
   return normalizedKey ? JOURNEY_WEAPON_META[normalizedKey] || null : null;
+}
+
+export function getJourneyManastoneInventory(state) {
+  const identifiedKeys = Array.isArray(state.identifiedManastoneKeys)
+    ? state.identifiedManastoneKeys
+    : [];
+
+  return (Array.isArray(state.inventoryManastoneKeys)
+    ? state.inventoryManastoneKeys
+    : []
+  )
+    .map((manastoneKey) => {
+      const meta = getJourneyManastoneMeta(manastoneKey);
+      const classMeta = meta?.classKey ? JOURNEY_CLASS_META[meta.classKey] || null : null;
+      if (!meta || !classMeta) return null;
+
+      return {
+        key: manastoneKey,
+        meta,
+        classMeta,
+        identified: identifiedKeys.includes(manastoneKey),
+        equipped: manastoneKey === state.equippedManastoneKey,
+      };
+    })
+    .filter(Boolean);
 }
 
 export function getJourneyCarryLimits(state) {
@@ -5241,6 +5552,17 @@ export function normalizeJourneyBagKey(bagKey) {
   return JOURNEY_BAG_META[safeKey] ? safeKey : "none";
 }
 
+export function normalizeJourneyManastoneKey(manastoneKey) {
+  const safeKey = String(manastoneKey || "").trim();
+  if (!safeKey) return "";
+  if (JOURNEY_MANASTONE_META[safeKey]) return safeKey;
+
+  const matchingEntry = Object.entries(JOURNEY_MANASTONE_META).find(
+    ([, meta]) => meta.label.toLowerCase() === safeKey.toLowerCase()
+  );
+  return matchingEntry?.[0] || "";
+}
+
 export function normalizeJourneyWeaponKey(weaponKey) {
   const safeKey = String(weaponKey || "").trim();
   if (!safeKey) return "";
@@ -5263,6 +5585,30 @@ export function awardJourneyBag(state, bagKey) {
 
   state.bagKey = nextBagKey;
   return nextBagMeta.label;
+}
+
+export function awardJourneyManastone(state, manastoneKey) {
+  const nextManastoneKey = normalizeJourneyManastoneKey(manastoneKey);
+  const manastoneMeta = getJourneyManastoneMeta(nextManastoneKey);
+  if (!manastoneMeta) return "";
+
+  state.inventoryManastoneKeys = Array.isArray(state.inventoryManastoneKeys)
+    ? [...new Set(state.inventoryManastoneKeys.map((entry) => normalizeJourneyManastoneKey(entry)).filter(Boolean))]
+    : [];
+  state.identifiedManastoneKeys = Array.isArray(state.identifiedManastoneKeys)
+    ? [...new Set(state.identifiedManastoneKeys.map((entry) => normalizeJourneyManastoneKey(entry)).filter(Boolean))]
+    : [];
+
+  if (state.inventoryManastoneKeys.includes(nextManastoneKey)) {
+    return "";
+  }
+
+  state.inventoryManastoneKeys = [...state.inventoryManastoneKeys, nextManastoneKey];
+  if (!state.unlockedClasses.includes(manastoneMeta.classKey)) {
+    state.unlockedClasses = [...state.unlockedClasses, manastoneMeta.classKey];
+  }
+
+  return `${manastoneMeta.label} acquired. Its blessing will not reveal itself until you channel it.`;
 }
 
 export function awardJourneyWeapon(state, weaponKey) {
@@ -5410,6 +5756,55 @@ export function equipJourneyWeapon(state, weaponKey) {
 
   state.equippedWeaponKey = nextWeaponKey;
   return true;
+}
+
+export function channelJourneyManastone(state, manastoneKey) {
+  const nextManastoneKey = normalizeJourneyManastoneKey(manastoneKey);
+  const manastoneMeta = getJourneyManastoneMeta(nextManastoneKey);
+  if (!manastoneMeta) return null;
+
+  state.inventoryManastoneKeys = Array.isArray(state.inventoryManastoneKeys)
+    ? state.inventoryManastoneKeys
+        .map((entry) => normalizeJourneyManastoneKey(entry))
+        .filter(Boolean)
+    : [];
+  if (!state.inventoryManastoneKeys.includes(nextManastoneKey)) {
+    return null;
+  }
+
+  state.identifiedManastoneKeys = Array.isArray(state.identifiedManastoneKeys)
+    ? state.identifiedManastoneKeys
+        .map((entry) => normalizeJourneyManastoneKey(entry))
+        .filter(Boolean)
+    : [];
+
+  const wasIdentified = state.identifiedManastoneKeys.includes(nextManastoneKey);
+  const previousManastoneKey = normalizeJourneyManastoneKey(
+    state.equippedManastoneKey
+  );
+  const alreadyChannelled = previousManastoneKey === nextManastoneKey;
+
+  if (!wasIdentified) {
+    state.identifiedManastoneKeys = [
+      ...new Set([...state.identifiedManastoneKeys, nextManastoneKey]),
+    ];
+  }
+
+  state.equippedManastoneKey = nextManastoneKey;
+  state.classType = manastoneMeta.classKey;
+  if (!state.unlockedClasses.includes(manastoneMeta.classKey)) {
+    state.unlockedClasses = [...state.unlockedClasses, manastoneMeta.classKey];
+  }
+
+  return {
+    key: nextManastoneKey,
+    meta: manastoneMeta,
+    classMeta: JOURNEY_CLASS_META[manastoneMeta.classKey] || null,
+    discovered: !wasIdentified,
+    previousKey: previousManastoneKey,
+    previousMeta: getJourneyManastoneMeta(previousManastoneKey),
+    alreadyChannelled,
+  };
 }
 
 export function settleJourneySupplyOverflow(state, games, sessions) {

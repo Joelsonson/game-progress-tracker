@@ -3113,6 +3113,117 @@
   font-weight: 600;
 }
 
+.journey-manastone-card {
+  --manastone-rgb: 96, 165, 250;
+  position: relative;
+  display: grid;
+  gap: 10px;
+  overflow: hidden;
+  border-color: rgba(var(--manastone-rgb), 0.18);
+  background:
+    radial-gradient(circle at top right, rgba(var(--manastone-rgb), 0.18), transparent 34%),
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.96), rgba(var(--surface-rgb), 0.84)),
+    rgba(var(--panel-rgb), 0.76);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 12px 24px rgba(var(--ink-rgb), 0.08);
+}
+
+.journey-manastone-card::after {
+  content: "";
+  position: absolute;
+  right: -26px;
+  bottom: -34px;
+  width: 110px;
+  height: 110px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(var(--manastone-rgb), 0.18), transparent 68%);
+  pointer-events: none;
+}
+
+.journey-manastone-card.is-equipped {
+  border-color: rgba(var(--manastone-rgb), 0.34);
+  box-shadow:
+    0 16px 30px rgba(var(--ink-rgb), 0.12),
+    0 0 0 1px rgba(var(--manastone-rgb), 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.journey-manastone-card.is-hidden {
+  border-color: rgba(var(--ink-rgb), 0.1);
+}
+
+.journey-manastone-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.journey-manastone-title strong {
+  min-width: 0;
+}
+
+.journey-manastone-sigil {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  border-radius: 4px;
+  transform: rotate(45deg);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(var(--manastone-rgb), 0.92));
+  box-shadow:
+    0 0 0 5px rgba(var(--manastone-rgb), 0.12),
+    0 6px 14px rgba(var(--manastone-rgb), 0.18);
+}
+
+.journey-manastone-card.is-equipped .journey-manastone-sigil {
+  box-shadow:
+    0 0 0 7px rgba(var(--manastone-rgb), 0.14),
+    0 8px 18px rgba(var(--manastone-rgb), 0.24);
+}
+
+.journey-manastone-card.is-hidden .journey-manastone-sigil {
+  filter: saturate(0.65) brightness(0.92);
+}
+
+.journey-manastone-card .journey-skill-actions {
+  margin-top: 2px;
+}
+
+.journey-manastone-card .secondary-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.journey-manastone-card.is-ruby {
+  --manastone-rgb: 179, 70, 78;
+}
+
+.journey-manastone-card.is-onyx {
+  --manastone-rgb: 103, 110, 128;
+}
+
+.journey-manastone-card.is-garnet {
+  --manastone-rgb: 148, 56, 76;
+}
+
+.journey-manastone-card.is-sapphire {
+  --manastone-rgb: 72, 118, 203;
+}
+
+.journey-manastone-card.is-emerald {
+  --manastone-rgb: 81, 151, 114;
+}
+
+.journey-manastone-card.is-amber {
+  --manastone-rgb: 181, 132, 62;
+}
+
+.journey-manastone-card.is-diamond {
+  --manastone-rgb: 173, 183, 215;
+}
+
 @keyframes journey-thinking-pulse {
   0%,
   80%,

@@ -486,6 +486,8 @@ const translations = {
         loadout: "Loadout",
         loadoutTitle: "What is shaping this build",
         discipline: "Discipline",
+        equippedManastone: "Equipped manastone",
+        noManastoneEquipped: "No manastone channelled",
         equippedWeapon: "Equipped weapon",
         stillUnarmed: "Still unarmed",
         bag: "Bag",
@@ -495,6 +497,9 @@ const translations = {
           `${weaponSlots} weapon slot${Number(weaponSlots) === 1 ? "" : "s"}, ${rationCapacity} ration${Number(rationCapacity) === 1 ? "" : "s"}, ${tonicCapacity} tonic${Number(tonicCapacity) === 1 ? "" : "s"}`,
         inventory: "Inventory",
         inventoryTitle: "What you are carrying",
+        manastones: "Manastones",
+        unknownBlessing: "Blessing unknown until channelled",
+        blessingRevealed: ({ className }) => `Blessing: ${className}`,
         weapons: "Weapons",
         rations: "Rations",
         tonics: "Tonics",
@@ -503,13 +508,19 @@ const translations = {
         travellingLight: "You are still travelling light and painfully under-armed.",
         autoConsumeNote:
           "Extra supplies beyond your bag space are automatically consumed on the road.",
-        classDiscipline: "Class discipline",
+        classDiscipline: "Manastone attunement",
         hiddenPaths:
-          "Other paths are still hidden. They reveal themselves through the road, not the menu.",
+          "Some blessings still sleep elsewhere on the road. Stones reveal themselves when the land decides you are ready.",
         noDiscipline:
-          "No discipline has awakened yet. You are still learning the rules of this world the hard way.",
+          "No manastone blessing is flowing through you right now.",
         learnedBySurviving:
-          "Most of what you know has been learned by surviving one ugly stretch at a time.",
+          "Most of what you know has still been learned by surviving one ugly stretch at a time.",
+        noManastonesYet:
+          "You have not found a manastone yet. The road is still deciding what it wants to place in your hands.",
+        manastoneAttunementBody:
+          "Concentrate on one manastone at a time. When you channel a new one, the old blessing settles back into its gem.",
+        channelStone: ({ stone }) => `Channel ${stone}`,
+        currentlyChannelled: "Currently channelled",
         characterLevel: "Character level",
         pointsReady: ({ count }) => `${count} point${Number(count) === 1 ? "" : "s"} ready`,
         spendSkillPoints: "Spend skill points",
@@ -1206,6 +1217,8 @@ const translations = {
         loadout: "装備構成",
         loadoutTitle: "このビルドを形づくるもの",
         discipline: "系統",
+        equippedManastone: "装備中のマナストーン",
+        noManastoneEquipped: "マナストーン未調律",
         equippedWeapon: "装備武器",
         stillUnarmed: "まだ素手",
         bag: "バッグ",
@@ -1215,6 +1228,9 @@ const translations = {
           `武器 ${weaponSlots}枠、食料 ${rationCapacity}、トニック ${tonicCapacity}`,
         inventory: "持ち物",
         inventoryTitle: "いま携えているもの",
+        manastones: "マナストーン",
+        unknownBlessing: "祝福は調律するまで不明",
+        blessingRevealed: ({ className }) => `祝福: ${className}`,
         weapons: "武器",
         rations: "食料",
         tonics: "トニック",
@@ -1223,13 +1239,19 @@ const translations = {
         travellingLight: "まだ荷物は少なく、武装も心もとない。",
         autoConsumeNote:
           "バッグ容量を超えた予備品は、道中で自動的に消費されます。",
-        classDiscipline: "クラス系統",
+        classDiscipline: "マナストーン調律",
         hiddenPaths:
-          "ほかの道はまだ隠されています。道そのものが明かしてくれるのであって、メニューではありません。",
+          "まだ見ぬ祝福は路上のどこかで眠っている。石は、相応しい時にだけ姿を見せる。",
         noDiscipline:
-          "まだどの系統も目覚めていません。この世界の理を体で覚えている最中です。",
+          "いまはどの祝福も流れていない。",
         learnedBySurviving:
           "知っていることの大半は、ひどい道のりを生き延びながら身につけたものです。",
+        noManastonesYet:
+          "まだマナストーンを見つけていない。この土地が何を託すつもりなのか、道はまだ明かしていない。",
+        manastoneAttunementBody:
+          "一度に流せる祝福はひとつだけ。別の石に意識を通せば、前の祝福は元のマナストーンへと戻っていく。",
+        channelStone: ({ stone }) => `${stone} を調律する`,
+        currentlyChannelled: "現在調律中",
         characterLevel: "キャラレベル",
         pointsReady: ({ count }) => `${count}ポイント割り振り可能`,
         spendSkillPoints: "スキルポイントを使う",

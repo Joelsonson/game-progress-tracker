@@ -2,6 +2,7 @@ import {
   JOURNEY_BAG_META,
   JOURNEY_CLASS_META,
   JOURNEY_FLAG_KEYS,
+  JOURNEY_MANASTONE_META,
   JOURNEY_STAT_META,
 } from "../../core/constants.js";
 
@@ -161,6 +162,9 @@ function normalizeJourneyChoiceEffects(effects) {
       typeof safeEffects.weaponName === "string" ? safeEffects.weaponName.trim() : "",
     unlockClass: JOURNEY_CLASS_META[safeEffects.unlockClass]
       ? safeEffects.unlockClass
+      : "",
+    manastoneKey: JOURNEY_MANASTONE_META[safeEffects.manastoneKey]
+      ? safeEffects.manastoneKey
       : "",
     permanentStatBonus,
     flags: normalizedFlags,

@@ -220,33 +220,127 @@ export const FOCUS_TAX_META = {
 
 export const JOURNEY_CLASS_META = {
   [JOURNEY_BASE_CLASS]: {
-    label: "Weak and Newly Isekai'd",
+    label: "Unattuned Wanderer",
     description:
-      "You woke up in another world with no training, no map, and barely anything that counts as gear.",
+      "You have not channelled a manastone yet. Whatever this land is willing to bestow on you remains sleeping in the dark.",
     bonuses: { might: 0, finesse: 0, arcana: 0, vitality: 0, resolve: 0 },
-    unlockHint: "This is where everybody starts: weak, confused, and trying not to die.",
+    unlockHint:
+      "This is where everybody starts: unblessed, uncertain, and trying not to die before the road notices them.",
   },
-  warrior: {
-    label: "Scrapper",
+  soldier: {
+    label: "Soldier",
     description:
-      "You learned to fight ugly, brace for impact, and survive close-range scraps.",
-    bonuses: { might: 2, finesse: 0, arcana: 0, vitality: 1, resolve: 0 },
-    unlockHint: "Usually unlocked by learning from guards, hunters, or desperate fights.",
+      "A drilled martial blessing that hardens your stance, steadies your nerves, and teaches you to meet violence head-on.",
+    bonuses: { might: 2, finesse: 0, arcana: 0, vitality: 1, resolve: 1 },
+    unlockHint:
+      "Usually found in stones kept by sentries, mercenaries, and those who swear themselves to the road.",
   },
-  mage: {
-    label: "Hedge Mage",
+  rogue: {
+    label: "Rogue",
     description:
-      "The world starts feeling less silent. You sense strange currents and learn to work with them.",
-    bonuses: { might: 0, finesse: 0, arcana: 3, vitality: 0, resolve: 1 },
-    unlockHint: "Usually unlocked through strange shrines, mana-sensitive people, or careful choices.",
-  },
-  thief: {
-    label: "Scout",
-    description:
-      "You survive by moving lightly, spotting trouble early, and wasting nothing.",
+      "A sly blessing of silence, quick hands, and sharp instincts. It teaches you to move before trouble notices you.",
     bonuses: { might: 0, finesse: 3, arcana: 0, vitality: 0, resolve: 1 },
-    unlockHint: "Usually unlocked by foraging, sneaking, and learning from people who live off the land.",
+    unlockHint:
+      "Usually found in stones hidden by scouts, poachers, smugglers, and patient thieves.",
   },
+  duelist: {
+    label: "Duelist",
+    description:
+      "A refined martial blessing built around timing, pressure, and one decisive exchange after another.",
+    bonuses: { might: 1, finesse: 2, arcana: 0, vitality: 0, resolve: 1 },
+    unlockHint:
+      "Usually found in stones left by champions, challengers, and proud blades who wanted to be remembered.",
+  },
+  arcanist: {
+    label: "Arcanist",
+    description:
+      "A blessing that teaches the hidden grammar of the land and lets raw wonder become something you can actually wield.",
+    bonuses: { might: 0, finesse: 0, arcana: 3, vitality: 0, resolve: 1 },
+    unlockHint:
+      "Usually found in stones steeped in shrines, boundary magic, and old vows made to the unseen.",
+  },
+  healer: {
+    label: "Healer",
+    description:
+      "A gentle but demanding blessing that turns calm, care, and endurance into real restorative power.",
+    bonuses: { might: 0, finesse: 0, arcana: 2, vitality: 1, resolve: 1 },
+    unlockHint:
+      "Usually found in stones carried by road-saints, surgeons, and those who chose mercy without choosing weakness.",
+  },
+  apothecary: {
+    label: "Apothecary",
+    description:
+      "A practical blessing of tinctures, roots, fumes, and remedies that rewards precise hands and patient study.",
+    bonuses: { might: 0, finesse: 1, arcana: 1, vitality: 1, resolve: 1 },
+    unlockHint:
+      "Usually found in stones passed between herbalists, field medics, and careful collectors of strange cures.",
+  },
+  knight: {
+    label: "Knight",
+    description:
+      "A high oath blessing of guardianship, composure, and unyielding presence in the face of ruin.",
+    bonuses: { might: 1, finesse: 0, arcana: 0, vitality: 2, resolve: 1 },
+    unlockHint:
+      "Usually found in stones sworn over old keeps, frontier cairns, and solemn duties meant to outlive their bearers.",
+  },
+};
+
+export const JOURNEY_MANASTONE_META = {
+  ruby_manastone: {
+    label: "Ruby Manastone",
+    description:
+      "A warm red gem with a pulse like banked iron. Something martial sleeps inside it.",
+    classKey: "soldier",
+  },
+  onyx_manastone: {
+    label: "Onyx Manastone",
+    description:
+      "A black gem that seems to drink the light around its edges. Its blessing hides behind stillness.",
+    classKey: "rogue",
+  },
+  garnet_manastone: {
+    label: "Garnet Manastone",
+    description:
+      "A deep crimson gem that catches light like a drawn blade. Its blessing feels precise and proud.",
+    classKey: "duelist",
+  },
+  sapphire_manastone: {
+    label: "Sapphire Manastone",
+    description:
+      "A blue gem with cold depth and a faint inner shimmer. Its blessing waits behind patterns you almost recognize.",
+    classKey: "arcanist",
+  },
+  emerald_manastone: {
+    label: "Emerald Manastone",
+    description:
+      "A green gem shot through with calm light. Its blessing feels like steady hands and living breath.",
+    classKey: "healer",
+  },
+  amber_manastone: {
+    label: "Amber Manastone",
+    description:
+      "Honey-gold resin hardened around drifting sparks. Its blessing smells faintly of herbs, smoke, and bitter medicine.",
+    classKey: "apothecary",
+  },
+  diamond_manastone: {
+    label: "Diamond Manastone",
+    description:
+      "A pale clear gem that throws back hard white light. Its blessing feels ceremonial, patient, and difficult to shake.",
+    classKey: "knight",
+  },
+};
+
+export const JOURNEY_LEGACY_CLASS_TO_MANASTONE = {
+  warrior: "ruby_manastone",
+  thief: "onyx_manastone",
+  mage: "sapphire_manastone",
+  soldier: "ruby_manastone",
+  rogue: "onyx_manastone",
+  duelist: "garnet_manastone",
+  arcanist: "sapphire_manastone",
+  healer: "emerald_manastone",
+  apothecary: "amber_manastone",
+  knight: "diamond_manastone",
 };
 
 export const JOURNEY_BAG_META = {

@@ -23,6 +23,7 @@ import {
   DEFAULT_CHARACTER_TAB,
   JOURNEY_BASE_CLASS,
   JOURNEY_CLASS_META,
+  JOURNEY_MANASTONE_META,
   JOURNEY_STAT_KEYS,
   JOURNEY_STAT_META,
 } from "../../core/constants.js";
@@ -46,6 +47,7 @@ import {
   getJourneyActivityText,
   getJourneyBoss,
   getJourneyLevel,
+  getJourneyManastoneInventory,
   getJourneyPendingWeapons,
   getJourneySegmentProgress,
   getSupportedJourneyBossBattleIndexes,
@@ -124,24 +126,67 @@ const JOURNEY_LOCALIZED_META = {
   ja: {
     classes: {
       stranded: {
-        label: "弱くて転移したばかり",
+        label: "未調律の旅人",
         description:
-          "訓練も地図も、まともな装備もほとんどないまま異世界で目を覚ました。",
+          "まだマナストーンに意識を通していない。異郷の祝福は、いまも石の向こうで眠ったままだ。",
       },
-      warrior: {
-        label: "喧嘩屋",
+      soldier: {
+        label: "兵士",
         description:
-          "泥臭く戦い、衝撃に耐え、近距離の乱戦を生き延びる術を覚えた。",
+          "構えを崩さず、正面から圧に耐え、乱戦を押し返すための武の祝福。",
       },
-      mage: {
-        label: "野の魔術師",
+      rogue: {
+        label: "ローグ",
         description:
-          "世界が少しずつ静かではなくなる。奇妙な流れを感じ取り、それを扱い始める。",
+          "静けさ、素早さ、気配を読む勘を授ける、影のような祝福。",
       },
-      thief: {
-        label: "斥候",
+      duelist: {
+        label: "決闘士",
         description:
-          "身軽さ、早めの察知、無駄のなさで生き残る。",
+          "間合い、駆け引き、決定的な一手に特化した、研ぎ澄まされた祝福。",
+      },
+      arcanist: {
+        label: "アルカニスト",
+        description:
+          "この土地の理そのものに手を伸ばし、隠れた法則を扱えるようにする祝福。",
+      },
+      healer: {
+        label: "癒し手",
+        description:
+          "呼吸と意志を整え、回復と持久へと力を通す穏やかな祝福。",
+      },
+      apothecary: {
+        label: "薬師",
+        description:
+          "薬草、煙、調合、処置に長ける、実務的で気難しい祝福。",
+      },
+      knight: {
+        label: "騎士",
+        description:
+          "守りと誓いと不動の気配を宿す、高潔で重い祝福。",
+      },
+    },
+    manastones: {
+      ruby_manastone: {
+        label: "紅玉のマナストーン",
+      },
+      onyx_manastone: {
+        label: "黒瑪瑙のマナストーン",
+      },
+      garnet_manastone: {
+        label: "柘榴石のマナストーン",
+      },
+      sapphire_manastone: {
+        label: "蒼玉のマナストーン",
+      },
+      emerald_manastone: {
+        label: "翠玉のマナストーン",
+      },
+      amber_manastone: {
+        label: "琥珀のマナストーン",
+      },
+      diamond_manastone: {
+        label: "金剛石のマナストーン",
       },
     },
     stats: {
@@ -417,6 +462,10 @@ function getJourneyBagLabel(bagKey, fallback = "") {
 
 function getJourneyBagDescription(bagKey, fallback = "") {
   return getJourneyLocalizedEntry("bags", bagKey, "description", fallback);
+}
+
+function getJourneyManastoneLabel(manastoneKey, fallback = "") {
+  return getJourneyLocalizedEntry("manastones", manastoneKey, "label", fallback);
 }
 
 function getJourneyWeaponLabel(weaponKey, fallback = "") {
@@ -2137,6 +2186,25 @@ function renderCharacterInventoryTab(viewModel) {
         })}
       </div>
 
+      ${
+        viewModel.manastoneInventory.length
+          ? `
+              <div class="character-tab-section">
+                <div class="journey-title-row">
+                  <h3>${escapeHtml(t("journeyUi.character.manastones"))}</h3>
+                </div>
+                <div class="journey-character-list">
+                  ${viewModel.manastoneInventory
+                    .map((manastone) =>
+                      renderJourneyManastoneCard(manastone, { showAction: false })
+                    )
+                    .join("")}
+                </div>
+              </div>
+            `
+          : ""
+      }
+
       <div class="character-tab-section">
         <div class="journey-title-row">
           <h3>${escapeHtml(t("journeyUi.character.weapons"))}</h3>
@@ -2197,6 +2265,12 @@ function renderCharacterInventoryTab(viewModel) {
 function renderCharacterEquipmentTab(viewModel) {
   const equippedWeaponBonuses = viewModel.journeyStats.equippedWeaponMeta?.bonuses;
   const equippedWeaponBonusMarkup = renderWeaponBonusChips(equippedWeaponBonuses);
+  const equippedManastoneLabel = viewModel.equippedManastone
+    ? getJourneyManastoneLabel(
+        viewModel.equippedManastone.key,
+        viewModel.equippedManastone.meta.label
+      )
+    : t("journeyUi.character.noManastoneEquipped");
 
   return `
     <div class="character-equipment-grid">
@@ -2206,6 +2280,11 @@ function renderCharacterEquipmentTab(viewModel) {
         <div class="journey-character-list">
           <div class="journey-log-entry">
             <p><strong>${escapeHtml(t("journeyUi.character.discipline"))}:</strong> ${escapeHtml(viewModel.classLabel)}</p>
+          </div>
+          <div class="journey-log-entry">
+            <p><strong>${escapeHtml(t("journeyUi.character.equippedManastone"))}:</strong> ${escapeHtml(
+              equippedManastoneLabel
+            )}</p>
           </div>
           <div class="journey-log-entry">
             <p><strong>${escapeHtml(t("journeyUi.character.equippedWeapon"))}:</strong> ${escapeHtml(
@@ -2253,9 +2332,17 @@ function renderCharacterEquipmentTab(viewModel) {
 
       <section class="character-tab-surface">
         <p class="journey-overline">${escapeHtml(t("journeyUi.character.classDiscipline"))}</p>
-        <h3>${escapeHtml(viewModel.classLabel)}</h3>
-        <p class="muted-text">${escapeHtml(viewModel.classDescription)}</p>
-        ${buildJourneyClassSelectionUi(viewModel.state)}
+        <h3>${escapeHtml(
+          viewModel.equippedManastone
+            ? viewModel.classLabel
+            : t("journeyUi.character.noManastoneEquipped")
+        )}</h3>
+        <p class="muted-text">${escapeHtml(
+          viewModel.equippedManastone
+            ? viewModel.classDescription
+            : t("journeyUi.character.manastoneAttunementBody")
+        )}</p>
+        ${buildJourneyManastoneSelectionUi(viewModel)}
         ${
           viewModel.knownNotes.length
             ? `
@@ -2271,46 +2358,26 @@ function renderCharacterEquipmentTab(viewModel) {
                     .join("")}
                 </div>
               `
-            : `<p class="muted-text">${escapeHtml(
-                t("journeyUi.character.learnedBySurviving")
-              )}</p>`
+            : ""
         }
       </section>
     </div>
   `;
 }
 
-export function buildJourneyClassSelectionUi(state) {
-  const unlockedClasses = state.unlockedClasses.filter(
-    (classKey) => JOURNEY_CLASS_META[classKey]
-  );
-  const advancedUnlocked = unlockedClasses.filter(
-    (classKey) => classKey !== JOURNEY_BASE_CLASS
-  );
-
-  return advancedUnlocked.length
+export function buildJourneyManastoneSelectionUi(viewModel) {
+  return viewModel.manastoneInventory.length
     ? `
-        <div class="journey-class-list">
-          ${unlockedClasses
-            .map((classKey) => {
-              return `
-                <button
-                  type="button"
-                  class="secondary-button ${
-                    state.classType === classKey ? "action-success" : ""
-                  }"
-                  data-journey-action="set-class"
-                  data-class="${classKey}"
-                >
-                  ${escapeHtml(getJourneyClassLabel(classKey))}
-                </button>
-              `;
-            })
+        <div class="journey-character-list">
+          ${viewModel.manastoneInventory
+            .map((manastone) =>
+              renderJourneyManastoneCard(manastone, { showAction: true })
+            )
             .join("")}
         </div>
         <p class="muted-text">${escapeHtml(t("journeyUi.character.hiddenPaths"))}</p>
       `
-    : `<p class="muted-text">${escapeHtml(t("journeyUi.character.noDiscipline"))}</p>`;
+    : `<p class="muted-text">${escapeHtml(t("journeyUi.character.noManastonesYet"))}</p>`;
 }
 
 export function getJourneyDisplayName(state) {
@@ -2363,6 +2430,9 @@ function buildJourneyViewModel(state, games, sessions, xpSummary) {
   const displayName = getJourneyDisplayName(state);
   const bagMeta = getJourneyBagMeta(state.bagKey);
   const weaponInventory = getJourneyWeaponInventory(state);
+  const manastoneInventory = getJourneyManastoneInventory(state);
+  const equippedManastone =
+    manastoneInventory.find((entry) => entry.equipped) || null;
   const pendingWeapons = getJourneyPendingWeapons(state);
   const knownNotes = getJourneyKnownNotes(state);
   const clearedRoads = Array.isArray(state.clearedRoads) ? state.clearedRoads : [];
@@ -2410,6 +2480,8 @@ function buildJourneyViewModel(state, games, sessions, xpSummary) {
     displayName,
     bagMeta,
     weaponInventory,
+    manastoneInventory,
+    equippedManastone,
     pendingWeapons,
     knownNotes,
     clearedRoads,
@@ -2778,6 +2850,78 @@ function renderJourneyWeaponCard(weapon) {
               `
         }
       </div>
+    </article>
+  `;
+}
+
+function renderJourneyManastoneCard(manastone, options = {}) {
+  const stoneLabel = getJourneyManastoneLabel(
+    manastone.key,
+    manastone.meta.label
+  );
+  const toneClass = manastone.key
+    .replace(/_manastone$/, "")
+    .replace(/_/g, "-");
+  const classLabel = getJourneyClassLabel(manastone.meta.classKey);
+  const blessingLabel = manastone.identified
+    ? t("journeyUi.character.blessingRevealed", {
+        className: classLabel,
+      })
+    : t("journeyUi.character.unknownBlessing");
+
+  return `
+    <article class="journey-log-entry journey-manastone-card is-${escapeAttribute(
+      toneClass
+    )} ${
+      manastone.equipped ? "is-equipped" : ""
+    } ${manastone.identified ? "is-identified" : "is-hidden"}">
+      <div class="journey-title-row">
+        <div class="journey-manastone-title">
+          <span class="journey-manastone-sigil" aria-hidden="true"></span>
+          <strong>${escapeHtml(stoneLabel)}</strong>
+        </div>
+        ${
+          manastone.equipped
+            ? `<span class="journey-chip is-active">${escapeHtml(
+                t("journeyUi.character.currentlyChannelled")
+              )}</span>`
+            : ""
+        }
+      </div>
+      <p class="muted-text">${escapeHtml(manastone.meta.description)}</p>
+      <div class="journey-inline-row stat-source-row">
+        <span class="journey-chip ${
+          manastone.identified ? "is-active" : ""
+        }">${escapeHtml(blessingLabel)}</span>
+      </div>
+      ${
+        options.showAction
+          ? `
+              <div class="journey-skill-actions">
+                ${
+                  manastone.equipped
+                    ? `<span class="journey-weapon-status-note">${escapeHtml(
+                        t("journeyUi.character.currentlyChannelled")
+                      )}</span>`
+                    : `
+                        <button
+                          type="button"
+                          class="secondary-button"
+                          data-journey-action="channel-manastone"
+                          data-manastone="${manastone.key}"
+                        >
+                          ${escapeHtml(
+                            t("journeyUi.character.channelStone", {
+                              stone: stoneLabel,
+                            })
+                          )}
+                        </button>
+                      `
+                }
+              </div>
+            `
+          : ""
+      }
     </article>
   `;
 }
@@ -3544,11 +3688,25 @@ export function getJourneyKnownNotes(state) {
     );
   }
 
-  if (state.unlockedClasses.length > 1) {
+  if ((state.inventoryManastoneKeys || []).length > 0) {
+    const equippedManastoneLabel = state.equippedManastoneKey
+      ? getJourneyManastoneLabel(
+          state.equippedManastoneKey,
+          JOURNEY_MANASTONE_META[state.equippedManastoneKey]?.label || ""
+        )
+      : "";
     notes.push(
       locale === "ja"
-        ? `新たな系統が目覚めた: ${getJourneyClassLabel(state.classType)}。`
-        : `A discipline awakened: ${getJourneyClassLabel(state.classType)}.`
+        ? equippedManastoneLabel
+          ? `${equippedManastoneLabel} を通して ${getJourneyClassLabel(
+              state.classType
+            )} の祝福が流れている。`
+          : "まだ調律していないマナストーンが荷の中で静かに脈打っている。"
+        : equippedManastoneLabel
+          ? `${equippedManastoneLabel} is currently feeding you the ${getJourneyClassLabel(
+              state.classType
+            )} blessing.`
+          : "A dormant manastone is waiting in your pack for you to channel it."
     );
   }
 

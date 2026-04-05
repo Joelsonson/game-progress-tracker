@@ -13,7 +13,6 @@ import {
 import {
   CHARACTER_TABS,
   IDLE_JOURNEY_META_KEY,
-  JOURNEY_CLASS_META,
   JOURNEY_PENDING_EVENT_LIMIT,
   JOURNEY_STAT_KEYS,
   JOURNEY_STAT_META,
@@ -30,16 +29,17 @@ import {
   buildJourneyDerived,
   buildJourneyOutcomeItems,
   buildJourneySupplies,
+  channelJourneyManastone,
   discardJourneyPendingWeapon,
   dropJourneyWeapon,
   equipJourneyWeapon,
   getJourneyBoss,
   getJourneyEventCandidates,
   getJourneyLevel,
+  getJourneyManastoneKeyForClass,
   getSupportedJourneyBossBattleIndexes,
   getJourneyWeaponMeta,
   getUnspentSkillPoints,
-  hasJourneyClassUnlocked,
   keepJourneyPendingWeapon,
   normalizeJourneyState,
   pushJourneyDebugSnapshot,
@@ -334,26 +334,49 @@ export async function handleJourneyClick(event) {
       return;
     }
 
-    if (action === "set-class") {
-      const classType = button.dataset.class;
-      if (!JOURNEY_CLASS_META[classType] || !hasJourneyClassUnlocked(state, classType)) {
-        showJourneyFeedback("That discipline has not been unlocked yet.", true);
+    if (action === "channel-manastone" || action === "set-class") {
+      const requestedManastoneKey =
+        action === "channel-manastone"
+          ? button.dataset.manastone
+          : getJourneyManastoneKeyForClass(button.dataset.class);
+      const channelResult = channelJourneyManastone(state, requestedManastoneKey);
+
+      if (!channelResult?.meta || !channelResult?.classMeta) {
+        showJourneyFeedback("That manastone is not in your pack yet.", true);
         return;
       }
 
-      state.classType = classType;
-      addJourneyLog(
-        state,
-        `You settled into the ${JOURNEY_CLASS_META[classType].label} discipline.`,
-        new Date().toISOString()
-      );
+      if (channelResult.alreadyChannelled) {
+        showJourneyFeedback(`${channelResult.meta.label} is already channelled.`);
+        return;
+      }
+
+      const atIso = new Date().toISOString();
+      const classLabel = channelResult.classMeta.label;
+      const previousStoneLabel = channelResult.previousMeta?.label || "";
+      const logText = channelResult.discovered
+        ? `You focus on ${channelResult.meta.label} until its blessing finally reveals the ${classLabel} path.`
+        : previousStoneLabel
+          ? `You let the ${previousStoneLabel} blessing settle back into its stone and channel ${channelResult.meta.label} instead.`
+          : `You channel ${channelResult.meta.label} and let the ${classLabel} blessing flow through you.`;
+
+      addJourneyLog(state, logText, atIso);
       await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
-      showJourneyFeedback(`${JOURNEY_CLASS_META[classType].label} equipped.`);
+      showJourneyFeedback(
+        channelResult.discovered
+          ? `${channelResult.meta.label} revealed the ${classLabel} blessing.`
+          : `${classLabel} now flows through ${channelResult.meta.label}.`
+      );
       await appState.renderApp();
-      showToast(`Class changed to ${JOURNEY_CLASS_META[classType].label}.`, {
-        title: "Class updated",
-        tone: "info",
-      });
+      showToast(
+        channelResult.discovered
+          ? `${channelResult.meta.label} is now known as a ${classLabel} stone.`
+          : `${classLabel} channelled through ${channelResult.meta.label}.`,
+        {
+          title: "Manastone attuned",
+          tone: "info",
+        }
+      );
       return;
     }
 
