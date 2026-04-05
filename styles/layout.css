@@ -649,27 +649,53 @@
 }
 
 .sessions-tab-shell {
-  padding: 12px;
+  position: relative;
+  z-index: 4;
+  padding: 0;
+  margin-bottom: -14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  overflow: visible;
 }
 
 .sessions-tab-bar {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+  min-height: 78px;
+  padding-right: 10px;
+  isolation: isolate;
 }
 
 .sessions-tab-button {
+  --bookmark-accent: rgba(var(--accent-rgb), 0.88);
+  --bookmark-offset: 6px;
+  --bookmark-z: 1;
+  position: relative;
+  z-index: var(--bookmark-z);
+  width: min(37vw, 148px);
+  min-height: 66px;
+  margin-left: -24px;
   border: 1px solid rgba(var(--ink-rgb), 0.08);
+  border-bottom: 0;
   background:
-    linear-gradient(180deg, rgba(var(--panel-rgb), 0.9), rgba(var(--surface-rgb), 0.82)),
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.86), rgba(var(--surface-rgb), 0.74)),
     rgba(var(--panel-rgb), 0.72);
-  color: var(--text);
-  border-radius: 16px;
-  padding: 12px 10px;
+  color: var(--muted);
+  border-radius: 18px 18px 0 0;
+  padding: 14px 14px 16px;
   font-size: 0.82rem;
   font-weight: 800;
-  text-align: center;
+  text-align: left;
   cursor: pointer;
+  transform: translateY(var(--bookmark-offset));
+  box-shadow:
+    0 12px 18px rgba(var(--ink-rgb), 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  overflow: hidden;
   transition:
     transform 0.18s ease,
     border-color 0.18s ease,
@@ -678,22 +704,97 @@
     color 0.18s ease;
 }
 
+.sessions-tab-button::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--bookmark-accent),
+    rgba(255, 255, 255, 0.28)
+  );
+}
+
+.sessions-tab-button:first-child {
+  --bookmark-accent: rgba(96, 165, 250, 0.92);
+  --bookmark-offset: 18px;
+  --bookmark-z: 3;
+  margin-left: 0;
+}
+
+.sessions-tab-button:nth-child(2) {
+  --bookmark-accent: rgba(52, 211, 153, 0.92);
+  --bookmark-offset: 11px;
+  --bookmark-z: 2;
+}
+
+.sessions-tab-button:nth-child(3) {
+  --bookmark-accent: rgba(191, 141, 92, 0.9);
+  --bookmark-offset: 4px;
+  --bookmark-z: 1;
+}
+
+.sessions-tab-button:hover {
+  color: var(--text);
+}
+
+.sessions-tab-button:not(.is-active):hover {
+  transform: translateY(calc(var(--bookmark-offset) + 2px));
+}
+
 .sessions-tab-button.is-active {
-  transform: translateY(-1px);
-  border-color: rgba(var(--accent-rgb), 0.28);
+  z-index: 6;
+  transform: translateY(22px);
+  border-color: rgba(var(--ink-rgb), 0.08);
   background:
-    radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.16), transparent 40%),
-    linear-gradient(180deg, rgba(var(--panel-rgb), 0.98), rgba(var(--surface-rgb), 0.88)),
-    rgba(var(--panel-rgb), 0.86);
-  color: var(--accent-2);
+    radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.12), transparent 40%),
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.98), rgba(var(--surface-rgb), 0.9)),
+    var(--panel);
+  color: var(--text);
   box-shadow:
-    0 14px 24px rgba(var(--ink-rgb), 0.08),
-    inset 0 0 0 1px rgba(var(--accent-rgb), 0.12);
+    0 18px 28px rgba(var(--ink-rgb), 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.sessions-tab-button:focus-visible {
+  outline: 2px solid rgba(var(--accent-rgb), 0.34);
+  outline-offset: 3px;
 }
 
 .sessions-tab-button span {
   display: block;
   line-height: 1.25;
+}
+
+.sessions-panel {
+  position: relative;
+  z-index: 2;
+  overflow: visible;
+  border-radius: 28px;
+  padding-top: 26px;
+  background:
+    radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.98), rgba(var(--surface-rgb), 0.92)),
+    var(--panel);
+  box-shadow:
+    0 18px 34px rgba(var(--ink-rgb), 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.sessions-panel::before {
+  content: "";
+  position: absolute;
+  inset: 14px 20px auto;
+  height: 1px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(var(--accent-rgb), 0.08),
+    rgba(var(--ink-rgb), 0.1),
+    rgba(var(--accent-rgb), 0.08)
+  );
+  pointer-events: none;
 }
 
 .crop-actions {

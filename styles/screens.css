@@ -48,6 +48,10 @@
   display: grid;
 }
 
+#screenSessions {
+  gap: 0;
+}
+
 .mobile-quick-switch {
   --quick-nav-shell-alpha: 0.78;
   --quick-nav-shell-top-alpha: 0.92;
@@ -257,6 +261,45 @@
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;
+}
+
+.sessions-tab-shell {
+  padding: 0;
+  margin-bottom: -14px;
+  border-radius: 0;
+}
+
+.sessions-tab-bar {
+  min-height: 72px;
+  padding-right: 0;
+}
+
+.sessions-tab-button {
+  width: min(39vw, 132px);
+  min-height: 62px;
+  margin-left: -20px;
+  padding: 13px 12px 14px;
+}
+
+.sessions-tab-button:first-child {
+  --bookmark-offset: 16px;
+}
+
+.sessions-tab-button:nth-child(2) {
+  --bookmark-offset: 9px;
+}
+
+.sessions-tab-button:nth-child(3) {
+  --bookmark-offset: 2px;
+}
+
+.sessions-tab-button.is-active {
+  transform: translateY(20px);
+}
+
+.sessions-panel {
+  border-radius: 26px;
+  padding-top: 24px;
 }
 
 .tracker-shell-panel > .section-header {
