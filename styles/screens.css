@@ -48,12 +48,6 @@
   display: grid;
 }
 
-#screenSessions {
-  gap: 0;
-  position: relative;
-  padding-top: 60px;
-}
-
 .mobile-quick-switch {
   --quick-nav-shell-alpha: 0.78;
   --quick-nav-shell-top-alpha: 0.92;
@@ -263,32 +257,6 @@
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;
-}
-
-.sessions-tab-shell {
-  padding: 0 6px;
-  border-radius: 0;
-}
-
-.sessions-tab-bar {
-  min-height: 68px;
-  padding-left: 2px;
-}
-
-.sessions-tab-button {
-  width: min(38vw, 128px);
-  min-height: 58px;
-  margin-left: -12px;
-  padding: 12px 11px 17px;
-}
-
-.sessions-tab-button.is-active {
-  transform: translateY(12px);
-}
-
-.sessions-panel {
-  border-radius: 26px;
-  padding-top: 28px;
 }
 
 .tracker-shell-panel > .section-header {
