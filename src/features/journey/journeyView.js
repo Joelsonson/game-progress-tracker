@@ -19,6 +19,8 @@ import {
   journeyOutcomeTitleEl,
 } from "../../core/dom.js";
 import {
+  CHARACTER_TABS,
+  DEFAULT_CHARACTER_TAB,
   JOURNEY_BASE_CLASS,
   JOURNEY_CLASS_META,
   JOURNEY_STAT_KEYS,
@@ -354,7 +356,14 @@ const JOURNEY_LOG_TRANSLATIONS_JA = {
 const JOURNEY_SPRITE_BOUNDING_PADDING = 12;
 const JOURNEY_SPRITE_BACKGROUND_TOLERANCE = 24;
 const JOURNEY_SPRITE_ALPHA_THRESHOLD = 12;
+const CHARACTER_TAB_VALUES = new Set(Object.values(CHARACTER_TABS));
 const journeySpriteMetricsCache = new Map();
+
+function normalizeCharacterTab(tabId) {
+  return CHARACTER_TAB_VALUES.has(tabId)
+    ? tabId
+    : DEFAULT_CHARACTER_TAB;
+}
 
 function getJourneyLocalizedEntry(group, key, field, fallback = "") {
   const locale = getCurrentLocale();
@@ -1908,9 +1917,103 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
   if (!characterContentEl) return;
 
   const viewModel = buildJourneyViewModel(state, games, sessions, xpSummary);
+  const activeCharacterTab = normalizeCharacterTab(appState.activeCharacterTab);
   const showNameEditor = !viewModel.state.characterName || appState.editingCharacterName;
+  appState.activeCharacterTab = activeCharacterTab;
 
   characterContentEl.innerHTML = `
+    ${renderCharacterTabBar(viewModel, activeCharacterTab)}
+
+    <section
+      id="characterTabPanel"
+      class="character-tab-panel"
+      data-character-tab-panel="${escapeAttribute(activeCharacterTab)}"
+      role="tabpanel"
+      aria-labelledby="characterTab-${escapeAttribute(activeCharacterTab)}"
+    >
+      ${renderCharacterTabContent(viewModel, showNameEditor, activeCharacterTab)}
+    </section>
+  `;
+
+  renderCharacterSkillModal(viewModel);
+  syncBodyScrollLock();
+}
+
+function renderCharacterTabBar(viewModel, activeCharacterTab) {
+  const tabItems = [
+    {
+      id: CHARACTER_TABS.STATS,
+      label: t("journeyUi.character.tabStats"),
+      meta: t("journeyUi.character.levelLabel", {
+        level: viewModel.journeyLevel,
+      }),
+    },
+    {
+      id: CHARACTER_TABS.INVENTORY,
+      label: t("journeyUi.character.tabInventory"),
+      meta: `${t("journeyUi.character.rations")} ${viewModel.supplies.availableRations} • ${t(
+        "journeyUi.character.tonics"
+      )} ${viewModel.supplies.availableTonics}`,
+    },
+    {
+      id: CHARACTER_TABS.EQUIPMENT,
+      label: t("journeyUi.character.tabEquipment"),
+      meta: `${t("journeyUi.character.weapons")} ${viewModel.weaponInventory.length} / ${
+        viewModel.bagMeta.weaponSlots
+      }`,
+    },
+  ];
+
+  return `
+    <section class="character-tab-shell">
+      <div
+        class="character-tab-bar"
+        role="tablist"
+        aria-label="${escapeAttribute(t("journeyUi.character.sectionsLabel"))}"
+      >
+        ${tabItems
+          .map(
+            (tab) => `
+              <button
+                type="button"
+                id="characterTab-${tab.id}"
+                class="character-tab-button ${
+                  activeCharacterTab === tab.id ? "is-active" : ""
+                }"
+                data-journey-action="set-character-tab"
+                data-character-tab="${tab.id}"
+                role="tab"
+                aria-selected="${activeCharacterTab === tab.id ? "true" : "false"}"
+                aria-controls="characterTabPanel"
+                tabindex="${activeCharacterTab === tab.id ? "0" : "-1"}"
+              >
+                <span class="character-tab-button-content">
+                  <strong class="character-tab-label">${escapeHtml(tab.label)}</strong>
+                  <span class="character-tab-meta">${escapeHtml(tab.meta)}</span>
+                </span>
+              </button>
+            `
+          )
+          .join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderCharacterTabContent(viewModel, showNameEditor, activeCharacterTab) {
+  if (activeCharacterTab === CHARACTER_TABS.INVENTORY) {
+    return renderCharacterInventoryTab(viewModel);
+  }
+
+  if (activeCharacterTab === CHARACTER_TABS.EQUIPMENT) {
+    return renderCharacterEquipmentTab(viewModel);
+  }
+
+  return renderCharacterStatsTab(viewModel, showNameEditor);
+}
+
+function renderCharacterStatsTab(viewModel, showNameEditor) {
+  return `
     <section class="character-hero-card">
       <div class="character-hero-layout">
         <div class="character-portrait-panel">
@@ -1987,11 +2090,121 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
         </div>
       </div>
     </section>
+  `;
+}
 
-    <section class="character-build-grid">
-      <article class="journey-side-card character-radar-card">
+function renderCharacterInventoryTab(viewModel) {
+  return `
+    <section class="character-tab-surface">
+      <div class="character-panel-header">
+        <div>
+          <p class="journey-overline">${escapeHtml(t("journeyUi.character.inventory"))}</p>
+          <h3>${escapeHtml(t("journeyUi.character.inventoryTitle"))}</h3>
+        </div>
+        <p class="muted-text">${escapeHtml(
+          t("journeyUi.character.carryLimitsValue", {
+            weaponSlots: viewModel.bagMeta.weaponSlots,
+            rationCapacity: viewModel.supplies.rationCapacity,
+            tonicCapacity: viewModel.supplies.tonicCapacity,
+          })
+        )}</p>
+      </div>
+
+      <div class="character-supply-grid">
+        ${renderCharacterSupplyCard({
+          title: t("journeyUi.character.tonics"),
+          resourceLabel: t("journeyUi.common.health"),
+          current: Math.round(viewModel.state.currentHp),
+          max: viewModel.journeyStats.maxHp,
+          available: viewModel.supplies.availableTonics,
+          capacity: viewModel.supplies.tonicCapacity,
+          action: "use-tonic",
+          actionText: t("journeyUi.character.useTonic", {
+            count: viewModel.supplies.availableTonics,
+          }),
+          disabled: viewModel.supplies.availableTonics <= 0,
+        })}
+        ${renderCharacterSupplyCard({
+          title: t("journeyUi.character.rations"),
+          resourceLabel: t("journeyUi.common.hunger"),
+          current: Math.round(viewModel.state.currentHunger),
+          max: viewModel.journeyStats.maxHunger,
+          available: viewModel.supplies.availableRations,
+          capacity: viewModel.supplies.rationCapacity,
+          action: "use-ration",
+          actionText: t("journeyUi.character.eatRation", {
+            count: viewModel.supplies.availableRations,
+          }),
+          disabled: viewModel.supplies.availableRations <= 0,
+        })}
+      </div>
+
+      <div class="character-tab-section">
+        <div class="journey-title-row">
+          <h3>${escapeHtml(t("journeyUi.character.weapons"))}</h3>
+          <span class="journey-chip">${viewModel.weaponInventory.length} / ${
+            viewModel.bagMeta.weaponSlots
+          }</span>
+        </div>
+
+        <div class="journey-character-list">
+          ${viewModel.weaponInventory.length
+            ? viewModel.weaponInventory
+                .map((weapon) => renderJourneyWeaponCard(weapon))
+                .join("")
+            : `
+                <div class="journey-log-entry">
+                  <p>${escapeHtml(t("journeyUi.character.travellingLight"))}</p>
+                </div>
+              `}
+        </div>
+      </div>
+
+      ${
+        viewModel.supplies.autoConsumedRations || viewModel.supplies.autoConsumedTonics
+          ? `
+              <p class="muted-text">
+                ${escapeHtml(t("journeyUi.character.autoConsumeNote"))}
+              </p>
+            `
+          : ""
+      }
+
+      ${
+        viewModel.pendingWeapons.length
+          ? `
+              <div class="character-tab-section">
+                <div class="journey-title-row">
+                  <h3>${escapeHtml(t("journeyUi.character.newFind"))}</h3>
+                </div>
+                <div class="journey-character-list journey-pending-weapon-list">
+                  ${viewModel.pendingWeapons
+                    .map((weapon) =>
+                      renderJourneyPendingWeaponCard(
+                        weapon,
+                        viewModel.weaponInventory,
+                        viewModel.bagMeta.weaponSlots
+                      )
+                    )
+                    .join("")}
+                </div>
+              </div>
+            `
+          : ""
+      }
+    </section>
+  `;
+}
+
+function renderCharacterEquipmentTab(viewModel) {
+  const equippedWeaponBonuses = viewModel.journeyStats.equippedWeaponMeta?.bonuses;
+  const equippedWeaponBonusMarkup = renderWeaponBonusChips(equippedWeaponBonuses);
+
+  return `
+    <div class="character-equipment-grid">
+      <section class="character-tab-surface">
         <p class="journey-overline">${escapeHtml(t("journeyUi.character.loadout"))}</p>
-        <h4>${escapeHtml(t("journeyUi.character.loadoutTitle"))}</h4>
+        <h3>${escapeHtml(t("journeyUi.character.loadoutTitle"))}</h3>
         <div class="journey-character-list">
           <div class="journey-log-entry">
             <p><strong>${escapeHtml(t("journeyUi.character.discipline"))}:</strong> ${escapeHtml(viewModel.classLabel)}</p>
@@ -2005,6 +2218,15 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
                   )
                 : t("journeyUi.character.stillUnarmed")
             )}</p>
+            ${
+              equippedWeaponBonusMarkup
+                ? `
+                    <div class="journey-inline-row stat-source-row">
+                      ${equippedWeaponBonusMarkup}
+                    </div>
+                  `
+                : ""
+            }
           </div>
           <div class="journey-log-entry">
             <p><strong>${escapeHtml(t("journeyUi.character.bag"))}:</strong> ${escapeHtml(
@@ -2029,113 +2251,35 @@ export function renderCharacterSheet(state, games, sessions, xpSummary) {
         <p class="muted-text">${escapeHtml(
           getJourneyBagDescription(viewModel.state.bagKey, viewModel.bagMeta.description)
         )}</p>
-      </article>
+      </section>
 
-      <article class="journey-side-card">
-        <p class="journey-overline">${escapeHtml(t("journeyUi.character.inventory"))}</p>
-        <h4>${escapeHtml(t("journeyUi.character.inventoryTitle"))}</h4>
-        <div class="summary-row">
-          <span class="summary-pill">${escapeHtml(t("journeyUi.character.weapons"))} <strong>${viewModel.weaponInventory.length} / ${viewModel.bagMeta.weaponSlots}</strong></span>
-          <span class="summary-pill">${escapeHtml(t("journeyUi.character.rations"))} <strong>${viewModel.supplies.availableRations} / ${viewModel.supplies.rationCapacity}</strong></span>
-          <span class="summary-pill">${escapeHtml(t("journeyUi.character.tonics"))} <strong>${viewModel.supplies.availableTonics} / ${viewModel.supplies.tonicCapacity}</strong></span>
-        </div>
-        <div class="journey-resource-actions character-inventory-actions">
-          <button
-            type="button"
-            class="secondary-button"
-            data-journey-action="use-tonic"
-            ${viewModel.supplies.availableTonics <= 0 ? "disabled" : ""}
-          >
-            ${escapeHtml(
-              t("journeyUi.character.useTonic", {
-                count: viewModel.supplies.availableTonics,
-              })
-            )}
-          </button>
-          <button
-            type="button"
-            class="secondary-button"
-            data-journey-action="use-ration"
-            ${viewModel.supplies.availableRations <= 0 ? "disabled" : ""}
-          >
-            ${escapeHtml(
-              t("journeyUi.character.eatRation", {
-                count: viewModel.supplies.availableRations,
-              })
-            )}
-          </button>
-        </div>
-        <div class="journey-character-list">
-          ${viewModel.weaponInventory.length
-            ? viewModel.weaponInventory
-                .map((weapon) => renderJourneyWeaponCard(weapon))
-                .join("")
-            : `
-                <div class="journey-log-entry">
-                  <p>${escapeHtml(t("journeyUi.character.travellingLight"))}</p>
-                </div>
-              `}
-        </div>
-        ${
-          viewModel.supplies.autoConsumedRations || viewModel.supplies.autoConsumedTonics
-            ? `
-                <p class="muted-text">
-                  ${escapeHtml(t("journeyUi.character.autoConsumeNote"))}
-                </p>
-              `
-            : ""
-        }
-        ${
-          viewModel.pendingWeapons.length
-            ? `
-                <div class="journey-character-list journey-pending-weapon-list">
-                  ${viewModel.pendingWeapons
-                    .map((weapon) =>
-                      renderJourneyPendingWeaponCard(
-                        weapon,
-                        viewModel.weaponInventory,
-                        viewModel.bagMeta.weaponSlots
-                      )
-                    )
-                    .join("")}
-                </div>
-              `
-            : ""
-        }
-      </article>
-    </section>
-
-    <section class="character-build-grid">
-      <article class="journey-side-card">
+      <section class="character-tab-surface">
         <p class="journey-overline">${escapeHtml(t("journeyUi.character.classDiscipline"))}</p>
-        <h4>${escapeHtml(viewModel.classLabel)}</h4>
+        <h3>${escapeHtml(viewModel.classLabel)}</h3>
         <p class="muted-text">${escapeHtml(viewModel.classDescription)}</p>
         ${buildJourneyClassSelectionUi(viewModel.state)}
         ${
           viewModel.knownNotes.length
             ? `
-              <div class="journey-character-list">
-                ${viewModel.knownNotes
-                  .map(
-                    (note) => `
-                      <div class="journey-log-entry">
-                        <p>${escapeHtml(note)}</p>
-                      </div>
-                    `
-                  )
-                  .join("")}
-              </div>
-            `
+                <div class="journey-character-list">
+                  ${viewModel.knownNotes
+                    .map(
+                      (note) => `
+                        <div class="journey-log-entry">
+                          <p>${escapeHtml(note)}</p>
+                        </div>
+                      `
+                    )
+                    .join("")}
+                </div>
+              `
             : `<p class="muted-text">${escapeHtml(
                 t("journeyUi.character.learnedBySurviving")
               )}</p>`
         }
-      </article>
-    </section>
+      </section>
+    </div>
   `;
-
-  renderCharacterSkillModal(viewModel);
-  syncBodyScrollLock();
 }
 
 export function buildJourneyClassSelectionUi(state) {
@@ -2748,6 +2892,32 @@ function renderCharacterResourceCard(config) {
           ${escapeHtml(config.actionText)}
         </button>
       </div>
+    </article>
+  `;
+}
+
+function renderCharacterSupplyCard(config) {
+  return `
+    <article class="character-supply-card">
+      <div class="character-supply-card-head">
+        <div>
+          <h4>${escapeHtml(config.title)}</h4>
+          <p class="muted-text">${escapeHtml(
+            `${config.resourceLabel} ${config.current} / ${config.max}`
+          )}</p>
+        </div>
+        <span class="journey-chip ${config.available > 0 ? "is-active" : ""}">
+          ${config.available} / ${config.capacity}
+        </span>
+      </div>
+      <button
+        type="button"
+        class="secondary-button"
+        data-journey-action="${config.action}"
+        ${config.disabled ? "disabled" : ""}
+      >
+        ${escapeHtml(config.actionText)}
+      </button>
     </article>
   `;
 }

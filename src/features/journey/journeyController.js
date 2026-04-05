@@ -11,6 +11,7 @@ import {
   journeyMessageEl,
 } from "../../core/dom.js";
 import {
+  CHARACTER_TABS,
   IDLE_JOURNEY_META_KEY,
   JOURNEY_CLASS_META,
   JOURNEY_PENDING_EVENT_LIMIT,
@@ -60,6 +61,13 @@ import {
 } from "./journeyView.js";
 
 const JOURNEY_EVENT_RESOLVE_DELAY_MS = 3000;
+const CHARACTER_TAB_VALUES = new Set(Object.values(CHARACTER_TABS));
+
+function normalizeCharacterTab(tabId) {
+  return CHARACTER_TAB_VALUES.has(tabId)
+    ? tabId
+    : CHARACTER_TABS.STATS;
+}
 
 function showJourneyFeedback(message, isError = false) {
   showMessage(journeyMessageEl, message, isError);
@@ -207,6 +215,12 @@ export async function handleJourneyClick(event) {
 
   if (action === "close-skill-modal") {
     appState.showCharacterSkillModal = false;
+    await appState.renderApp();
+    return;
+  }
+
+  if (action === "set-character-tab") {
+    appState.activeCharacterTab = normalizeCharacterTab(button.dataset.characterTab);
     await appState.renderApp();
     return;
   }

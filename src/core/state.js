@@ -1,4 +1,5 @@
 import {
+  DEFAULT_CHARACTER_TAB,
   DEFAULT_FOCUSED_GOALS_ENABLED,
   DEFAULT_SCREEN_ID,
   DEFAULT_SESSIONS_TAB,
@@ -12,6 +13,7 @@ export const appState = {
   cropSession: null,
   activeScreenId: DEFAULT_SCREEN_ID,
   activeSessionsTab: DEFAULT_SESSIONS_TAB,
+  activeCharacterTab: DEFAULT_CHARACTER_TAB,
   homeLibraryStatusFilter: "all",
   homeLibraryExpanded: false,
   latestIdleJourney: null,

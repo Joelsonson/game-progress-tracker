@@ -1202,7 +1202,12 @@
 .character-shell,
 .journey-adventure-grid,
 .character-build-grid,
-.character-resource-stack {
+.character-resource-stack,
+.character-tab-shell,
+.character-tab-panel,
+.character-equipment-grid,
+.character-tab-surface,
+.character-tab-section {
   display: grid;
   gap: 16px;
 }
@@ -1217,6 +1222,145 @@
   grid-template-columns: minmax(170px, 220px) minmax(0, 1fr);
   gap: 18px;
   align-items: stretch;
+}
+
+.character-tab-shell {
+  gap: 14px;
+}
+
+.character-tab-bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.character-tab-button {
+  display: grid;
+  min-width: 0;
+  padding: 14px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.84), rgba(var(--surface-rgb), 0.74)),
+    rgba(var(--panel-rgb), 0.68);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease;
+}
+
+.character-tab-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(var(--accent-rgb), 0.16);
+}
+
+.character-tab-button.is-active {
+  border-color: rgba(var(--accent-rgb), 0.26);
+  background:
+    radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.14), transparent 60%),
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.98), rgba(var(--surface-rgb), 0.9)),
+    rgba(var(--panel-rgb), 0.84);
+  box-shadow:
+    0 16px 28px rgba(var(--ink-rgb), 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.character-tab-button-content {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.character-tab-label {
+  font-size: 0.96rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.character-tab-meta {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.character-tab-button.is-active .character-tab-label {
+  color: var(--accent-2);
+}
+
+.character-tab-button.is-active .character-tab-meta {
+  color: var(--text);
+}
+
+.character-tab-surface {
+  padding: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.94), rgba(var(--surface-rgb), 0.84)),
+    rgba(var(--panel-rgb), 0.78);
+  box-shadow:
+    0 18px 34px rgba(var(--ink-rgb), 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.character-panel-header {
+  display: grid;
+  gap: 8px;
+}
+
+.character-panel-header h3,
+.character-tab-surface h3,
+.character-supply-card h4 {
+  margin: 0;
+}
+
+.character-panel-header .muted-text {
+  margin-top: 0;
+}
+
+.character-supply-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.character-supply-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.84), rgba(var(--surface-rgb), 0.74)),
+    rgba(var(--panel-rgb), 0.68);
+}
+
+.character-supply-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.character-supply-card-head > div {
+  min-width: 0;
+}
+
+.character-supply-card .secondary-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.character-tab-section {
+  gap: 12px;
+}
+
+.character-tab-section .journey-title-row {
+  justify-content: space-between;
 }
 
 .character-portrait-panel,

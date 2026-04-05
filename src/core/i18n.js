@@ -476,6 +476,10 @@ const translations = {
         resetJourneyOnly: "Reset journey only",
       },
       character: {
+        sectionsLabel: "Character sections",
+        tabStats: "Stats",
+        tabInventory: "Inventory",
+        tabEquipment: "Equipment",
         editCharacterName: "Edit character name",
         namePlaceholder: "Name your character",
         saveName: "Save name",
@@ -1192,6 +1196,10 @@ const translations = {
         resetJourneyOnly: "旅路だけリセット",
       },
       character: {
+        sectionsLabel: "キャラクター項目",
+        tabStats: "能力",
+        tabInventory: "持ち物",
+        tabEquipment: "装備",
         editCharacterName: "キャラ名を編集",
         namePlaceholder: "キャラクター名を入力",
         saveName: "名前を保存",

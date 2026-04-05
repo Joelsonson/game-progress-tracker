@@ -7,7 +7,9 @@
 .journey-class-grid,
 .journey-stat-grid,
 .journey-log-grid,
-.character-build-grid {
+.character-build-grid,
+.character-equipment-grid,
+.character-supply-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -259,6 +261,15 @@
   backdrop-filter: none;
 }
 
+.character-screen-panel {
+  padding: 0;
+  border: 0;
+  margin-bottom: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
 .tracker-shell-panel > .section-header {
   padding: 0 4px;
   margin-bottom: 0;
@@ -503,6 +514,11 @@
   align-items: flex-start;
 }
 
+.character-supply-card-head {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
 .character-level-up-button {
   align-self: center;
 }
@@ -535,7 +551,9 @@
   .journey-stat-grid,
   .journey-log-grid,
   .journey-adventure-grid,
-  .character-build-grid {
+  .character-build-grid,
+  .character-equipment-grid,
+  .character-supply-grid {
     grid-template-columns: 1fr;
   }
 

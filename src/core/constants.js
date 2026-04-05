@@ -70,6 +70,14 @@ export const SESSIONS_TABS = {
 
 export const DEFAULT_SESSIONS_TAB = SESSIONS_TABS.LOG;
 
+export const CHARACTER_TABS = {
+  STATS: "stats",
+  INVENTORY: "inventory",
+  EQUIPMENT: "equipment",
+};
+
+export const DEFAULT_CHARACTER_TAB = CHARACTER_TABS.STATS;
+
 export const IMAGE_PRESET = {
   cover: {
     width: 480,
