@@ -144,6 +144,7 @@ const translations = {
         logSessionBody: "Save progress for this goal without leaving the sheet.",
         logSessionLockedBody:
           "Move this goal into In Progress before logging from here.",
+        viewLatestSession: "View my last session",
         changeStatusTitle: "Change status",
         changeStatusBody:
           "Pause it, move it, finish it, or make it your Focus Goal.",
@@ -884,6 +885,7 @@ const translations = {
         logSessionBody: "この画面を離れずに、この目標の進捗を記録できます。",
         logSessionLockedBody:
           "ここから記録するには、この目標を「進行中」にしてください。",
+        viewLatestSession: "前回のセッションを見る",
         changeStatusTitle: "状態を変更",
         changeStatusBody:
           "一時停止、移動、完了、フォーカス目標への設定を行えます。",

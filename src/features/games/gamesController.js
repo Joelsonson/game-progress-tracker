@@ -42,6 +42,7 @@ import {
   buildCompletionMessage,
   buildGameForStatus,
   buildSessionStats,
+  emptySessionStats,
   enforceMainGameRules,
   getErrorMessage,
   getGameCompletionXp,
@@ -93,14 +94,19 @@ const completionShowcaseInteraction = {
 };
 
 export function openGameActionsSheet(game) {
-  if (!gameActionsModal || !gameActionsBodyEl || !gameActionsTitleEl || !gameActionsMetaEl) {
+  if (!gameActionsModal || !gameActionsBodyEl || !gameActionsTitleEl) {
     return;
   }
 
-  gameActionsTitleEl.textContent = t("tracker.manageCard");
-  gameActionsMetaEl.textContent = "";
-  gameActionsMetaEl.hidden = true;
-  gameActionsBodyEl.innerHTML = renderGameActionSheet(game);
+  gameActionsTitleEl.textContent = game.title;
+  if (gameActionsMetaEl) {
+    gameActionsMetaEl.textContent = "";
+    gameActionsMetaEl.hidden = true;
+  }
+  gameActionsBodyEl.innerHTML = renderGameActionSheet(
+    game,
+    appState.sessionStats.get(game.id) || emptySessionStats()
+  );
   gameActionsModal.hidden = false;
   syncBodyScrollLock();
 }
@@ -224,6 +230,7 @@ export async function handleGameActionsSubmit(event) {
         gameId: formData.get("gameId"),
         minutes: formData.get("minutes"),
         note: formData.get("note"),
+        updatedObjective: formData.get("updatedObjective"),
         meaningfulProgress: formData.get("meaningfulProgress") === "on",
       });
 

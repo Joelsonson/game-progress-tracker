@@ -1979,11 +1979,40 @@
   gap: 14px;
 }
 
+.game-action-sheet-dialog {
+  padding-top: 8px;
+}
+
+.game-action-sheet-close {
+  position: sticky;
+  top: max(10px, env(safe-area-inset-top));
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: 0 2px -20px auto;
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
+  border-radius: 999px;
+  padding: 0;
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.96), rgba(var(--surface-rgb), 0.9)),
+    rgba(var(--panel-rgb), 0.84);
+  box-shadow:
+    0 14px 24px rgba(var(--ink-rgb), 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  color: var(--text);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
 .game-action-sheet-hero {
   display: flex;
   gap: 14px;
   align-items: flex-start;
-  padding: 8px 2px 2px;
+  padding: 0 2px 2px;
 }
 
 .game-action-sheet-cover {
@@ -2035,6 +2064,16 @@
 .game-action-sheet-panel-header {
   display: grid;
   gap: 6px;
+}
+
+.game-action-sheet-panel-heading {
+  display: grid;
+  gap: 6px;
+}
+
+.game-action-sheet-panel-title {
+  margin: 0;
+  font-size: 1rem;
 }
 
 .game-action-sheet-panel-copy {
@@ -2132,6 +2171,83 @@
 .game-action-session-form,
 .game-action-edit-form {
   gap: 12px;
+}
+
+.game-action-session-context {
+  display: grid;
+  gap: 10px;
+}
+
+.game-action-sheet-note-block {
+  margin-top: 0;
+}
+
+.game-action-session-history {
+  display: grid;
+  gap: 10px;
+}
+
+.game-action-session-history-toggle {
+  position: relative;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0 18px 0 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.game-action-session-history-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.game-action-session-history-toggle::marker {
+  content: "";
+}
+
+.game-action-session-history-toggle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-62%) rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.game-action-session-history[open] > .game-action-session-history-toggle::after {
+  transform: translateY(-28%) rotate(-135deg);
+}
+
+.game-action-session-history-body {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(var(--accent-rgb), 0.14);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.9), rgba(var(--surface-rgb), 0.8)),
+    rgba(var(--panel-rgb), 0.74);
+}
+
+.game-action-session-history-meta,
+.game-action-sheet-inline-note {
+  margin: 0;
+  color: var(--muted);
+}
+
+.game-action-session-history-meta {
+  font-size: 0.84rem;
 }
 
 .game-action-compact-grid {

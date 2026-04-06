@@ -1228,7 +1228,7 @@ export function createActionButton(action, id, options) {
   `;
 }
 
-export function renderGameActionSheet(game) {
+export function renderGameActionSheet(game, sessionStats = emptySessionStats()) {
   const statusMeta = getStatusMeta(game.status);
   const mainBadge = game.isMain
     ? `<span class="badge badge-main">${escapeHtml(
@@ -1254,7 +1254,7 @@ export function renderGameActionSheet(game) {
         </div>
       </div>
 
-      ${renderGameActionSessionPanel(game)}
+      ${renderGameActionSessionPanel(game, sessionStats)}
 
       ${renderGameActionDisclosure({
         title: t("tracker.actionSheetSections.changeStatusTitle"),
@@ -1277,15 +1277,15 @@ export function renderGameActionSheet(game) {
   `;
 }
 
-function renderGameActionSessionPanel(game) {
+function renderGameActionSessionPanel(game, stats = emptySessionStats()) {
   if (!canLogSessionForGame(game)) {
     return `
       <section class="game-action-sheet-panel game-action-sheet-panel-muted">
         <div class="game-action-sheet-panel-header">
-          <div>
-            <p class="eyebrow">${escapeHtml(
+          <div class="game-action-sheet-panel-heading">
+            <h4 class="game-action-sheet-panel-title">${escapeHtml(
               t("tracker.actionSheetSections.logSessionTitle")
-            )}</p>
+            )}</h4>
             <p class="game-action-sheet-panel-copy">
               ${escapeHtml(t("tracker.actionSheetSections.logSessionLockedBody"))}
             </p>
@@ -1300,14 +1300,13 @@ function renderGameActionSessionPanel(game) {
   return `
     <section class="game-action-sheet-panel">
       <div class="game-action-sheet-panel-header">
-        <div>
-          <p class="eyebrow">${escapeHtml(
+        <div class="game-action-sheet-panel-heading">
+          <h4 class="game-action-sheet-panel-title">${escapeHtml(
             t("tracker.actionSheetSections.logSessionTitle")
-          )}</p>
-          <p class="game-action-sheet-panel-copy">
-            ${escapeHtml(t("tracker.actionSheetSections.logSessionBody"))}
-          </p>
+          )}</h4>
         </div>
+
+        ${renderGameActionSessionContext(game, stats)}
       </div>
 
       <form class="stack-form game-action-session-form" data-game-session-form>
@@ -1336,8 +1335,20 @@ function renderGameActionSessionPanel(game) {
             <textarea
               id="gameActionNote-${gameId}"
               name="note"
-              rows="2"
+              rows="3"
               placeholder="${escapeAttribute(t("sessions.notePlaceholder"))}"
+            ></textarea>
+          </div>
+
+          <div class="field game-action-field-wide">
+            <label for="gameActionObjective-${gameId}">${escapeHtml(
+              t("sessions.objectiveLabel")
+            )}</label>
+            <textarea
+              id="gameActionObjective-${gameId}"
+              name="updatedObjective"
+              rows="2"
+              placeholder="${escapeAttribute(t("sessions.objectivePlaceholder"))}"
             ></textarea>
           </div>
         </div>
@@ -1354,6 +1365,48 @@ function renderGameActionSessionPanel(game) {
         </button>
       </form>
     </section>
+  `;
+}
+
+function renderGameActionSessionContext(game, stats = emptySessionStats()) {
+  const currentObjective =
+    getGameObjectiveText(game) || t("tracker.mainQuest.noObjective");
+  const latestSession = stats.latestSession;
+  const latestSessionNote =
+    latestSession?.note?.trim() || t("tracker.notes.noSessionNote");
+
+  return `
+    <div class="game-action-session-context">
+      <div class="note-block game-action-sheet-note-block">
+        <p class="note-label">${escapeHtml(t("tracker.notes.currentObjective"))}</p>
+        <p class="game-notes">${escapeHtml(currentObjective)}</p>
+      </div>
+
+      ${
+        latestSession
+          ? `
+            <details class="game-action-session-history">
+              <summary class="game-action-session-history-toggle">
+                <span>${escapeHtml(
+                  t("tracker.actionSheetSections.viewLatestSession")
+                )}</span>
+              </summary>
+              <div class="game-action-session-history-body">
+                <p class="note-label">${escapeHtml(
+                  t("tracker.notes.latestSession")
+                )}</p>
+                <p class="game-action-session-history-meta">${escapeHtml(
+                  formatDateTime(latestSession.playedAt)
+                )}</p>
+                <p class="session-note">${escapeHtml(latestSessionNote)}</p>
+              </div>
+            </details>
+          `
+          : `<p class="game-action-sheet-inline-note">${escapeHtml(
+              t("tracker.notes.noSessionNote")
+            )}</p>`
+      }
+    </div>
   `;
 }
 

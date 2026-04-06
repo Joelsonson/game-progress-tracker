@@ -7,6 +7,7 @@ import {
 
 export const appState = {
   db: null,
+  sessionStats: new Map(),
   builtInCoverImageOptions: [],
   builtInCoverImageOptionsLoading: false,
   pendingArtTarget: null,

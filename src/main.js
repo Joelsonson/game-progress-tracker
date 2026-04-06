@@ -453,6 +453,7 @@ export async function renderApp() {
   const games = enforceMainGameRules(gamesRaw.map((game) => normalizeGameRecord(game)));
   const sortedGames = sortGames(games);
   const sessionStats = buildSessionStats(sessions);
+  appState.sessionStats = sessionStats;
   const xpSummary = buildXpSummary(sortedGames, sessions);
   setBootPhase("syncing journey");
   const idleJourney = await syncJourneyStateSafely(

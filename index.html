@@ -961,31 +961,27 @@
       <div class="mobile-action-sheet-backdrop" data-close-game-actions></div>
 
       <div
-        class="mobile-action-sheet-dialog"
+        class="mobile-action-sheet-dialog game-action-sheet-dialog"
         role="dialog"
         aria-modal="true"
         aria-labelledby="gameActionsTitle"
       >
         <div class="mobile-action-sheet-grabber" aria-hidden="true"></div>
 
-        <div class="mobile-action-sheet-header">
-          <div>
-            <p class="eyebrow" data-i18n="tracker.actionSheetEyebrow">Tracker actions</p>
-            <h2 id="gameActionsTitle">Manage goal</h2>
-            <p id="gameActionsMeta" class="muted-text" hidden>
-              Choose what to do next.
-            </p>
-          </div>
-          <button
-            id="gameActionsCloseButton"
-            type="button"
-            class="secondary-button"
-            data-close-game-actions
-            data-i18n="tracker.actionSheetDone"
-          >
-            Done
-          </button>
-        </div>
+        <h2 id="gameActionsTitle" class="visually-hidden">Manage goal</h2>
+        <p id="gameActionsMeta" class="visually-hidden" hidden>
+          Choose what to do next.
+        </p>
+        <button
+          id="gameActionsCloseButton"
+          type="button"
+          class="game-action-sheet-close"
+          data-close-game-actions
+          data-i18n-aria-label="common.close"
+          data-i18n-title="common.close"
+        >
+          ×
+        </button>
 
         <div id="gameActionsBody" class="mobile-action-sheet-body"></div>
       </div>
