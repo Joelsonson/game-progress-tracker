@@ -2003,9 +2003,25 @@
     0 14px 24px rgba(var(--ink-rgb), 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
   color: var(--text);
-  font-size: 1.5rem;
-  line-height: 1;
   cursor: pointer;
+}
+
+.game-action-sheet-close::before,
+.game-action-sheet-close::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.game-action-sheet-close::before {
+  transform: rotate(45deg);
+}
+
+.game-action-sheet-close::after {
+  transform: rotate(-45deg);
 }
 
 .game-action-sheet-hero {
@@ -2171,83 +2187,6 @@
 .game-action-session-form,
 .game-action-edit-form {
   gap: 12px;
-}
-
-.game-action-session-context {
-  display: grid;
-  gap: 10px;
-}
-
-.game-action-sheet-note-block {
-  margin-top: 0;
-}
-
-.game-action-session-history {
-  display: grid;
-  gap: 10px;
-}
-
-.game-action-session-history-toggle {
-  position: relative;
-  list-style: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  width: fit-content;
-  max-width: 100%;
-  padding: 0 18px 0 0;
-  border: 0;
-  background: none;
-  color: var(--muted);
-  font-size: 0.92rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.game-action-session-history-toggle::-webkit-details-marker {
-  display: none;
-}
-
-.game-action-session-history-toggle::marker {
-  content: "";
-}
-
-.game-action-session-history-toggle::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: 2px;
-  width: 8px;
-  height: 8px;
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  transform: translateY(-62%) rotate(45deg);
-  transition: transform 0.2s ease;
-}
-
-.game-action-session-history[open] > .game-action-session-history-toggle::after {
-  transform: translateY(-28%) rotate(-135deg);
-}
-
-.game-action-session-history-body {
-  display: grid;
-  gap: 6px;
-  padding: 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(var(--accent-rgb), 0.14);
-  background:
-    linear-gradient(180deg, rgba(var(--panel-rgb), 0.9), rgba(var(--surface-rgb), 0.8)),
-    rgba(var(--panel-rgb), 0.74);
-}
-
-.game-action-session-history-meta,
-.game-action-sheet-inline-note {
-  margin: 0;
-  color: var(--muted);
-}
-
-.game-action-session-history-meta {
-  font-size: 0.84rem;
 }
 
 .game-action-compact-grid {

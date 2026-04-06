@@ -19,7 +19,6 @@ import {
   escapeAttribute,
   escapeHtml,
   formatDate,
-  formatDateTime,
   formatMinutes,
   getCompletionTier,
   getCompletedStateText,
@@ -1296,6 +1295,8 @@ function renderGameActionSessionPanel(game, stats = emptySessionStats()) {
   }
 
   const gameId = escapeAttribute(game.id);
+  const notePlaceholder = buildGameActionNotePlaceholder(stats);
+  const objectivePlaceholder = buildGameActionObjectivePlaceholder(game);
 
   return `
     <section class="game-action-sheet-panel">
@@ -1305,8 +1306,6 @@ function renderGameActionSessionPanel(game, stats = emptySessionStats()) {
             t("tracker.actionSheetSections.logSessionTitle")
           )}</h4>
         </div>
-
-        ${renderGameActionSessionContext(game, stats)}
       </div>
 
       <form class="stack-form game-action-session-form" data-game-session-form>
@@ -1336,7 +1335,7 @@ function renderGameActionSessionPanel(game, stats = emptySessionStats()) {
               id="gameActionNote-${gameId}"
               name="note"
               rows="3"
-              placeholder="${escapeAttribute(t("sessions.notePlaceholder"))}"
+              placeholder="${escapeAttribute(notePlaceholder)}"
             ></textarea>
           </div>
 
@@ -1348,7 +1347,7 @@ function renderGameActionSessionPanel(game, stats = emptySessionStats()) {
               id="gameActionObjective-${gameId}"
               name="updatedObjective"
               rows="2"
-              placeholder="${escapeAttribute(t("sessions.objectivePlaceholder"))}"
+              placeholder="${escapeAttribute(objectivePlaceholder)}"
             ></textarea>
           </div>
         </div>
@@ -1368,46 +1367,30 @@ function renderGameActionSessionPanel(game, stats = emptySessionStats()) {
   `;
 }
 
-function renderGameActionSessionContext(game, stats = emptySessionStats()) {
-  const currentObjective =
-    getGameObjectiveText(game) || t("tracker.mainQuest.noObjective");
+function buildGameActionNotePlaceholder(stats = emptySessionStats()) {
   const latestSession = stats.latestSession;
-  const latestSessionNote =
-    latestSession?.note?.trim() || t("tracker.notes.noSessionNote");
+  if (!latestSession) {
+    return t("sessions.notePlaceholder");
+  }
 
-  return `
-    <div class="game-action-session-context">
-      <div class="note-block game-action-sheet-note-block">
-        <p class="note-label">${escapeHtml(t("tracker.notes.currentObjective"))}</p>
-        <p class="game-notes">${escapeHtml(currentObjective)}</p>
-      </div>
+  const latestSessionNote = normalizePlaceholderText(
+    latestSession.note || t("tracker.notes.noSessionNote")
+  );
 
-      ${
-        latestSession
-          ? `
-            <details class="game-action-session-history">
-              <summary class="game-action-session-history-toggle">
-                <span>${escapeHtml(
-                  t("tracker.actionSheetSections.viewLatestSession")
-                )}</span>
-              </summary>
-              <div class="game-action-session-history-body">
-                <p class="note-label">${escapeHtml(
-                  t("tracker.notes.latestSession")
-                )}</p>
-                <p class="game-action-session-history-meta">${escapeHtml(
-                  formatDateTime(latestSession.playedAt)
-                )}</p>
-                <p class="session-note">${escapeHtml(latestSessionNote)}</p>
-              </div>
-            </details>
-          `
-          : `<p class="game-action-sheet-inline-note">${escapeHtml(
-              t("tracker.notes.noSessionNote")
-            )}</p>`
-      }
-    </div>
-  `;
+  return t("tracker.actionSheetSections.previousSessionPlaceholder", {
+    note: latestSessionNote,
+  });
+}
+
+function buildGameActionObjectivePlaceholder(game) {
+  const currentObjective = normalizePlaceholderText(getGameObjectiveText(game));
+  return currentObjective || t("sessions.objectivePlaceholder");
+}
+
+function normalizePlaceholderText(value) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function renderGameActionDisclosure({ title, body, content }) {
