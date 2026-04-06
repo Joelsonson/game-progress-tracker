@@ -429,15 +429,15 @@
 }
 
 .completion-showcase-card {
-  border-radius: 28px;
+  border-radius: 24px;
 }
 
 .completion-showcase-card-inner {
-  padding: 12px;
+  padding: 10px;
 }
 
 .completion-showcase-art-frame {
-  min-height: min(50dvh, 340px);
+  min-height: min(38dvh, 255px);
 }
 
 .completion-showcase-stats {

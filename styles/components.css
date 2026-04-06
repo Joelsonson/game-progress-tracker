@@ -194,7 +194,7 @@
 .completion-showcase-dialog {
   position: relative;
   z-index: 1;
-  width: min(100%, 420px);
+  width: min(100%, 332px);
   display: grid;
   justify-items: end;
   gap: 10px;
