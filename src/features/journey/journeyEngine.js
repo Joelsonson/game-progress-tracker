@@ -3984,7 +3984,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               successText:
                 "You notice which branches were pecked clean and which were avoided. The clues are enough to turn the patch into a useful stop.",
               failureText:
-                "You misread the signs and collect more trouble than food, leaving with a lighter pack and an annoyed stomach.",
+                "You misread the signs and collected more bad berries than you thought, leaving yourself with stomach pain.",
               successEffects: {
                 hunger: 11,
                 distance: 3,
@@ -3992,6 +3992,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
               failureEffects: {
                 hunger: 5,
+                hp: -5,
                 storyXp: 0,
               },
             }),
@@ -4002,76 +4003,72 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
     );
 
     pushCandidate("arrival:tracks", 3, () => ({
-          title: "Heavy tracks near the creek",
-          teaser: "Something big has been moving through this area.",
+          title: "You spot some heavy tracks near the creek",
+          teaser: "Something big has just moved through this area.",
           detail:
             "You find fresh prints cut deep into the mud beside the water. They are too wide to ignore and too recent to feel safe.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
               label: "Stalk the trail a little farther",
-              preview: "Learn what made the tracks before it learns you.",
+              preview: "Keep low and quiet, try not to get caught.",
               highlightWord: "Stalk",
               statKey: "finesse",
               chanceBase: 0.25,
               chancePerStat: 0.09,
               successText:
-                "You move lightly enough to watch the creature's route without becoming part of it. The knowledge makes the next miles feel less blind.",
+                "You safely pass the large lizard like creature, moving lightly yet swiftly enough to not get noticed.",
               failureText:
-                "A snapped branch gives you away and the lesson becomes a chase. You escape, but not elegantly.",
+                "A snapped branch gives you away and the the lizard spots you and immediately darts your way. You barely dodge his attack and manage to escape, but not elegantly.",
               successEffects: {
-                hp: -2,
-                distance: 6,
+                distance: 10,
                 storyXp: 13,
               },
               failureEffects: {
                 hp: -8,
-                distance: 2,
-                storyXp: 0,
+                distance: 5,
+                storyXp: 1,
               },
             }),
             createJourneyStatChoice({
-              label: "Brace and drive it from the creek",
-              preview: "Make noise first and hope confidence carries the rest.",
-              highlightWord: "Brace",
+              label: "Roar as loud as you can to drive it from the creek",
+              preview: "Channel your inner animal",
+              highlightWord: "Roar",
               statKey: "might",
               chanceBase: 0.23,
               chancePerStat: 0.09,
               successText:
-                "You step in hard, shout louder than you feel, and the beast finally gives way. The water is yours for a brief, dangerous minute.",
+                "You jump through the reeds and scream your loudest. Scaring the lizard creature and making him flee.",
               failureText:
-                "You come on strong, but the animal does not care. You retreat bruised, angry, and very aware of your own size.",
+                "You attempt to scream but a sudden cough catches your throat. A lizard creature spots you and attempts to bite your head off but you manage to block it with your arm. You manage to scramble your way out of a tussle and escape wounded.",
               successEffects: {
-                hp: -4,
-                hunger: 7,
+                distance: 5,
                 storyXp: 14,
               },
               failureEffects: {
-                hp: -10,
+                hp: -20,
                 storyXp: 0,
               },
             }),
             createJourneyStatChoice({
               label: "Push past before your nerves win",
-              preview: "Use momentum to outrun the worst of the fear.",
+              preview: "Use momentum to outrun whatever lies behind those reeds.",
               highlightWord: "Push",
               statKey: "vitality",
               chanceBase: 0.33,
               chancePerStat: 0.07,
               successText:
-                "You keep moving at a hard pace until the creek and the tracks are both behind you. It costs energy, but buys real distance.",
+                "You keep moving at a hard pace until the creek and the tracks are both behind you. You managed to outrun whatever was back there.",
               failureText:
-                "You force the pace too early and burn yourself out halfway through. The escape still works, just badly.",
+                "You push through and spot a lizard creature. He snaps at your legs as you try to run past him and he manages to bite a chunk into your waist. You shrug it off and keep running, managing to escape the strange beast while in pain.",
               successEffects: {
                 distance: 10,
-                hunger: -6,
-                storyXp: 7,
+                storyXp: 10,
               },
               failureEffects: {
-                distance: 4,
-                hunger: -9,
-                hp: -3,
-                storyXp: 0,
+                distance: 10,
+                hp: -10,
+                storyXp: 2,
               },
             }),
           ],
