@@ -145,6 +145,8 @@ const translations = {
         logSessionLockedBody:
           "Move this goal into In Progress before logging from here.",
         previousSessionPlaceholder: ({ note }) => `Previous Session: ${note}`,
+        currentObjectivePlaceholder: ({ objective }) =>
+          `Current Objective: ${objective}`,
         changeStatusTitle: "Change status",
         changeStatusBody:
           "Pause it, move it, finish it, or make it your Focus Goal.",
@@ -886,6 +888,7 @@ const translations = {
         logSessionLockedBody:
           "ここから記録するには、この目標を「進行中」にしてください。",
         previousSessionPlaceholder: ({ note }) => `前回のセッション: ${note}`,
+        currentObjectivePlaceholder: ({ objective }) => `現在の目標: ${objective}`,
         changeStatusTitle: "状態を変更",
         changeStatusBody:
           "一時停止、移動、完了、フォーカス目標への設定を行えます。",

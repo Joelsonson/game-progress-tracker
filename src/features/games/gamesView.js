@@ -1384,7 +1384,13 @@ function buildGameActionNotePlaceholder(stats = emptySessionStats()) {
 
 function buildGameActionObjectivePlaceholder(game) {
   const currentObjective = normalizePlaceholderText(getGameObjectiveText(game));
-  return currentObjective || t("sessions.objectivePlaceholder");
+  if (!currentObjective) {
+    return t("sessions.objectivePlaceholder");
+  }
+
+  return t("tracker.actionSheetSections.currentObjectivePlaceholder", {
+    objective: currentObjective,
+  });
 }
 
 function normalizePlaceholderText(value) {
