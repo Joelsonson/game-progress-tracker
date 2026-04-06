@@ -84,6 +84,7 @@ const translations = {
       libraryShowMore: ({ count }) =>
         `Expand more${Number(count) > 0 ? ` (${count})` : ""}`,
       libraryShowLess: "Show less",
+      focusCapsuleBadge: "Focus",
       focusEyebrow: "Focus goal",
       focusTitle: "The goal you want front and center",
       focusBody:
@@ -824,6 +825,7 @@ const translations = {
       libraryShowMore: ({ count }) =>
         `もっと見る${Number(count) > 0 ? ` (${count})` : ""}`,
       libraryShowLess: "折りたたむ",
+      focusCapsuleBadge: "Focus",
       focusEyebrow: "フォーカス目標",
       focusTitle: "前面に置いておきたい目標",
       focusBody:

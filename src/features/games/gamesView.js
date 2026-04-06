@@ -14,7 +14,7 @@ import {
 } from "../../core/constants.js";
 import {
   buildArtBackgroundStyle,
-  computeStreak,
+  computeGoalStreak,
   emptySessionStats,
   escapeAttribute,
   escapeHtml,
@@ -140,7 +140,7 @@ export function renderStats(games, sessions) {
   const mainGame = games.find((game) => game.isMain);
   mainGameNameEl.textContent = mainGame ? mainGame.title : t("common.noneSet");
 
-  const streak = computeStreak(sessions);
+  const streak = mainGame ? computeGoalStreak(sessions, mainGame.id) : 0;
   currentStreakEl.textContent = `${streak} ${t("common.dayWord", { count: streak })}`;
 }
 
@@ -355,6 +355,14 @@ function renderHomeGoalCapsule(game, stats, index = 0) {
   const ariaLabel = isCompleted
     ? t("tracker.completionShowcase.openLabel", { title: game.title })
     : t("tracker.manageCard");
+  const focusBadge = game.isMain
+    ? `
+        <div class="goal-capsule-focus-pill">
+          <span class="goal-capsule-focus-dot" aria-hidden="true"></span>
+          <span>${escapeHtml(t("home.focusCapsuleBadge"))}</span>
+        </div>
+      `
+    : "";
 
   return `
     <article
@@ -369,6 +377,7 @@ function renderHomeGoalCapsule(game, stats, index = 0) {
         aria-label="${escapeAttribute(ariaLabel)}"
         ${holographicStyle}
       >
+        ${focusBadge}
         ${renderHomeGoalCapsuleArt(game)}
         <div class="goal-capsule-overlay" aria-hidden="true"></div>
         <div class="goal-capsule-title-wrap">
@@ -884,6 +893,16 @@ export function renderCompletedDeckItem(game, sessionStats) {
       >
         ${renderCompletionCard(game, sessionStats.get(game.id) || emptySessionStats())}
       </button>
+      <div class="game-card-footer completed-card-actions">
+        <button
+          type="button"
+          class="secondary-button game-card-action-trigger"
+          data-action="open-completed-actions"
+          data-id="${game.id}"
+        >
+          ${escapeHtml(t("tracker.actions"))}
+        </button>
+      </div>
     </article>
   `;
 }

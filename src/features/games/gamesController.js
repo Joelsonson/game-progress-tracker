@@ -703,6 +703,11 @@ export async function handleListClick(event) {
       return;
     }
 
+    if (action === "open-completed-actions") {
+      openGameActionsSheet(game);
+      return;
+    }
+
     if (action === "open-game-actions") {
       if (game.status === GAME_STATUSES.COMPLETED) {
         await openCompletionShowcaseModal(game);

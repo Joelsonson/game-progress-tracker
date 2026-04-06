@@ -46,15 +46,11 @@ export function showToast(message, options = {}) {
     title = "",
     tone = "success",
     duration = 3200,
-    placement = "bottom",
     replace = false,
   } = options;
 
   const toast = document.createElement("article");
   toast.className = `app-toast is-${tone}`;
-  if (placement === "top") {
-    toast.classList.add("is-top");
-  }
   toast.setAttribute("role", tone === "error" ? "alert" : "status");
 
   if (title) {
@@ -73,12 +69,7 @@ export function showToast(message, options = {}) {
     const existingToasts = [...toastViewport.children];
     for (const existingToast of existingToasts) {
       if (!(existingToast instanceof HTMLElement)) continue;
-      const existingPlacement = existingToast.classList.contains("is-top")
-        ? "top"
-        : "bottom";
-      if (existingPlacement === placement) {
-        existingToast.remove();
-      }
+      existingToast.remove();
     }
   }
 
