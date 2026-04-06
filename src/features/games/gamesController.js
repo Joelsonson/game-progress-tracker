@@ -955,30 +955,30 @@ function updateCompletionShowcaseMotion(card, event) {
   const pointerY = clamp((event.clientY - rect.top) / rect.height, 0, 1);
   const centeredX = pointerX - 0.5;
   const centeredY = pointerY - 0.5;
-  const rotateX = clamp(-centeredY * 18, -9, 9);
-  const rotateY = clamp(centeredX * 20, -10, 10);
+  const rotateX = clamp(-centeredY * 32, -16, 16);
+  const rotateY = clamp(centeredX * 36, -18, 18);
 
   card.style.setProperty("--completion-showcase-rotate-x", `${rotateX.toFixed(2)}deg`);
   card.style.setProperty("--completion-showcase-rotate-y", `${rotateY.toFixed(2)}deg`);
   card.style.setProperty(
     "--completion-showcase-pointer-sheen-x",
-    `${(centeredX * 38).toFixed(2)}%`
+    `${(centeredX * 56).toFixed(2)}%`
   );
   card.style.setProperty(
     "--completion-showcase-pointer-sheen-y",
-    `${(centeredY * 24).toFixed(2)}%`
+    `${(centeredY * 36).toFixed(2)}%`
   );
   card.style.setProperty(
     "--completion-showcase-pointer-glow-x",
-    `${(centeredX * 30).toFixed(2)}%`
+    `${(centeredX * 42).toFixed(2)}%`
   );
   card.style.setProperty(
     "--completion-showcase-pointer-glow-y",
-    `${(centeredY * 22).toFixed(2)}%`
+    `${(centeredY * 30).toFixed(2)}%`
   );
   card.style.setProperty(
     "--completion-showcase-pointer-drift",
-    `${(centeredX * 48).toFixed(2)}%`
+    `${(centeredX * 72).toFixed(2)}%`
   );
 }
 

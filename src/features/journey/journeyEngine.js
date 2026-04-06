@@ -3970,7 +3970,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
               failureEffects: {
                 hunger: 8,
-                hp: -7,
+                hp: -10,
                 storyXp: 0,
               },
             }),

@@ -14,6 +14,8 @@ import { appState } from "./state.js";
 const TOAST_VISIBLE_CLASS = "is-visible";
 const TOAST_MAX_VISIBLE = 3;
 const TOAST_HIDE_DELAY_MS = 180;
+let bodyScrollLockActive = false;
+let lockedScrollY = 0;
 
 export function openFilePicker(input) {
   if (!(input instanceof HTMLInputElement)) return;
@@ -110,7 +112,7 @@ export function closeSettingsModal() {
 }
 
 export function syncBodyScrollLock() {
-  document.body.style.overflow =
+  const shouldLock =
     (appState.onboarding?.active && appState.onboarding?.lockBodyScroll) ||
     appState.cropSession ||
     characterSkillModalRoot?.firstElementChild ||
@@ -121,8 +123,58 @@ export function syncBodyScrollLock() {
     (journeyEventModal && !journeyEventModal.hidden) ||
     (journeyOutcomeModal && !journeyOutcomeModal.hidden) ||
     (artCropModal && !artCropModal.hidden)
-      ? "hidden"
-      : "";
+      ? true
+      : false;
+
+  const root = document.documentElement;
+  const body = document.body;
+
+  if (!root || !body) {
+    return;
+  }
+
+  if (shouldLock) {
+    if (!bodyScrollLockActive) {
+      lockedScrollY = Math.max(window.scrollY || window.pageYOffset || 0, 0);
+      bodyScrollLockActive = true;
+      body.style.position = "fixed";
+      body.style.top = `-${lockedScrollY}px`;
+      body.style.left = "0";
+      body.style.right = "0";
+      body.style.width = "100%";
+    }
+
+    root.style.overflow = "hidden";
+    root.style.overscrollBehavior = "none";
+    body.style.overflow = "hidden";
+    body.style.overscrollBehavior = "none";
+    body.style.touchAction = "none";
+    return;
+  }
+
+  root.style.overflow = "";
+  root.style.overscrollBehavior = "";
+  body.style.overflow = "";
+  body.style.overscrollBehavior = "";
+  body.style.touchAction = "";
+
+  if (!bodyScrollLockActive) {
+    body.style.position = "";
+    body.style.top = "";
+    body.style.left = "";
+    body.style.right = "";
+    body.style.width = "";
+    return;
+  }
+
+  body.style.position = "";
+  body.style.top = "";
+  body.style.left = "";
+  body.style.right = "";
+  body.style.width = "";
+  window.scrollTo(0, lockedScrollY);
+  bodyScrollLockActive = false;
+  lockedScrollY = 0;
 }
 
 export function scrollDeck(targetId, direction = "right") {
