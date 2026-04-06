@@ -3691,19 +3691,19 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
         return {
           title: "A road healer finds you",
           teaser: grantsHealerStone
-            ? "The healer notices more than your wounds and draws out an emerald set in wrapped silver."
-            : "Someone finally notices how rough a state you are in.",
+            ? "She sees how close you are to dropping and reaches for an emerald wrapped in silver."
+            : "One look at you is enough for her to step in.",
           detail: grantsHealerStone
-            ? "A traveling healer reins in beside you, takes one long look, and decides you are too close to collapsing to be left alone. While binding your injuries, she produces an emerald manastone from beneath her sleeve and says some blessings only choose people who have already learned how badly the road can hurt."
-            : "A traveling healer reins in beside you, takes one long look, and decides you are too close to collapsing to be left alone.",
+            ? "A healer reins in beside you, takes one hard look, and decides the road has had enough of you for one day. While she binds the worst of your injuries, she draws an emerald manastone from beneath her sleeve and says some blessings go to people who already know how much the road can hurt."
+            : "A healer reins in beside you, takes one hard look, and decides the road has had enough of you for one day. She starts patching you up before you can argue.",
           createdAt: eventTime,
           choices: [
             createJourneyGuaranteedChoice({
-              label: "Take the healer's aid",
-              preview: "Let the treatment land and get back on your feet.",
+              label: "Let the healer patch you up",
+              preview: "Stop, breathe, and take the help.",
               resultText: grantsHealerStone
-                ? "The healer cleans the worst of the damage, binds you properly, and closes your fingers around the emerald before sending you back to the road."
-                : "The healer cleans the worst of the damage, binds you properly, and presses a tonic and trail food into your hands before sending you back to the road.",
+                ? "She cleans and binds you with brisk, practiced hands. When you can stand straight again, she presses the emerald into your palm and sends you back to the road."
+                : "She cleans and binds you, then stuffs a tonic and trail food into your hands before waving you onward.",
               effects: grantsHealerStone
                 ? {
                     hp: 22,
@@ -3739,19 +3739,19 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
         return {
           title: "A traveling herbalist waves you over",
           teaser: grantsApothecaryStone
-            ? "She has a sharp eye for exhaustion and an amber stone tied into her charm-braid."
-            : "She has a sharp eye for exhaustion and a pack full of remedies.",
+            ? "She spots your exhaustion at once, and an amber stone glows in her braid."
+            : "She spots your exhaustion at once and already has remedies in hand.",
           detail: grantsApothecaryStone
-            ? "An herbalist sorting roots by the roadside sees you limping, waves you in without bargaining, and starts mixing exactly the kind of help your body has been begging for. When you prove you can follow every warning she gives, she unknots a resin-gold manastone from her braid and says some blessings belong with people who respect the difference between cure and poison."
-            : "An herbalist sorting roots by the roadside sees you limping, waves you in without bargaining, and starts putting together exactly the kind of help your body has been begging for.",
+            ? "An herbalist sorting roots by the roadside waves you over before you can pretend you are fine. She feeds you, mixes what your body needs most, and watches closely enough to see whether you respect the line between medicine and poison. When you do, she fingers the amber manastone knotted into her braid."
+            : "An herbalist sorting roots by the roadside waves you over before you can pretend you are fine. She feeds you, mixes what your body needs most, and starts issuing blunt instructions.",
           createdAt: eventTime,
           choices: [
             createJourneyGuaranteedChoice({
               label: "Take the herbalist's help",
-              preview: "Drink, eat, and listen while she patches the worst of it.",
+              preview: "Eat, drink, and listen.",
               resultText: grantsApothecaryStone
-                ? "She talks you through what to eat, what to avoid, and which salve to keep for later. Before you leave, she knots the amber manastone into your palm and tells you not to waste what it teaches."
-                : "She talks you through what to eat, what to avoid, and which salve to keep for later. By the time you leave, the ache is quieter and your pack is heavier with useful supplies.",
+                ? "She patches you up with food, salves, and sharper advice than comfort. Before you leave, she unties the amber stone from her braid and tells you not to waste what it can teach."
+                : "She feeds you, mixes a few useful remedies, and sends you on with better supplies and stricter warnings.",
               effects: grantsApothecaryStone
                 ? {
                     hp: 10,
@@ -3781,17 +3781,17 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
       "aid:spring",
       5 + state.aidUrgency,
       () => ({
-        title: "A glowing spring in the underbrush",
-        teaser: "The water shines faintly even in the shade.",
+        title: "A glowing spring in the brush",
+        teaser: "Even in the shade, the water shines.",
         detail:
-          "You spot a spring giving off a pale glow, untouched by mud or rot. The air around it feels unnaturally calm.",
+          "A spring bubbles up between roots and stone, clear as glass and strangely still. The air around it feels cooler and quieter than the rest of the woods.",
         createdAt: eventTime,
         choices: [
           createJourneyGuaranteedChoice({
             label: "Drink from the spring",
-            preview: "Take the quiet gift and keep moving.",
+            preview: "Take the gift and keep moving.",
             resultText:
-              "The water goes through you like cold light. The worst of the ache eases, your breathing settles, and you manage to bottle enough of it to keep some of that strange calm for later.",
+              "The water hits like cold light. Pain eases, your breathing settles, and you bottle a little of that calm before you go.",
             effects: {
               hp: 16,
               hunger: 12,
@@ -3810,17 +3810,17 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
       "aid:bandit-camp",
       5 + state.aidUrgency,
       () => ({
-        title: "A raider's camp by the looted carriage",
-        teaser: "The bandit looks half-asleep beside a pile of stolen supplies.",
+        title: "A raider's camp beside a looted carriage",
+        teaser: "One raider is nodding off beside the stolen supplies.",
         detail:
-          "You spot the carriage first, wheels sunk in the mud, then the camp beyond it. One bandit is dozing by a tent with the wagon's missing goods stacked close at hand.",
+          "You spot the wrecked carriage first, sunk deep in the mud, then the camp beyond it. One raider is half-asleep by the tent with the wagon's best goods stacked within reach.",
         createdAt: eventTime,
         choices: [
           createJourneyGuaranteedChoice({
-            label: "Take what you can and go",
-            preview: "A quick grab, a quick exit, and no heroics.",
+            label: "Grab supplies and slip away",
+            preview: "Move fast and leave before the camp wakes.",
             resultText:
-              "You wait for the bandit to drift the wrong way, snatch the nearest bundle of supplies, and leave before the camp ever properly wakes around you.",
+              "You wait for the raider's head to dip, snatch a bundle, and vanish before anyone can raise a shout.",
             effects: {
               hunger: 10,
               bonusRations: 2,
@@ -3838,23 +3838,23 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
 
   if (!state.storyFlags.foundWeapon) {
     pushCandidate("survival:weapon-cart", 4, () => ({
-          title: "A broken cart in the thorn brush",
-          teaser: "There may be scraps worth risking a closer look for.",
+          title: "A broken cart in the thorns",
+          teaser: "There may be a weapon worth pulling free.",
           detail:
-            "You spot an overturned cart half-swallowed by roots in the thorn brush. A cracked spear shaft, a rusted belt knife, and a few ruined travel goods are still tangled in the frame.",
+            "An overturned cart lies tangled in thorn brush and roots. A cracked spear shaft, a rusted belt knife, and the remains of someone's travel kit still cling to the frame.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
-              label: "Tease the knife free from the frame",
-              preview: "Trust careful hands with the tight, dangerous work.",
+              label: "Tease the knife free",
+              preview: "Careful hands can win you a real blade.",
               highlightWord: "Tease",
               statKey: "finesse",
               chanceBase: 0.28,
               chancePerStat: 0.08,
               successText:
-                "The rusted knife comes loose with only a scrape across your knuckles, but now you finally have a real blade.",
+                "You work the knife loose with only a nick across the knuckles. It is ugly, rusted, and finally yours.",
               failureText:
-                "The blade gives all at once and slices your palm on the way out. It still ends up in your hand, warm with your own blood.",
+                "The knife tears free all at once and opens your palm. You keep the blade, but it costs blood.",
               successEffects: {
                 hp: -2,
                 distance: 4,
@@ -3870,16 +3870,16 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Wrench the shaft into something useful",
-              preview: "Take the loud, direct option and make it work.",
+              label: "Wrench the shaft into a club",
+              preview: "Take the rough, loud option.",
               highlightWord: "Wrench",
               statKey: "might",
               chanceBase: 0.33,
               chancePerStat: 0.07,
               successText:
-                "You rip free the surviving wood and turn it into a crude spear-club sturdy enough to trust in a panic.",
+                "You rip the surviving wood free, pry loose a little food, and turn the rest into a brutal spear-club good enough to trust in a panic.",
               failureText:
-                "The first pull splinters half the shaft, but you still salvage a brutal little club from the wreckage.",
+                "The shaft splinters in your hands, but you still salvage a stubby club from the wreck.",
               successEffects: {
                 distance: 3,
                 storyXp: 11,
@@ -3895,17 +3895,17 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Focus and salvage only what matters",
-              preview: "Take a breath, grab the best piece, and keep moving.",
+              label: "Focus on the best salvage",
+              preview: "Do not get greedy. Take one good thing and move.",
               highlightWord: "Steady",
               statKey: "resolve",
               chanceBase: 0.36,
               chancePerStat: 0.06,
               minChance: 0.28,
               successText:
-                "You resist the urge to paw through every scrap, spot the one usable weapon quickly, and get moving before the stop costs too much.",
+                "You ignore the junk, spot the one usable weapon, and get back on the road before the stop costs you.",
               failureText:
-                "You try to stay disciplined, but hesitation keeps eating the moment. By the time you leave, you have only scraps and lost time.",
+                "You spend too long digging through scraps. When you finally leave, you have a little food and lost time, but no weapon.",
               successEffects: {
                 distance: 5,
                 storyXp: 9,
@@ -3925,24 +3925,24 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
 
   if (state.bossIndex === 0) {
     pushCandidate("arrival:berries", 3, () => ({
-          title: "A patch of unfamiliar berries",
-          teaser: "It could be food. It could also be a mistake.",
+          title: "A patch of wild berries",
+          teaser: "Some look safe. Some really do not.",
           detail:
-            "You spot dark berries growing where the light breaks through the trees. Some have been pecked by birds. Some hang untouched.",
+            "Dark berries cluster where sunlight cuts through the trees. Birds have pecked some branches clean and left others untouched.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
-              label: "Sort the safe ones from the rest",
-              preview: "Take your time and let small signs guide you.",
+              label: "Sort the safe berries",
+              preview: "Take your time and trust the small signs.",
               highlightWord: "Sort",
               statKey: "resolve",
               chanceBase: 0.37,
               chancePerStat: 0.06,
               minChance: 0.28,
               successText:
-                "You test patiently, keep only what proves itself, and leave with a modest meal that does not fight back.",
+                "You check them one by one and keep only the berries that prove themselves. It is not much, but it is clean food.",
               failureText:
-                "You stay cautious, but not cautious enough. A few bad berries slip through and sour the whole stop.",
+                "A few bad berries slip into the pile. You still eat, but the stop leaves your gut sour.",
               successEffects: {
                 hunger: 10,
                 storyXp: 9,
@@ -3955,15 +3955,15 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
             }),
             createJourneyStatChoice({
               label: "Go wild on the berries",
-              preview: "Trust your body to tell you what belongs in it.",
+              preview: "Eat first. Ask questions later.",
               highlightWord: "Taste",
               statKey: "vitality",
               chanceBase: 0.29,
               chancePerStat: 0.08,
               successText:
-                "Your stomach takes the test better than expected. The berries are not perfect, but they fill the ache without doing real harm.",
+                "You chance it and your body holds. The berries are rough, but they quiet the hunger without laying you low.",
               failureText:
-                "The gamble turns on you fast. You force down enough to matter, then spend the next stretch wishing you had not.",
+                "The gamble lands hard. You fill your stomach, then spend the next stretch fighting off the sickness.",
               successEffects: {
                 hunger: 14,
                 storyXp: 8,
@@ -3976,15 +3976,15 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
             }),
             createJourneyStatChoice({
               label: "Read what the birds left behind",
-              preview: "Look for patterns before you commit your own stomach.",
+              preview: "Study what they touched before you choose.",
               highlightWord: "Read",
-              statKey: "finesse",
+              statKey: "arcana",
               chanceBase: 0.3,
               chancePerStat: 0.08,
               successText:
-                "You notice which branches were pecked clean and which were avoided. The clues are enough to turn the patch into a useful stop.",
+                "You follow the pecked branches and the untouched ones, find the safest cluster, and move on before the whole stop turns into a gamble.",
               failureText:
-                "You misread the signs and collected more bad berries than you thought, leaving yourself with stomach pain.",
+                "You think you see the pattern, but you read it wrong. You still get a little food and a sharp reminder not to guess.",
               successEffects: {
                 hunger: 11,
                 distance: 3,
@@ -4003,23 +4003,23 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
     );
 
     pushCandidate("arrival:tracks", 3, () => ({
-          title: "You spot some heavy tracks near the creek",
-          teaser: "Something big has just moved through this area.",
+          title: "Heavy tracks by the creek",
+          teaser: "Whatever made them is still close.",
           detail:
-            "You find fresh prints cut deep into the mud beside the water. They are too wide to ignore and too recent to feel safe.",
+            "Fresh prints sink deep into the mud beside the creek. Water is still seeping back into them, and something heavy has pushed through the reeds ahead.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
-              label: "Stalk the trail a little farther",
-              preview: "Keep low and quiet, try not to get caught.",
+              label: "Stalk the trail farther",
+              preview: "Keep low and see what made them.",
               highlightWord: "Stalk",
               statKey: "finesse",
               chanceBase: 0.25,
               chancePerStat: 0.09,
               successText:
-                "You safely pass the large lizard like creature, moving lightly yet swiftly enough to not get noticed.",
+                "You spot a huge creek lizard in the reeds and ghost past before it ever scents you. Knowing where it is lets you take the safe line around it.",
               failureText:
-                "A snapped branch gives you away and the the lizard spots you and immediately darts your way. You barely dodge his attack and manage to escape, but not elegantly.",
+                "A branch snaps underfoot. The lizard whips around and lunges, and you only get clear by diving through the reeds and running half-blind.",
               successEffects: {
                 distance: 10,
                 storyXp: 13,
@@ -4031,16 +4031,16 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Roar as loud as you can to drive it from the creek",
-              preview: "Channel your inner animal",
+              label: "Roar and drive it off",
+              preview: "Hit it with noise and nerve before it hits you.",
               highlightWord: "Roar",
               statKey: "might",
               chanceBase: 0.23,
               chancePerStat: 0.09,
               successText:
-                "You jump through the reeds and scream your loudest. Scaring the lizard creature and making him flee.",
+                "You explode through the reeds with every bit of noise you have. The beast startles, splashes for deeper water, and leaves the creek to you.",
               failureText:
-                "You attempt to scream but a sudden cough catches your throat. A lizard creature spots you and attempts to bite your head off but you manage to block it with your arm. You manage to scramble your way out of a tussle and escape wounded.",
+                "You go to bellow and the beast beats you to it. The fight turns ugly at arm's length, and you escape only after a savage scramble.",
               successEffects: {
                 distance: 5,
                 storyXp: 14,
@@ -4051,16 +4051,16 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Push past before your nerves win",
-              preview: "Use momentum to outrun whatever lies behind those reeds.",
+              label: "Push past before fear wins",
+              preview: "Commit to the run and do not look back.",
               highlightWord: "Push",
               statKey: "vitality",
               chanceBase: 0.33,
               chancePerStat: 0.07,
               successText:
-                "You keep moving at a hard pace until the creek and the tracks are both behind you. You managed to outrun whatever was back there.",
+                "You keep a hard pace and never give the thing a clean shot at you. By the time the creek is out of earshot, so is the danger.",
               failureText:
-                "You push through and spot a lizard creature. He snaps at your legs as you try to run past him and he manages to bite a chunk into your waist. You shrug it off and keep running, managing to escape the strange beast while in pain.",
+                "You try to blow past it, but the beast clips you as you break from the reeds. You keep moving and do not stop until the creek is far behind.",
               successEffects: {
                 distance: 10,
                 storyXp: 10,
@@ -4078,23 +4078,23 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
     );
 
     pushCandidate("arrival:watchtower", 2, () => ({
-          title: "A collapsed watchtower in the reeds",
-          teaser: "Most of it is rotten, but the top still overlooks the road ahead.",
+          title: "A watchtower sinking into the reeds",
+          teaser: "Rotten timber, old warnings, and a view if it holds.",
           detail:
-            "You come across a watchtower leaning at an ugly angle above the marsh grass. The lower door is jammed, the ladder is splintered, and old signal marks still cling to the timber.",
+            "A watchtower leans at a sick angle above the marsh grass. The lower door is jammed, the ladder is splintered, and faded signal marks still scar the timber.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
               label: "Climb the frame before it gives way",
-              preview: "Risk the old height for a better read of the road.",
+              preview: "Risk the height for a look at the road ahead.",
               highlightWord: "Climb",
               statKey: "vitality",
               chanceBase: 0.26,
               chancePerStat: 0.08,
               successText:
-                "You reach the upper ledge, catch a long view of the route ahead, and come down with a clearer line through the next stretch.",
+                "You reach the upper ledge and spot a cleaner line through the marsh. The climb down is ugly, but worth it.",
               failureText:
-                "Halfway up, the frame shudders and drops you back into the reeds. You salvage a glimpse, but not without pain.",
+                "Halfway up, the frame bucks and throws you into the reeds. You still catch a glimpse of the route, just not without pain.",
               successEffects: {
                 distance: 12,
                 storyXp: 10,
@@ -4107,15 +4107,15 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
             }),
             createJourneyStatChoice({
               label: "Force the lower door open",
-              preview: "The quiet route is ruined anyway, so lean into it.",
+              preview: "The quiet way is gone already, so lean into it.",
               highlightWord: "Force",
               statKey: "might",
               chanceBase: 0.3,
               chancePerStat: 0.08,
               successText:
-                "The rotten latch gives under your shoulder. Inside, you find a dry corner with a little food and an old watchman's tonic.",
+                "The rotten latch gives under your shoulder. Inside, you find a dry corner, a little food, and an old watchman's tonic.",
               failureText:
-                "You batter the door apart, but most of what waited inside has already gone bad. Only scraps remain worth taking.",
+                "You smash your way in, but damp and rot have ruined most of the stash. You limp out with scraps and bruises.",
               successEffects: {
                 bonusRations: 1,
                 bonusTonics: 1,
@@ -4129,15 +4129,15 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
             }),
             createJourneyStatChoice({
               label: "Trace the old signal marks",
-              preview: "Let the people who built this place tell you what they saw.",
+              preview: "Let the tower tell you what it once warned others about.",
               highlightWord: "Trace",
               statKey: "arcana",
               chanceBase: 0.24,
               chancePerStat: 0.09,
               successText:
-                "The chalk and carved lines resolve into a warning route and a safer one. You leave with a strange little confidence about where to step next.",
+                "The marks resolve into old warning signs and a safer path through the reeds. You leave with better footing and a sharper read on what comes next.",
               failureText:
-                "You find a pattern in the marks, but it is only half the truth. The detour helps less than expected, though the lesson stays with you.",
+                "You decode only part of the message. It helps some, but not as much as you hoped.",
               successEffects: {
                 distance: 8,
                 bonusSkillPoints: 1,
@@ -4156,23 +4156,23 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
 
     if (currentBagRank < 1) {
       pushCandidate("arrival:forager-satchel", 4, () => ({
-            title: "A torn satchel caught in the briars",
-            teaser: "The strap is snagged high in the thorns, but the bag itself still looks sound.",
+            title: "A satchel caught in the briars",
+            teaser: "The strap is snarled high in the thorns, but the bag still looks sound.",
             detail:
-              "You spot a leather satchel hanging where a traveler must have torn free of the thicket in a hurry. The bag is within reach if you can get it down without ruining it.",
+              "A leather satchel hangs in the thicket where some traveler must have torn free in a hurry. It is within reach if you can get it down without ruining it.",
             createdAt: eventTime,
             choices: [
               createJourneyStatChoice({
-                label: "Ease the strap loose without ripping it",
-                preview: "Careful hands might save the bag intact.",
+                label: "Ease the strap loose",
+                preview: "Careful hands might save the whole bag.",
                 highlightWord: "Ease",
                 statKey: "finesse",
                 chanceBase: 0.3,
                 chancePerStat: 0.08,
                 successText:
-                  "You work the strap free thread by thread until the satchel drops cleanly into your hands, still sturdy enough to use.",
+                  "You work the strap free thread by thread until the satchel drops cleanly into your hands.",
                 failureText:
-                  "The briars bite back and the strap tears in the worst possible place. You salvage a little food, but not the bag.",
+                  "The briars bite back and the strap tears at the worst possible spot. You save some food, but not the bag.",
                 successEffects: {
                   bagKey: "satchel",
                   bonusRations: 1,
@@ -4185,16 +4185,16 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 },
               }),
               createJourneyStatChoice({
-                label: "Yank it free before the thorns take more skin",
+                label: "Yank it free",
                 preview: "Rough force might still win the bag.",
                 highlightWord: "Yank",
                 statKey: "might",
                 chanceBase: 0.27,
                 chancePerStat: 0.08,
                 successText:
-                  "One hard pull tears the satchel loose along with half the thorn branch holding it. The leather complains, but it will serve.",
+                  "One brutal pull tears the satchel loose. The leather complains, but it holds.",
                 failureText:
-                  "You wrench too hard, split the seam, and end up with only the spilled contents and bleeding knuckles.",
+                  "You rip the seam wide open. All you recover is a little food and fresh cuts.",
                 successEffects: {
                   bagKey: "satchel",
                   bonusRations: 1,
@@ -4207,17 +4207,17 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 },
               }),
               createJourneyStatChoice({
-                label: "Judge whether it is worth the trouble first",
-                preview: "Take a breath and only commit if the prize is real.",
+                label: "Judge if it is worth it",
+                preview: "Take a breath and commit only if the prize is real.",
                 highlightWord: "Judge",
                 statKey: "resolve",
                 chanceBase: 0.35,
                 chancePerStat: 0.06,
                 minChance: 0.28,
                 successText:
-                  "You slow yourself down, spot the weak points in the thorn snare, and recover the satchel without ruining it.",
+                  "You slow down, find the weak point in the snag, and bring the satchel down without wrecking it.",
                 failureText:
-                  "You hesitate just long enough for the leather to give under its own weight. By the time you reach it, only scraps remain useful.",
+                  "You wait a beat too long. The strap gives under its own weight, and by the time you reach it the bag is ruined.",
                 successEffects: {
                   bagKey: "satchel",
                   bonusRations: 1,
@@ -4236,24 +4236,24 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
 
   if (journeyPhase !== "frontier") {
     pushCandidate("weather:cold-rain", 2, () => ({
-          title: "Cold rain before dusk",
-          teaser: "You need to decide whether to stop or suffer through it.",
+          title: "Cold rain at dusk",
+          teaser: "Stop and shelter, or keep walking wet.",
           detail:
-            "The weather turns without warning. Cold rain starts slanting through the trees, the air goes bitter, and the path begins to vanish beneath wet leaves and mud.",
+            "The weather turns in a rush. Cold rain slants through the trees, the air goes bitter, and the path starts to disappear beneath mud and wet leaves.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
-              label: "Knot together rough shelter",
-              preview: "Lose distance now so the night does not take more later.",
+              label: "Knot together a shelter",
+              preview: "Lose ground now so the night takes less later.",
               highlightWord: "Knot",
               statKey: "resolve",
               chanceBase: 0.37,
               chancePerStat: 0.06,
               minChance: 0.28,
               successText:
-                "Your hands stay steady long enough to make a miserable little shelter that still keeps the worst of the cold off you.",
+                "You lash together a miserable shelter, but it keeps enough rain and wind off you to let your body recover.",
               failureText:
-                "The shelter goes up crooked and late. It helps, but not before the weather has already worked its way into your bones.",
+                "The shelter goes up late and crooked. It helps a little, but not before the cold has already sunk in.",
               successEffects: {
                 distance: -4,
                 hp: 6,
@@ -4274,9 +4274,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               chanceBase: 0.31,
               chancePerStat: 0.08,
               successText:
-                "You keep your body moving hard enough to stay warm, forcing out useful ground before the storm can claim the evening.",
+                "You keep moving hard enough to stay warm and steal real distance before the storm can break you.",
               failureText:
-                "The cold drains you faster than expected. You still make progress, but every step after feels heavier than the last.",
+                "You force your way onward, but the cold drains you faster than the miles repay.",
               successEffects: {
                 distance: 10,
                 hp: -4,
@@ -4291,16 +4291,16 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Catch clean rainwater before the light dies",
-              preview: "Use quick hands to turn the storm into something useful.",
+              label: "Catch clean rainwater",
+              preview: "Turn the storm into something useful before dark.",
               highlightWord: "Catch",
               statKey: "finesse",
               chanceBase: 0.29,
               chancePerStat: 0.08,
               successText:
-                "You angle cloth, bark, and branches just right, catching clean rainwater and salvaging something useful from the storm before the light dies.",
+                "You rig bark and cloth into a decent catch, then use the stop to gather a little forage before the light dies.",
               failureText:
-                "Your makeshift catch slips, spills, and collapses twice before you finally abandon it, cold and irritated.",
+                "Your makeshift catch keeps slipping and collapsing. You end up colder, hungrier, and empty-handed.",
               successEffects: {
                 hunger: 8,
                 bonusRations: 1,
@@ -4321,22 +4321,22 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyPhase === "frontier" && currentBagRank < 2 && journeyLevel >= 3) {
     pushCandidate("frontier:abandoned-pack-mule", 4, () => ({
           title: "An abandoned pack frame by the road",
-          teaser: "The mule is gone, but the frame and bedroll are still wedged under the brush.",
+          teaser: "The mule is gone, but the backpack may still be worth saving.",
           detail:
-            "Off the side of the road, you find the remains of a trader's pack rig: split straps, scattered buckles, and a traveler's backpack pinned beneath a warped frame.",
+            "Off the road, you find the wreck of a trader's pack rig: split straps, bent buckles, and a traveler's backpack pinned beneath a warped frame.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
-              label: "Slip the backpack free from the frame",
+              label: "Slip the backpack free",
               preview: "Careful hands might save the best part intact.",
               highlightWord: "Slip",
               statKey: "finesse",
               chanceBase: 0.27,
               chancePerStat: 0.08,
               successText:
-                "You work the straps loose in the right order and recover the backpack with only surface damage.",
+                "You loosen the straps in the right order and recover the backpack with only surface damage.",
               failureText:
-                "One bad tug snaps a key buckle and the whole frame collapses on your hand. You salvage trail food, but not a usable pack.",
+                "One bad tug snaps a key buckle and the frame collapses on your hand. You salvage food, but not a usable pack.",
               successEffects: {
                 bagKey: "backpack",
                 bonusRations: 1,
@@ -4349,16 +4349,16 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Heave the whole rig over and strip it fast",
+              label: "Heave the whole rig aside",
               preview: "If subtlety is gone already, win with force.",
               highlightWord: "Heave",
               statKey: "might",
               chanceBase: 0.24,
               chancePerStat: 0.09,
               successText:
-                "You flip the crushed frame aside and wrestle the backpack out before the rotten wood can tear it open.",
+                "You flip the crushed frame aside and drag the backpack clear before the rotten wood can tear it open.",
               failureText:
-                "The frame shifts the wrong way and crushes the pack flat. You pull out a few intact supplies and little else.",
+                "The frame shifts the wrong way and crushes the pack flat. You pull out a few supplies and nothing more.",
               successEffects: {
                 bagKey: "backpack",
                 bonusRations: 2,
@@ -4371,8 +4371,8 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Check the stitching before you commit",
-              preview: "A steady eye might tell you where the pack can still hold.",
+              label: "Check the stitching first",
+              preview: "A steady eye might show where the pack can still hold.",
               highlightWord: "Check",
               statKey: "resolve",
               chanceBase: 0.33,
@@ -4381,7 +4381,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               successText:
                 "You find the surviving seams, cut only where you need to, and come away with a backpack still fit for the road.",
               failureText:
-                "You read the damage too generously. The leather gives as soon as the weight shifts, leaving you with frustration and a handful of dried food.",
+                "You trust the leather too much. It gives as soon as the weight shifts, leaving you with frustration and a handful of dried food.",
               successEffects: {
                 bagKey: "backpack",
                 bonusRations: 1,
@@ -4401,22 +4401,22 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyPhase === "frontier" && currentBagRank < 3 && journeyLevel >= 6) {
     pushCandidate("frontier:field-kit-cache", 2, () => ({
           title: "A sealed supply niche in a ruined gate",
-          teaser: "Someone hid real expedition gear here and hoped to come back for it.",
+          teaser: "Someone hid real expedition gear here and meant to come back.",
           detail:
-            "Inside a broken gatehouse, you find a fitted wall niche hidden behind a loose stone. A field kit wrapped in oilcloth sits inside, but the lock and crumbling stonework both look ready to fight you for it.",
+            "Inside a broken gatehouse, you find a fitted wall niche hidden behind a loose stone. A field kit wrapped in oilcloth sits inside, but the lock and crumbling masonry both look ready to fight you for it.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
-              label: "Pick the clasp before the rust gives you away",
-              preview: "One patient touch could save the whole kit.",
+              label: "Pick the clasp",
+              preview: "Quiet hands could save the whole kit.",
               highlightWord: "Pick",
               statKey: "finesse",
               chanceBase: 0.22,
               chancePerStat: 0.09,
               successText:
-                "The clasp yields just enough for you to work the cache open quietly. Inside is a field kit built for roads far harsher than this one.",
+                "The clasp gives just enough for you to work the cache open quietly. Inside is a field kit built for harder roads than this one.",
               failureText:
-                "The clasp snaps loud enough to echo through the stone. You grab what loose supplies you can and abandon the rest before company arrives.",
+                "The clasp snaps loud enough to echo through the stone. You snatch a few loose supplies and abandon the rest before company arrives.",
               successEffects: {
                 bagKey: "field_kit",
                 bonusRations: 1,
@@ -4430,8 +4430,8 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Break the niche open and trust the stone to lose first",
-              preview: "Brute force will settle the argument quickly.",
+              label: "Break the niche open",
+              preview: "Settle it with force before the wall settles it for you.",
               highlightWord: "Break",
               statKey: "might",
               chanceBase: 0.2,
@@ -4439,7 +4439,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               successText:
                 "You batter the loosened stone aside and haul the field kit free before the wall can bury it again.",
               failureText:
-                "The wall gives, but so does the ledge under your footing. You wrench free only the smaller supplies while the real prize disappears into rubble.",
+                "The wall gives, but so does the ground under your feet. You wrench out the smaller supplies while the real prize disappears into rubble.",
               successEffects: {
                 bagKey: "field_kit",
                 bonusRations: 1,
@@ -4453,16 +4453,16 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Wait out the echoes and open it cleanly",
+              label: "Wait out the echoes",
               preview: "Let caution buy you the better prize.",
               highlightWord: "Wait",
               statKey: "resolve",
               chanceBase: 0.28,
               chancePerStat: 0.08,
               successText:
-                "You pace the ruin, listen for movement, and choose the one quiet minute that lets you take the field kit without ruining it.",
+                "You listen, wait, and choose the one quiet minute that lets you take the field kit cleanly.",
               failureText:
-                "You wait too long and the niche shifts under its own weight. The field kit is lost, though a tonic and some food survive the collapse.",
+                "You wait too long and the niche shifts under its own weight. The field kit is lost, though some food and a tonic survive the collapse.",
               successEffects: {
                 bagKey: "field_kit",
                 bonusRations: 1,
@@ -4482,10 +4482,10 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
 
   if (journeyPhase === "frontier") {
     pushCandidate("frontier:waystone-cache", 3, () => ({
-          title: "A waystone with a hidden compartment",
-          teaser: "The stone still marks the road, but someone carved more into it than directions.",
+          title: "A waystone with a hidden cache",
+          teaser: "The road mark hides more than directions.",
           detail:
-            "You come to an old waystone at a fork in the road, etched with faded route marks and a seam near the base where a hidden compartment might once have been tucked away.",
+            "At a fork in the road stands an old waystone scored with faded route marks. A seam near the base hints at a hidden compartment.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4496,9 +4496,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               chanceBase: 0.25,
               chancePerStat: 0.09,
               successText:
-                "The marks resolve into more than directions: a warning line, a safer turn, and a clue to where travelers once hid supplies.",
+                "The carvings resolve into more than directions: a warning, a safer turn, and the clue to a traveler's tonic tucked nearby.",
               failureText:
-                "You follow the patterns too far into your own guesses and only come away with a partial read and lost time.",
+                "You chase meaning that is not quite there and lose time for it. Still, part of the message helps.",
               successEffects: {
                 distance: 8,
                 bonusTonics: 1,
@@ -4510,16 +4510,16 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Pry the base open before the road notices you",
+              label: "Pry the base open",
               preview: "If there is a cache, force will find it faster than patience.",
               highlightWord: "Pry",
               statKey: "might",
               chanceBase: 0.24,
               chancePerStat: 0.09,
               successText:
-                "You crack the hidden panel wide enough to pull out a small cache of trail food and a wrapped blade.",
+                "You crack the panel wide enough to drag out a small cache of food and a wrapped hatchet.",
               failureText:
-                "The stone shifts against you and nearly traps your hand. You wrench it free with only bruises and a few crumbs to show for it.",
+                "The stone shifts and nearly traps your hand. You wrench free with bruises and only a few crumbs.",
               successEffects: {
                 bonusRations: 2,
                 weaponName: "Traveler's hatchet",
@@ -4532,16 +4532,16 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Circle behind the hedgerow and search the blind side",
+              label: "Circle to the blind side",
               preview: "Use the road's habits against it.",
               highlightWord: "Circle",
               statKey: "finesse",
               chanceBase: 0.29,
               chancePerStat: 0.08,
               successText:
-                "You find the stash where most eyes would never look: tucked into the blind side with dry food and a route note worth following.",
+                "You work around the hedgerow and find the stash where most eyes would never look: dry food and a route note tucked out of sight.",
               failureText:
-                "You misjudge the footing on the far side and announce yourself with loose stone. Whatever was hidden there, someone gets to it before you do.",
+                "Loose stone gives you away. By the time you circle back, the stash is gone and the effort just leaves you tired.",
               successEffects: {
                 bonusRations: 1,
                 distance: 7,
@@ -4561,23 +4561,23 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
 
   if (journeyLevel >= 3 && state.storyFlags.boarDefeated && !hasJourneyClassUnlocked(state, "soldier")) {
     pushCandidate("class:soldier-watchfire", 4, () => ({
-          title: "A guard by a roadside fire",
-          teaser: "He notices your stance, then studies the ruby set into his old signet.",
+          title: "A guard by the watchfire",
+          teaser: "He notices your stance before he notices your face.",
           detail:
-            "You come across a tired local guard warming his hands beside a watchfire. After hearing about the boar, he turns a cracked ruby mounted in an iron signet and says stones like that used to be given to people who could hold the line without folding.",
+            "A tired local guard warms his hands beside a roadside fire. When he hears about the boar, he turns a cracked ruby in an iron signet and says stones like that once went to people who could hold the line without folding.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
               label: "Match his guard and hold the line",
-              preview: "Let him test whether the stone has any reason to answer you.",
+              preview: "Let him test whether the stone has a reason to answer you.",
               highlightWord: "line",
               statKey: "might",
               chanceBase: 0.24,
               chancePerStat: 0.09,
               successText:
-                "You meet every correction without giving ground. At the end of it, the ruby flares warm in the guard's palm, and he presses the stone into your hand with a grim nod.",
+                "You take every correction without giving ground. At the end, the ruby warms in his palm and he passes it to you with a grim nod.",
               failureText:
-                "You understand the lesson, but the stone stays dark. The guard still leaves you with hard advice and a few new bruises.",
+                "You understand the lesson, but the stone stays dark. He still leaves you bruised and a little sharper.",
               successEffects: {
                 hp: -4,
                 storyXp: 20,
@@ -4590,15 +4590,15 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
             }),
             createJourneyStatChoice({
               label: "Take the blows and rise anyway",
-              preview: "Show the stone you know how to endure a soldier's lesson.",
+              preview: "Show the stone you can take the hit and rise clean.",
               highlightWord: "rising",
               statKey: "vitality",
               chanceBase: 0.28,
               chancePerStat: 0.08,
               successText:
-                "He knocks you down until your body remembers how to come back up before your pride can. When the drill ends, he gives you the ruby and tells you the land can judge the rest.",
+                "He knocks you down until your body learns to rise before pride can complain. When the drill ends, he hands you the ruby and tells the land to judge the rest.",
               failureText:
-                "You last longer than he expects, but not long enough to wake the stone. The practice still leaves its mark.",
+                "You keep getting up, but not enough to wake the stone. The lesson still leaves its mark.",
               successEffects: {
                 hp: -3,
                 storyXp: 18,
@@ -4611,15 +4611,15 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
             }),
             createJourneyStatChoice({
               label: "Read the discipline behind each correction",
-              preview: "Show him you understand what the stone is actually measuring.",
+              preview: "Show him you understand what the stone is really measuring.",
               highlightWord: "rhythm",
               statKey: "resolve",
               chanceBase: 0.29,
               chancePerStat: 0.07,
               successText:
-                "You stop reacting to each strike and start answering the intent beneath it. The guard notices, then leaves the ruby signet stone in your hand as if returning something that was only ever on loan.",
+                "You stop reacting to the blows and start reading the drill beneath them. The guard sees it, leaves the ruby in your hand, and flips you a ration for the road.",
               failureText:
-                "You catch part of what he means, but not enough to stir the gem. The rest will have to wait for another road and another fire.",
+                "You catch part of the meaning, but not enough. He sends you on with hard advice and a growling stomach instead of the gem.",
               successEffects: {
                 bonusRations: 1,
                 storyXp: 18,
@@ -4638,22 +4638,22 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyLevel >= 4 && state.storyFlags.boarDefeated && !hasJourneyClassUnlocked(state, "arcanist")) {
     pushCandidate("class:arcanist-shrine", 3, () => ({
           title: "A whispering shrine",
-          teaser: "The stones hum around a sapphire hidden in the springlight.",
+          teaser: "The stones hum around a sapphire buried in springlight.",
           detail:
-            "You find half-buried stones circling a shallow spring. In the water rests a sapphire the size of a thumbnail, untouched by moss or silt. When you reach toward it, the whole ring of stone tightens around your hand as if waiting to see whether you can bear the attention.",
+            "Half-buried stones circle a shallow spring. In the water rests a sapphire the size of a thumbnail, untouched by moss or silt. When you reach toward it, the whole ring of stone tightens around your hand as if waiting to see whether you can bear its attention.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
               label: "Trace the current around the sapphire",
-              preview: "Follow the shrine's strange logic until the stone answers.",
+              preview: "Follow the shrine's pattern until the stone answers.",
               highlightWord: "Trace",
               statKey: "arcana",
               chanceBase: 0.22,
               chancePerStat: 0.1,
               successText:
-                "You stop fighting the sensation and let the shrine's strange logic pass through you. When you lift the sapphire free, it feels less like treasure and more like a sealed instruction.",
+                "You stop fighting the current and follow its pattern. When you lift the sapphire free, it feels less like treasure than a lesson choosing you.",
               failureText:
-                "You brush the edge of understanding before the current slips away. The sapphire remains beyond you, but even the incomplete lesson changes how the air feels around your hands.",
+                "The pattern slips away before you can hold it. You leave without the stone, but the shrine lets you carry off a little charged water.",
               successEffects: {
                 hunger: -3,
                 storyXp: 22,
@@ -4674,9 +4674,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               chanceBase: 0.24,
               chancePerStat: 0.09,
               successText:
-                "The force of the shrine presses through you like cold iron, but you hold on until the pattern settles. When the pain finally loosens, the sapphire is waiting in your palm.",
+                "The pressure slams through you like cold iron, but you keep your hand closed until it breaks. When it does, the sapphire is in your palm.",
               failureText:
-                "The pressure throws you back before the stone will yield. You recover, shaken but empty-handed.",
+                "The shrine throws you back before the gem will yield. You crawl up sore and empty-handed.",
               successEffects: {
                 hp: 6,
                 storyXp: 19,
@@ -4695,9 +4695,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               chanceBase: 0.27,
               chancePerStat: 0.08,
               successText:
-                "You quiet yourself until the shrine stops feeling distant. The sapphire rises through the water without splash or ripple and settles into your waiting hand.",
+                "You steady your breathing until the whole ring of stone goes quiet with you. The sapphire rises without a splash and settles into your hand.",
               failureText:
-                "You find stillness for a moment, then lose it. The shrine gives you only a passing blessing before the silence breaks.",
+                "You almost hold the stillness. The shrine keeps the stone, but some small peace stays with you.",
               successEffects: {
                 hp: 8,
                 storyXp: 18,
@@ -4716,22 +4716,22 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyLevel >= 3 && state.storyFlags.foundWeapon && !hasJourneyClassUnlocked(state, "rogue")) {
     pushCandidate("class:rogue-forager", 4, () => ({
           title: "A quiet forager on the trail",
-          teaser: "You did not hear her arrive, and the onyx at her throat is somehow quieter still.",
+          teaser: "You never heard her approach, and the onyx at her throat is quieter still.",
           detail:
             "A local forager steps out from behind a fallen tree with a basket of roots and herbs. She looks amused that you never noticed her approach, then taps an onyx pendant and says some stones prefer people who understand silence before power.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
               label: "Shadow the way she circles you",
-              preview: "Learn the route her feet are taking before the stone decides.",
+              preview: "Copy her route before the stone decides.",
               highlightWord: "Shadow",
               statKey: "finesse",
               chanceBase: 0.23,
               chancePerStat: 0.1,
               successText:
-                "You mirror her footwork just well enough that she stops laughing and starts nodding. Before she leaves, she unthreads the onyx from her cord and flicks it into your hand.",
+                "You mirror her path well enough to wipe the smirk off her face. Before she leaves, she flicks the onyx into your palm.",
               failureText:
-                "You try to match her steps and spend half the attempt announcing yourself to the forest. She still offers advice, but keeps the onyx where it is.",
+                "You try to follow her steps and mostly prove how loud the forest can be. She keeps the onyx.",
               successEffects: {
                 storyXp: 18,
                 manastoneKey: "onyx_manastone",
@@ -4741,16 +4741,16 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
             }),
             createJourneyStatChoice({
-              label: "Notice the route hidden in her basket",
-              preview: "Read what she gathered and prove you can see the path behind the path.",
+              label: "Notice the path in her basket",
+              preview: "Read what she gathered and prove you can see the trail behind it.",
               highlightWord: "Notice",
               statKey: "arcana",
               chanceBase: 0.26,
               chancePerStat: 0.08,
               successText:
-                "You identify more from the roots and leaves than she expected. Impressed, she says the onyx would rather travel with someone observant than someone merely quiet.",
+                "You read the roots, leaves, and cuts in the stems, and the hidden route clicks into place. She looks impressed, gives you the onyx, and points you toward the faster line.",
               failureText:
-                "You spot a few clues, but not enough to earn the stone. She sends you onward with only a safer route and a smirk.",
+                "You catch enough clues to follow a safer route, but not enough to earn the stone.",
               successEffects: {
                 distance: 10,
                 storyXp: 17,
@@ -4763,15 +4763,15 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
             }),
             createJourneyStatChoice({
               label: "Wait until she decides you are worth trusting",
-              preview: "Hold your tongue and let patience bargain for the onyx.",
+              preview: "Say nothing and let patience do the work.",
               highlightWord: "Wait",
               statKey: "resolve",
               chanceBase: 0.3,
               chancePerStat: 0.07,
               successText:
-                "You do not rush the exchange, and eventually she answers stillness with trust. Her lesson is brief, precise, and ends with the onyx resting in your palm.",
+                "You wait without forcing the moment. At last she leaves the onyx and a little food beside you like a quiet verdict.",
               failureText:
-                "You stay guarded too long and the moment cools. She leaves you with directions, but not with her best secret.",
+                "You stay closed off too long and the moment thins out. She gives you a direction and nothing more.",
               successEffects: {
                 bonusRations: 1,
                 storyXp: 17,
@@ -4789,24 +4789,24 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
 
   if (journeyPhase === "survival") {
     pushCandidate("survival:charcoal-burners", 3, () => ({
-          title: "Smoke from a charcoal pit",
-          teaser: "Smoke, banked earth, and a wary invitation promise shelter if you can earn it.",
+          title: "Smoke over a charcoal pit",
+          teaser: "Shelter is possible here if you earn it.",
           detail:
-            "Toward dusk you come upon charcoal burners tending low earthen mounds and blackened stacks of cordwood. They do not wave you in like friends, but one of them jerks her chin toward the fire and tells you there is room to warm yourself if you make yourself useful before night closes in.",
+            "Toward dusk you come upon charcoal burners tending low earthen mounds and blackened stacks of cordwood. They do not wave you in like friends, but one jerks her chin toward the fire and says there is room to warm yourself if you make yourself useful before night closes in.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
               label: "Work quietly for your supper and bedroll",
-              preview: "Take the offered place by the fire and earn it the patient way.",
+              preview: "Take the fire they offer and earn your place.",
               highlightWord: "quietly",
               statKey: "resolve",
               chanceBase: 0.31,
               chancePerStat: 0.07,
               minChance: 0.22,
               successText:
-                "You stack wood, draw water, and mind the pits without making yourself a nuisance. By the time the stew is ladled out, the burners have decided you have earned your place by the fire. At dawn they send you on with food, a coal-warmed flask, and the safer trail through the trees.",
+                "You fetch water, stack wood, and mind the pits without becoming a burden. By supper they have made room for you by the fire, and at dawn they send you on with food, a warm flask, and a safer trail.",
               failureText:
-                "You help well enough, but the camp never fully relaxes around you. They let you warm yourself and point out the morning road, though the extra food and easy company stay behind with the smoke.",
+                "You help well enough, but the camp never fully relaxes around you. They still let you warm up and point you down the morning road.",
               successEffects: {
                 bonusRations: 2,
                 bonusTonics: 1,
@@ -4826,9 +4826,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               chanceBase: 0.28,
               chancePerStat: 0.08,
               successText:
-                "You drag green timber, shift packed earth, and haul the loads that make everyone else's back ache in sympathy. The burners decide that anyone willing to bleed sweat for a place at the fire deserves a full bowl and provisions for the road.",
+                "You take the worst jobs: dragging green timber, shifting packed earth, and hauling until your whole body shakes. The burners decide effort like that has earned a full bowl and supplies for the road.",
               failureText:
-                "You force the work through, but it leaves you shaking and short of breath before the pits are settled. They still feed you and let you stay at the edge of the firelight, more out of decency than admiration.",
+                "You muscle through the work, but it nearly empties you. They still feed you and let you sleep near the fire, more out of decency than trust.",
               successEffects: {
                 hp: -2,
                 hunger: 10,
@@ -4849,9 +4849,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               chanceBase: 0.29,
               chancePerStat: 0.08,
               successText:
-                "While the burners eat and trade gossip, you notice the soot slashes on their wagon boards and the cuts they leave on nearby posts. Once they see you have the sense to follow along, they explain which marks mean safe turns, bad crossings, and hungry men on the road. You leave the camp faster and wiser for it.",
+                "While they talk, you notice the soot marks on wagons and the knife cuts on nearby posts. Once they see you can follow along, they teach you which signs mean safe turns, bad crossings, and trouble ahead, then send you off with a little food.",
               failureText:
-                "You try to piece their sign language together from half-heard talk and firelit glimpses, but you come away with only part of it. The mistake costs you time the next day before one of the burners catches up long enough to point you back on course.",
+                "You piece together only half of their sign language. The mistake costs you time the next day before one of the burners sets you straight.",
               successEffects: {
                 distance: 11,
                 bonusRations: 1,
@@ -4873,7 +4873,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyPhase === "frontier") {
     pushCandidate("frontier:rope-ferry", 3, () => ({
           title: "A rope ferry over black water",
-          teaser: "The crossing is still usable, but only just.",
+          teaser: "The crossing still works, barely.",
           detail:
             "You come to a flat ferry platform tethered to a rope as thick as your wrist. The black water below is fast, mean, and loud enough to make every bad outcome feel possible.",
           createdAt: eventTime,
@@ -4886,9 +4886,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               chanceBase: 0.25,
               chancePerStat: 0.08,
               successText:
-                "You drag the ferry across inch by inch, shoulders burning, but you reach the far side with your gear and pride both intact.",
+                "You haul hand over hand until the far bank finally grinds under the ferry. By the end your shoulders burn, but you are across.",
               failureText:
-                "The rope jerks, your footing goes wild, and the crossing turns into a bruising, ugly fight for balance before you scrape through.",
+                "The rope jerks, the platform swings, and the crossing turns into a brutal fight just to stay upright.",
               successEffects: {
                 distance: 12,
                 storyXp: 12,
@@ -4907,9 +4907,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               chanceBase: 0.29,
               chancePerStat: 0.08,
               successText:
-                "You re-seat the slipping knots, free the jammed guide ring, and make the whole crossing almost respectable before you trust it with your life.",
+                "You reset the rig, free the jammed guide ring, and make the ferry almost trustworthy before you step on it.",
               failureText:
-                "You fix part of the rig and miss the worst of it. The ferry still gets you across, just with one sudden lurch that nearly throws you to the water.",
+                "You fix enough to get moving, but miss the worst snag. The platform lurches halfway across and nearly throws you over.",
               successEffects: {
                 distance: 14,
                 bonusTonics: 1,
@@ -4929,9 +4929,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               chanceBase: 0.23,
               chancePerStat: 0.09,
               successText:
-                "You catch a strange pattern in the current and time the pull with it, as though the water is willing to lend you one careful favor.",
+                "You catch a rhythm in the current and pull with it. For a few tense moments, the water feels almost willing.",
               failureText:
-                "You think you hear a pattern, but it breaks under you halfway out. The far bank still takes you, though not gently.",
+                "You think you have the river's rhythm, then it turns on you halfway across. You make the far bank soaked, rattled, and hungrier than before.",
               successEffects: {
                 distance: 13,
                 bonusRations: 1,
@@ -4951,10 +4951,10 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
     );
 
     pushCandidate("frontier:pilgrim-lanterns", 2, () => ({
-          title: "Lanterns hung for the dead",
-          teaser: "Someone still tends this old roadside custom.",
+          title: "Lanterns for the dead",
+          teaser: "Someone still keeps this old roadside rite alive.",
           detail:
-            "At dusk you come upon a line of small lanterns hung from iron hooks and thorn branches, each flame set before an old roadside name. The air is quiet in the reverent way a chapel feels after everybody has gone home.",
+            "At dusk you find small lanterns hanging from hooks and thorn branches, each one lit before an old roadside name. The hush around them feels like a chapel after the last prayer.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4965,9 +4965,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               chanceBase: 0.26,
               chancePerStat: 0.08,
               successText:
-                "You speak into the dusk more honestly than you meant to. When the lantern catches, some knot in you loosens, and the road afterward feels fractionally less cruel.",
+                "You speak a name into the dusk and light one more lantern. The grief still hurts, but something inside you loosens and steadies.",
               failureText:
-                "The words refuse to come cleanly. You still leave a light behind, but the comfort of it never quite reaches your chest.",
+                "The words never come cleanly. You still leave a flame burning, but the comfort stays just out of reach.",
               successEffects: {
                 hp: 8,
                 hunger: 6,
@@ -4985,9 +4985,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               chanceBase: 0.24,
               chancePerStat: 0.09,
               successText:
-                "The names and sigils line up into a pattern of warnings, blessings, and distances. You leave with a clearer route and the unsettled sense that the road has begun to recognize you.",
+                "The names and symbols resolve into warnings, blessings, and distances. You leave with a clearer route, a votive draught, and the uneasy sense that the road has started to know you.",
               failureText:
-                "You understand only fragments of the old marks. They help, but only in the crooked partial way of half-remembered prayer.",
+                "You read only fragments of the old marks. They help a little, in the crooked way half-remembered prayer sometimes does.",
               successEffects: {
                 distance: 10,
                 bonusTonics: 1,
@@ -5006,9 +5006,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               chanceBase: 0.27,
               chancePerStat: 0.08,
               successText:
-                "You slip through the lantern line without dimming a single flame and find a votive cache of wax, dried fruit, and a folded route charm left for travelers who know how to be gentle.",
+                "You move through the lantern line without dimming a flame and find a small votive cache left for respectful travelers.",
               failureText:
-                "One lantern knocks and hisses out under your sleeve. You still find the cache, but you leave feeling watched in the disappointed way only sacred places manage.",
+                "One lantern hisses out under your sleeve. You still find a smaller cache, but the place feels colder after.",
               successEffects: {
                 bonusRations: 2,
                 distance: 7,
@@ -5030,7 +5030,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
             title: "A duelist's vigil among the lanterns",
             teaser: "One lantern hangs beside a practice blade and a garnet no mourner claimed.",
             detail:
-              "Set slightly apart from the other memorials is a lantern hung beside a weather-stained dueling blade. Beneath the soot-dark glass rests a deep garnet manastone tied in red cord, with a brass strip etched in old script: let this pass to the next traveler who understands challenge without cruelty.",
+              "Set apart from the other memorials is a lantern hung beside a weather-stained dueling blade. Beneath the soot-dark glass rests a deep garnet manastone tied in red cord, with a brass strip etched in old script: let this pass to the next traveler who understands challenge without cruelty.",
             createdAt: eventTime,
             choices: [
               createJourneyStatChoice({
@@ -5041,9 +5041,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 chanceBase: 0.23,
                 chancePerStat: 0.09,
                 successText:
-                  "You repeat the remembered steps until the lantern flame straightens and the garnet taps once against the glass. When you open the housing, the manastone drops into your palm as if the vigil had only been waiting for proper timing.",
+                  "You repeat the footwork until the lantern flame straightens and the garnet taps the glass. When you open the housing, the manastone drops into your palm.",
                 failureText:
-                  "You catch the outline of the form, but not the heartbeat inside it. The lantern settles back into ordinary fire, and the garnet remains where it was.",
+                  "You catch the shape of the form, but not its pulse. The lantern settles and the garnet stays put.",
                 successEffects: {
                   distance: 8,
                   storyXp: 20,
@@ -5061,9 +5061,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 chanceBase: 0.24,
                 chancePerStat: 0.08,
                 successText:
-                  "You speak softly into the lantern-light about the kind of fight you refuse to become. The red cord loosens on its own, leaving the garnet manastone waiting in your hand with surprising warmth.",
+                  "You speak softly about the kind of fighter you refuse to become. The red cord loosens on its own, leaving the garnet waiting in your hand.",
                 failureText:
-                  "Your words are honest, but not yet enough to move whatever old judgment keeps the vigil. The lantern hears you and offers quiet, but not the stone.",
+                  "Your words are honest, but the vigil does not yield its trust.",
                 successEffects: {
                   hp: 8,
                   storyXp: 19,
@@ -5081,9 +5081,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 chanceBase: 0.21,
                 chancePerStat: 0.1,
                 successText:
-                  "You work the blade through cut after cut until strength gives way to clean control. The garnet finally shakes free from its red cord, and you catch the manastone before it can strike the ground.",
+                  "You work the blade until power turns into clean control. The garnet finally shakes loose and you catch it before it hits the ground.",
                 failureText:
-                  "Power gets you through the motions, but not through the lesson. By the end your shoulders ache and the vigil keeps its trust to itself.",
+                  "You have strength enough for the motions, but not for the lesson. By the end your shoulders ache and the vigil keeps its stone.",
                 successEffects: {
                   hp: -2,
                   storyXp: 21,
@@ -5105,9 +5105,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyPhase === "frontier" && journeyLevel >= 5) {
     pushCandidate("legend:last-hearth", 1, () => ({
           title: "The Last Hearth Below the Hill",
-          teaser: "A ruined shrine still keeps one ember alive beneath the rain.",
+          teaser: "A ruined shrine still keeps one ember alive in the rain.",
           detail:
-            "You pick your way beyond a tumble of leaning stones and find the shell of an old roadside shrine. Its roof is gone, its icons are broken, and yet one ember still glows in the drowned hearth at its center. A half-legible carving names this place the Last Hearth, where travelers once swore what they would not let the dark take from them.",
+            "Beyond a tumble of leaning stones sits the shell of an old roadside shrine. Its roof is gone, its icons are broken, and yet one ember still glows in the drowned hearth at its center. A half-legible carving calls this place the Last Hearth, where travelers once swore what they would not let the dark take from them.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -5120,9 +5120,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               minChance: 0.1,
               maxChance: 0.42,
               successText:
-                "The ember brightens without wind or tinder. It brands no flesh, yet something in you comes away marked all the same, steadier than it was when you knelt.",
+                "The ember brightens without wind or tinder. It brands no flesh, but something in you leaves the shrine steadier than it arrived.",
               failureText:
-                "The vow leaves your mouth and dies in the wet air. The hearth gives you warmth for a minute, but not the blessing hidden beneath it.",
+                "The vow leaves your mouth and dies in the wet air. The hearth gives you a little warmth, but not the blessing under it.",
               successEffects: {
                 hp: 10,
                 storyXp: 24,
@@ -5148,7 +5148,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               minChance: 0.08,
               maxChance: 0.4,
               successText:
-                "Pain flashes bright, then folds inward. The hearth takes its due and returns something harder in its place, as if your body has been reminded how stubborn life can be.",
+                "Pain flashes bright, then folds inward. The hearth takes its due and leaves your body feeling harder to extinguish.",
               failureText:
                 "The ember drinks the offering and gives back only heat and a sharp lesson about old things that owe you nothing.",
               successEffects: {
@@ -5176,9 +5176,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               minChance: 0.08,
               maxChance: 0.42,
               successText:
-                "You follow the curling soot patterns until they resolve into an older kind of language. When the meaning lands, the ember answers with a hush of blue light and leaves part of that grammar in you.",
+                "You follow the soot curls until they resolve into an older kind of language. When the meaning lands, blue light stirs in the hearth, leaves part of that grammar in you, and lingers in a small tonic vial.",
               failureText:
-                "You almost catch the hidden text before it blurs back into smoke and old weathering. The shrine still yields a fragment, but not the deeper lesson.",
+                "You almost catch the hidden text before it blurs back into smoke. The shrine still yields a fragment, but not the deeper lesson.",
               successEffects: {
                 bonusTonics: 1,
                 storyXp: 26,
@@ -5205,7 +5205,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
             title: "A sworn stone beneath the cairn",
             teaser: "A diamond manastone waits where the first wardens left their hardest vows.",
             detail:
-              "Set beneath one of the iron oath-rings is a diamond manastone wrapped in blackened cord. The weather-soft inscription beneath it says the first wardens left certain blessings for those willing to carry duty longer than comfort, and to carry it without applause.",
+              "Set beneath one of the iron oath-rings is a diamond manastone wrapped in blackened cord. The weather-soft inscription says the first wardens left certain blessings for those willing to carry duty longer than comfort, and to carry it without applause.",
             createdAt: eventTime,
             choices: [
               createJourneyStatChoice({
@@ -5216,9 +5216,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 chanceBase: 0.2,
                 chancePerStat: 0.08,
                 successText:
-                  "The ring bites into your hands and shoulders, but you keep it aloft until the strain becomes something steadier. When you lower it again, the diamond manastone has come loose from its cord and settles against your palm.",
+                  "The ring bites into your hands and shoulders, but you keep it aloft until the strain settles into something steadier. When you lower it, the diamond manastone has come loose and rests against your palm.",
                 failureText:
-                  "You hold for a moment, then the old weight rolls through you and forces your hands open. The cairn leaves you aching and empty-handed.",
+                  "You hold for a moment, then the old weight tears your hands open. The cairn leaves you aching and empty-handed.",
                 successEffects: {
                   hp: -3,
                   storyXp: 22,
@@ -5237,9 +5237,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 chanceBase: 0.22,
                 chancePerStat: 0.08,
                 successText:
-                  "You speak into the wind until the words stop sounding like performance and start sounding like truth. The old cord frays apart, and the diamond manastone drops into your hand as if the cairn has accepted the answer.",
+                  "You speak into the wind until the words stop sounding like performance and start sounding like truth. The old cord frays apart, and the diamond manastone drops into your hand as if the cairn accepts the answer.",
                 failureText:
-                  "The vow reaches the stones, but it does not quite root there. The wind carries it away, leaving you thoughtful but unchanged.",
+                  "The vow reaches the stones, but never truly roots there. Even so, speaking it leaves you lighter than you arrived.",
                 successEffects: {
                   hp: 7,
                   storyXp: 21,
@@ -5258,9 +5258,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 chanceBase: 0.19,
                 chancePerStat: 0.09,
                 successText:
-                  "You work the old fastening loose without cracking the stone or the ring that has guarded it. When the diamond comes free, it feels less like loot than a responsibility passing from one hand to the next.",
+                  "You ease the old fastening loose without cracking the ring that guards it. When the diamond comes free, it feels like a duty changing hands.",
                 failureText:
-                  "You force the metal too quickly and the ring snaps back hard enough to rattle bone. The diamond remains beneath the cairn, unmoved by impatience.",
+                  "You force the metal too quickly and the ring snaps back hard enough to rattle bone. The diamond stays where it is.",
                 successEffects: {
                   distance: 7,
                   storyXp: 23,
@@ -5295,9 +5295,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               minChance: 0.08,
               maxChance: 0.4,
               successText:
-                "The ring rises only an inch at first, then a handspan, then enough. The cairn answers with a deep stone hum that runs up your arms and settles there as lasting strength.",
+                "The ring rises an inch, then a handspan, then enough. A deep hum runs up your arms and stays there as lasting strength.",
               failureText:
-                "You strain until your vision whitens, but the oath-ring does not quite acknowledge you. It leaves you shaking, wiser, and empty-handed.",
+                "You strain until your vision whites out, but the oath-ring does not acknowledge you. It leaves you shaking and wiser.",
               successEffects: {
                 hp: -4,
                 storyXp: 25,
@@ -5323,9 +5323,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               minChance: 0.09,
               maxChance: 0.42,
               successText:
-                "You let the gale take everything unnecessary and keep only balance. By the time you step down, your body remembers the lesson with unsettling clarity.",
+                "You let the gale strip everything unnecessary away and keep only balance. When you step down, your body remembers the lesson.",
               failureText:
-                "A loose edge of stone nearly teaches you the lesson by force. You recover before the fall, but not before fear has had its say.",
+                "A loose edge of stone nearly teaches you the lesson by force. You recover, but not before fear gets its say.",
               successEffects: {
                 distance: 8,
                 storyXp: 24,
@@ -5351,9 +5351,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               minChance: 0.1,
               maxChance: 0.42,
               successText:
-                "The wind through the stones starts sounding less like weather and more like witness. You leave with the impossible conviction that the old wardens have counted you among the stubborn.",
+                "The wind through the stones starts to sound less like weather and more like witness. You leave with the impossible feeling that the old wardens counted you among their own.",
               failureText:
-                "You wait and hear only wind, but even that leaves you quieter than before and not entirely unchanged.",
+                "You wait and hear only wind, but even that leaves you quieter than before.",
               successEffects: {
                 hp: 6,
                 storyXp: 23,
@@ -5377,9 +5377,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyPhase === "frontier" && journeyLevel >= 7) {
     pushCandidate("legend:mirror-spring", 1, () => ({
           title: "The mirror spring under moonlight",
-          teaser: "The surface shows more than one sky.",
+          teaser: "Its surface reflects more than the sky above it.",
           detail:
-            "You find a spring hidden in a fold of stone, so still it reflects the moon twice: once above, once from some pale depth below the waterline. Old chalk marks on the surrounding rock suggest travelers came here seeking revelations and usually left with scars.",
+            "You find a spring hidden in folded stone, so still it reflects the moon twice: once above, once from some pale depth below the waterline. Old chalk marks on the surrounding rock suggest travelers came here seeking revelations and usually left with scars.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -5392,9 +5392,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               minChance: 0.08,
               maxChance: 0.4,
               successText:
-                "The lower sky opens like a book written in cold light. You do not understand all of it, but enough remains in your head to change the way the world fits together.",
+                "The lower sky opens like a book written in cold light. You do not understand all of it, but enough remains to change the way the world fits together, and you bottle a little of the spring's clarity.",
               failureText:
-                "The second reflection looks back harder than you were ready for. You jerk away with only a headache and a splinter of meaning.",
+                "The second reflection looks back harder than you can bear. You jerk away with a splitting head and only a splinter of meaning.",
               successEffects: {
                 bonusTonics: 1,
                 storyXp: 28,
@@ -5422,7 +5422,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               successText:
                 "You move around the pool so lightly that the surface never shivers. Something in the spring seems to approve, and your steps afterward carry that impossible precision.",
               failureText:
-                "One loose pebble breaks the mirrored sky. The blessing goes thin at once, leaving you with only a sharper respect for places like this.",
+                "One loose pebble breaks the mirrored sky. The blessing thins at once, though you still find your way around the place more safely than before.",
               successEffects: {
                 distance: 9,
                 storyXp: 26,
@@ -5448,9 +5448,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               minChance: 0.08,
               maxChance: 0.38,
               successText:
-                "The water is ice and starlight together. It hurts in a way that feels almost surgical, stripping weakness down to what can regrow stronger.",
+                "The water is ice and starlight together. It hurts, then clears you out all the way to the bone, leaving something stronger behind.",
               failureText:
-                "The spring goes through you like winter steel. You survive it, but the deeper change refuses to take hold.",
+                "The spring passes through you like winter steel. You survive it, but the deeper change never takes hold.",
               successEffects: {
                 hp: 12,
                 storyXp: 27,
