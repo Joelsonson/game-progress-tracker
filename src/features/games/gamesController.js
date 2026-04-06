@@ -87,6 +87,10 @@ const addGoalPreviewObjectUrls = {
   cover: "",
   banner: "",
 };
+const completionShowcaseInteraction = {
+  card: null,
+  pointerId: null,
+};
 
 export function openGameActionsSheet(game) {
   if (!gameActionsModal || !gameActionsBodyEl || !gameActionsTitleEl || !gameActionsMetaEl) {
@@ -114,6 +118,7 @@ export async function openCompletionShowcaseModal(game) {
     return;
   }
 
+  resetCompletionShowcaseInteractionState();
   const sessions = await getAllSessions(appState.db);
   const sessionStats = buildSessionStats(sessions);
 
@@ -128,6 +133,7 @@ export async function openCompletionShowcaseModal(game) {
 export function closeCompletionShowcaseModal() {
   if (!completionShowcaseModal || !completionShowcaseBodyEl) return;
 
+  resetCompletionShowcaseInteractionState();
   completionShowcaseModal.hidden = true;
   completionShowcaseBodyEl.innerHTML = "";
   syncBodyScrollLock();
@@ -138,6 +144,58 @@ export function handleCompletionShowcaseModalClick(event) {
   if (event.target.closest("[data-close-completion-showcase]")) {
     closeCompletionShowcaseModal();
   }
+}
+
+export function handleCompletionShowcasePointerDown(event) {
+  if (!(event.target instanceof Element)) return;
+  if (event.button !== undefined && event.button !== 0) return;
+
+  const card = event.target.closest("[data-completion-showcase-card]");
+  if (!(card instanceof HTMLElement)) return;
+
+  completionShowcaseInteraction.card = card;
+  completionShowcaseInteraction.pointerId = event.pointerId;
+
+  card.classList.add("is-interacting");
+  if (typeof card.setPointerCapture === "function") {
+    try {
+      card.setPointerCapture(event.pointerId);
+    } catch (error) {
+      // Ignore browsers that reject pointer capture for this interaction.
+    }
+  }
+
+  updateCompletionShowcaseMotion(card, event);
+}
+
+export function handleCompletionShowcasePointerMove(event) {
+  const { card, pointerId } = completionShowcaseInteraction;
+  if (!(card instanceof HTMLElement) || pointerId !== event.pointerId) {
+    return;
+  }
+
+  updateCompletionShowcaseMotion(card, event);
+}
+
+export function handleCompletionShowcasePointerEnd(event) {
+  const { card, pointerId } = completionShowcaseInteraction;
+  if (!(card instanceof HTMLElement) || pointerId !== event.pointerId) {
+    return;
+  }
+
+  if (typeof card.releasePointerCapture === "function") {
+    try {
+      if (card.hasPointerCapture?.(event.pointerId)) {
+        card.releasePointerCapture(event.pointerId);
+      }
+    } catch (error) {
+      // Ignore browsers that reject capture release after teardown.
+    }
+  }
+
+  resetCompletionShowcaseMotion(card);
+  completionShowcaseInteraction.card = null;
+  completionShowcaseInteraction.pointerId = null;
 }
 
 export function handleGameActionsModalClick(event) {
@@ -887,6 +945,67 @@ function showFeedback(message, { isError = false, toast = false } = {}) {
   }
 
   showMessage(formMessage, message, isError);
+}
+
+function updateCompletionShowcaseMotion(card, event) {
+  const rect = card.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+
+  const pointerX = clamp((event.clientX - rect.left) / rect.width, 0, 1);
+  const pointerY = clamp((event.clientY - rect.top) / rect.height, 0, 1);
+  const centeredX = pointerX - 0.5;
+  const centeredY = pointerY - 0.5;
+  const rotateX = clamp(-centeredY * 18, -9, 9);
+  const rotateY = clamp(centeredX * 20, -10, 10);
+
+  card.style.setProperty("--completion-showcase-rotate-x", `${rotateX.toFixed(2)}deg`);
+  card.style.setProperty("--completion-showcase-rotate-y", `${rotateY.toFixed(2)}deg`);
+  card.style.setProperty(
+    "--completion-showcase-pointer-sheen-x",
+    `${(centeredX * 38).toFixed(2)}%`
+  );
+  card.style.setProperty(
+    "--completion-showcase-pointer-sheen-y",
+    `${(centeredY * 24).toFixed(2)}%`
+  );
+  card.style.setProperty(
+    "--completion-showcase-pointer-glow-x",
+    `${(centeredX * 30).toFixed(2)}%`
+  );
+  card.style.setProperty(
+    "--completion-showcase-pointer-glow-y",
+    `${(centeredY * 22).toFixed(2)}%`
+  );
+  card.style.setProperty(
+    "--completion-showcase-pointer-drift",
+    `${(centeredX * 48).toFixed(2)}%`
+  );
+}
+
+function resetCompletionShowcaseMotion(card) {
+  if (!(card instanceof HTMLElement)) return;
+
+  card.classList.remove("is-interacting");
+  card.style.setProperty("--completion-showcase-rotate-x", "0deg");
+  card.style.setProperty("--completion-showcase-rotate-y", "0deg");
+  card.style.setProperty("--completion-showcase-pointer-sheen-x", "0%");
+  card.style.setProperty("--completion-showcase-pointer-sheen-y", "0%");
+  card.style.setProperty("--completion-showcase-pointer-glow-x", "0%");
+  card.style.setProperty("--completion-showcase-pointer-glow-y", "0%");
+  card.style.setProperty("--completion-showcase-pointer-drift", "0%");
+}
+
+function resetCompletionShowcaseInteractionState() {
+  if (completionShowcaseInteraction.card instanceof HTMLElement) {
+    resetCompletionShowcaseMotion(completionShowcaseInteraction.card);
+  }
+
+  completionShowcaseInteraction.card = null;
+  completionShowcaseInteraction.pointerId = null;
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
 }
 
 async function discoverBuiltInCoverImageOptions() {

@@ -1643,54 +1643,60 @@ export function renderCompletionShowcase(game, statsInput) {
     .join("");
 
   return `
-    <article class="completion-showcase-card ${tierMeta.className}" style="${showcaseStyle}">
-      <div class="completion-showcase-card-inner">
-        <header class="completion-showcase-header">
-          <div class="completion-showcase-nameplate">
-            <span class="completion-showcase-tier">${escapeHtml(tierMeta.label)}</span>
-            <h2 id="completionShowcaseTitle">${escapeHtml(game.title)}</h2>
-          </div>
-          <div class="completion-showcase-xp">
-            <span class="completion-showcase-xp-label">${escapeHtml(
-              t("tracker.completionShowcase.xpShort")
-            )}</span>
-            <strong>${totalQuestXp}</strong>
-          </div>
-        </header>
+    <div class="completion-showcase-card-shell">
+      <article
+        class="completion-showcase-card ${tierMeta.className}"
+        data-completion-showcase-card
+        style="${showcaseStyle}"
+      >
+        <div class="completion-showcase-card-inner">
+          <header class="completion-showcase-header">
+            <div class="completion-showcase-nameplate">
+              <span class="completion-showcase-tier">${escapeHtml(tierMeta.label)}</span>
+              <h2 id="completionShowcaseTitle">${escapeHtml(game.title)}</h2>
+            </div>
+            <div class="completion-showcase-xp">
+              <span class="completion-showcase-xp-label">${escapeHtml(
+                t("tracker.completionShowcase.xpShort")
+              )}</span>
+              <strong>${totalQuestXp}</strong>
+            </div>
+          </header>
 
-        <div class="completion-showcase-art-shell"${artStyle}>
-          <div class="completion-showcase-art-frame">
-            ${renderCoverVisual(game, "completion-showcase-cover")}
+          <div class="completion-showcase-art-shell"${artStyle}>
+            <div class="completion-showcase-art-frame">
+              ${renderCoverVisual(game, "completion-showcase-cover")}
+            </div>
+            <div class="completion-showcase-meta-row">
+              ${metaChips}
+            </div>
           </div>
-          <div class="completion-showcase-meta-row">
-            ${metaChips}
+
+          <div class="completion-showcase-stats">
+            <div class="completion-showcase-stat">
+              <span class="completion-showcase-stat-label">${escapeHtml(
+                t("tracker.completionShowcase.time")
+              )}</span>
+              <strong class="completion-showcase-stat-value">${formatMinutes(
+                stats.totalMinutes
+              )}</strong>
+            </div>
+            <div class="completion-showcase-stat">
+              <span class="completion-showcase-stat-label">${escapeHtml(
+                t("tracker.completionShowcase.sessions")
+              )}</span>
+              <strong class="completion-showcase-stat-value">${stats.sessionCount}</strong>
+            </div>
+            <div class="completion-showcase-stat">
+              <span class="completion-showcase-stat-label">${escapeHtml(
+                t("tracker.completionShowcase.meaningful")
+              )}</span>
+              <strong class="completion-showcase-stat-value">${stats.meaningfulCount}</strong>
+            </div>
           </div>
         </div>
-
-        <div class="completion-showcase-stats">
-          <div class="completion-showcase-stat">
-            <span class="completion-showcase-stat-label">${escapeHtml(
-              t("tracker.completionShowcase.time")
-            )}</span>
-            <strong class="completion-showcase-stat-value">${formatMinutes(
-              stats.totalMinutes
-            )}</strong>
-          </div>
-          <div class="completion-showcase-stat">
-            <span class="completion-showcase-stat-label">${escapeHtml(
-              t("tracker.completionShowcase.sessions")
-            )}</span>
-            <strong class="completion-showcase-stat-value">${stats.sessionCount}</strong>
-          </div>
-          <div class="completion-showcase-stat">
-            <span class="completion-showcase-stat-label">${escapeHtml(
-              t("tracker.completionShowcase.meaningful")
-            )}</span>
-            <strong class="completion-showcase-stat-value">${stats.meaningfulCount}</strong>
-          </div>
-        </div>
-      </div>
-    </article>
+      </article>
+    </div>
   `;
 }
 
@@ -1711,10 +1717,17 @@ function buildCompletionShowcaseStyle(game, tierMeta) {
     `--completion-showcase-accent-a:${tierMeta?.accentA || "#c084fc"}`,
     `--completion-showcase-accent-b:${tierMeta?.accentB || "#7c3aed"}`,
     `--completion-showcase-accent-text:${tierMeta?.accentText || "#f8fafc"}`,
-    `--completion-showcase-sheen-x:${sheenX}%`,
-    `--completion-showcase-sheen-y:${sheenY}%`,
-    `--completion-showcase-glow-x:${glowX}%`,
-    `--completion-showcase-glow-y:${glowY}%`,
+    `--completion-showcase-base-sheen-x:${sheenX}%`,
+    `--completion-showcase-base-sheen-y:${sheenY}%`,
+    `--completion-showcase-base-glow-x:${glowX}%`,
+    `--completion-showcase-base-glow-y:${glowY}%`,
     `--completion-showcase-drift:${drift}%`,
+    "--completion-showcase-pointer-sheen-x:0%",
+    "--completion-showcase-pointer-sheen-y:0%",
+    "--completion-showcase-pointer-glow-x:0%",
+    "--completion-showcase-pointer-glow-y:0%",
+    "--completion-showcase-pointer-drift:0%",
+    "--completion-showcase-rotate-x:0deg",
+    "--completion-showcase-rotate-y:0deg",
   ].join(";");
 }

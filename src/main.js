@@ -87,6 +87,9 @@ import {
   handleBuiltInCoverLibraryChange,
   handleBuiltInCoverLibraryModalClick,
   handleCompletionShowcaseModalClick,
+  handleCompletionShowcasePointerDown,
+  handleCompletionShowcasePointerEnd,
+  handleCompletionShowcasePointerMove,
   handleGameActionsModalClick,
   handleGameActionsSubmit,
   handleListClick,
@@ -239,6 +242,10 @@ function bindEvents() {
   gameActionsModal?.addEventListener("click", handleGameActionsModalClick);
   gameActionsCloseButton?.addEventListener("click", closeGameActionsSheet);
   completionShowcaseModal?.addEventListener("click", handleCompletionShowcaseModalClick);
+  completionShowcaseModal?.addEventListener("pointerdown", handleCompletionShowcasePointerDown);
+  completionShowcaseModal?.addEventListener("pointermove", handleCompletionShowcasePointerMove);
+  completionShowcaseModal?.addEventListener("pointerup", handleCompletionShowcasePointerEnd);
+  completionShowcaseModal?.addEventListener("pointercancel", handleCompletionShowcasePointerEnd);
   completionShowcaseCloseButton?.addEventListener("click", closeCompletionShowcaseModal);
   journeyEventModal?.addEventListener("click", handleJourneyEventModalClick);
   journeyEventCloseButton?.addEventListener("click", closeJourneyEventModal);
