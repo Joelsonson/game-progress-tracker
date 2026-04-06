@@ -38,8 +38,10 @@ const JOURNEY_AMBIENT_LOG_COOLDOWN_MS = 1000 * 60 * 60 * 4;
 const JOURNEY_AMBIENT_REPEAT_MEMORY = 3;
 const JOURNEY_EVENT_COOLDOWN_MIN_HOURS = 4;
 const JOURNEY_EVENT_COOLDOWN_MAX_HOURS = 6;
-const JOURNEY_EVENT_HP_GAIN_MULTIPLIER = 2;
+const JOURNEY_EVENT_HP_GAIN_MULTIPLIER = 2.2;
 const JOURNEY_EVENT_HP_LOSS_MULTIPLIER = 3;
+const JOURNEY_EVENT_HUNGER_GAIN_MULTIPLIER = 1.2;
+const JOURNEY_EVENT_HUNGER_LOSS_MULTIPLIER = 2;
 const JOURNEY_BOSS_BATTLE_MAX_HP = 100;
 const JOURNEY_BOSS_BATTLE_TURN_LIMIT = 3;
 const JOURNEY_SUPPORTED_BOSS_BATTLE_MAX_INDEX = 2;
@@ -3466,7 +3468,7 @@ export function maybeApplyJourneyIncident(state, atDate, journeyStats, journeyCo
       journeyStats.maxHp
     );
     state.currentHunger = clamp(
-      state.currentHunger - 4,
+      state.currentHunger + scaleJourneyEventHungerDelta(-4),
       0,
       journeyStats.maxHunger
     );
@@ -4122,7 +4124,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 storyXp: 9,
               },
               failureEffects: {
-                hp: -3,
+                hp: -5,
                 bonusRations: 1,
                 storyXp: 0,
               },
@@ -4179,7 +4181,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                   storyXp: 10,
                 },
                 failureEffects: {
-                  hp: -4,
+                  hp: -5,
                   bonusRations: 1,
                   storyXp: 0,
                 },
@@ -4201,8 +4203,8 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                   storyXp: 9,
                 },
                 failureEffects: {
-                  hp: -5,
-                  hunger: -2,
+                  hp: -6,
+                  hunger: -3,
                   storyXp: 0,
                 },
               }),
@@ -4261,8 +4263,8 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
               failureEffects: {
                 distance: -2,
-                hp: -2,
-                hunger: -2,
+                hp: -4,
+                hunger: -4,
                 storyXp: 0,
               },
             }),
@@ -4279,14 +4281,14 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 "You force your way onward, but the cold drains you faster than the miles repay.",
               successEffects: {
                 distance: 10,
-                hp: -4,
-                hunger: -4,
+                hp: -5,
+                hunger: -5,
                 storyXp: 8,
               },
               failureEffects: {
                 distance: 5,
-                hp: -8,
-                hunger: -6,
+                hp: -9,
+                hunger: -7,
                 storyXp: 0,
               },
             }),
@@ -4307,7 +4309,8 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 storyXp: 9,
               },
               failureEffects: {
-                hunger: -3,
+                hp: -3,
+                hunger: -4,
                 storyXp: 0,
               },
             }),
@@ -4343,7 +4346,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 storyXp: 11,
               },
               failureEffects: {
-                hp: -5,
+                hp: -6,
                 bonusRations: 1,
                 storyXp: 0,
               },
@@ -4365,7 +4368,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 storyXp: 10,
               },
               failureEffects: {
-                hp: -6,
+                hp: -7,
                 bonusRations: 1,
                 storyXp: 0,
               },
@@ -4388,7 +4391,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 storyXp: 9,
               },
               failureEffects: {
-                hunger: -2,
+                hunger: -3,
                 bonusRations: 1,
                 storyXp: 0,
               },
@@ -4447,7 +4450,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 storyXp: 11,
               },
               failureEffects: {
-                hp: -8,
+                hp: -9,
                 bonusTonics: 1,
                 storyXp: 0,
               },
@@ -4526,7 +4529,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 storyXp: 10,
               },
               failureEffects: {
-                hp: -5,
+                hp: -6,
                 bonusRations: 1,
                 storyXp: 0,
               },
@@ -4548,7 +4551,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 storyXp: 9,
               },
               failureEffects: {
-                hunger: -3,
+                hunger: -4,
                 storyXp: 0,
               },
             }),
@@ -4579,12 +4582,12 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               failureText:
                 "You understand the lesson, but the stone stays dark. He still leaves you bruised and a little sharper.",
               successEffects: {
-                hp: -4,
+                hp: -5,
                 storyXp: 20,
                 manastoneKey: "ruby_manastone",
               },
               failureEffects: {
-                hp: -6,
+                hp: -7,
                 storyXp: 0,
               },
             }),
@@ -4600,12 +4603,12 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               failureText:
                 "You keep getting up, but not enough to wake the stone. The lesson still leaves its mark.",
               successEffects: {
-                hp: -3,
+                hp: -4,
                 storyXp: 18,
                 manastoneKey: "ruby_manastone",
               },
               failureEffects: {
-                hp: -5,
+                hp: -6,
                 storyXp: 0,
               },
             }),
@@ -4626,7 +4629,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 manastoneKey: "ruby_manastone",
               },
               failureEffects: {
-                hunger: -2,
+                hunger: -3,
                 storyXp: 0,
               },
             }),
@@ -4661,7 +4664,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 manastoneKey: "sapphire_manastone",
               },
               failureEffects: {
-                hp: -2,
+                hp: -3,
                 storyXp: 0,
                 bonusTonics: 1,
               },
@@ -4683,7 +4686,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 manastoneKey: "sapphire_manastone",
               },
               failureEffects: {
-                hp: -4,
+                hp: -5,
                 storyXp: 0,
               },
             }),
@@ -4830,14 +4833,14 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               failureText:
                 "You muscle through the work, but it nearly empties you. They still feed you and let you sleep near the fire, more out of decency than trust.",
               successEffects: {
-                hp: -2,
-                hunger: 10,
+                hp: -3,
+                hunger: 12,
                 bonusRations: 2,
                 storyXp: 11,
               },
               failureEffects: {
-                hp: -7,
-                hunger: 5,
+                hp: -8,
+                hunger: 6,
                 storyXp: 1,
               },
             }),
@@ -4859,7 +4862,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               },
               failureEffects: {
                 distance: 4,
-                hunger: -2,
+                hunger: -3,
                 storyXp: 1,
               },
             }),
@@ -4916,7 +4919,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 storyXp: 11,
               },
               failureEffects: {
-                hp: -4,
+                hp: -5,
                 distance: 6,
                 storyXp: 1,
               },
@@ -4938,8 +4941,8 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 storyXp: 13,
               },
               failureEffects: {
-                hp: -5,
-                hunger: -3,
+                hp: -6,
+                hunger: -4,
                 distance: 6,
                 storyXp: 1,
               },
@@ -5085,12 +5088,12 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 failureText:
                   "You have strength enough for the motions, but not for the lesson. By the end your shoulders ache and the vigil keeps its stone.",
                 successEffects: {
-                  hp: -2,
+                  hp: -3,
                   storyXp: 21,
                   manastoneKey: "garnet_manastone",
                 },
                 failureEffects: {
-                  hp: -5,
+                  hp: -6,
                   storyXp: 1,
                 },
               }),
@@ -5152,7 +5155,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               failureText:
                 "The ember drinks the offering and gives back only heat and a sharp lesson about old things that owe you nothing.",
               successEffects: {
-                hp: -3,
+                hp: -4,
                 storyXp: 24,
                 permanentStatBonus: {
                   statKey: "vitality",
@@ -5162,7 +5165,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 },
               },
               failureEffects: {
-                hp: -8,
+                hp: -10,
                 storyXp: 3,
               },
             }),
@@ -5220,12 +5223,12 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 failureText:
                   "You hold for a moment, then the old weight tears your hands open. The cairn leaves you aching and empty-handed.",
                 successEffects: {
-                  hp: -3,
+                  hp: -4,
                   storyXp: 22,
                   manastoneKey: "diamond_manastone",
                 },
                 failureEffects: {
-                  hp: -8,
+                  hp: -10,
                   storyXp: 2,
                 },
               }),
@@ -5267,7 +5270,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                   manastoneKey: "diamond_manastone",
                 },
                 failureEffects: {
-                  hp: -6,
+                  hp: -7,
                   storyXp: 2,
                 },
               }),
@@ -5299,7 +5302,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
               failureText:
                 "You strain until your vision whites out, but the oath-ring does not acknowledge you. It leaves you shaking and wiser.",
               successEffects: {
-                hp: -4,
+                hp: -5,
                 storyXp: 25,
                 permanentStatBonus: {
                   statKey: "might",
@@ -5309,7 +5312,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 },
               },
               failureEffects: {
-                hp: -9,
+                hp: -10,
                 storyXp: 3,
               },
             }),
@@ -5406,7 +5409,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 },
               },
               failureEffects: {
-                hp: -5,
+                hp: -6,
                 storyXp: 4,
               },
             }),
@@ -5462,7 +5465,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
                 },
               },
               failureEffects: {
-                hp: -10,
+                hp: -12,
                 storyXp: 4,
               },
             }),
@@ -5660,7 +5663,7 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
     journeyStats.maxHp
   );
   state.currentHunger = clamp(
-    state.currentHunger + effects.hunger,
+    state.currentHunger + scaleJourneyEventHungerDelta(effects.hunger),
     0,
     journeyStats.maxHunger
   );
@@ -5739,7 +5742,11 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
     !effects.permanentStatBonus &&
     !effects.unlockClass
   ) {
-    state.currentHunger = clamp(state.currentHunger - 3, 0, journeyStats.maxHunger);
+    state.currentHunger = clamp(
+      state.currentHunger + scaleJourneyEventHungerDelta(-3),
+      0,
+      journeyStats.maxHunger
+    );
     notes.push("The failed attempt still drained more out of you than you expected.");
   }
 
@@ -5757,10 +5764,33 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
 function scaleJourneyEventHpDelta(delta) {
   const amount = Math.round(Number(delta) || 0);
   if (amount > 0) {
-    return Math.round(amount * JOURNEY_EVENT_HP_GAIN_MULTIPLIER);
+    const multiplier =
+      amount >= 10 ? JOURNEY_EVENT_HP_GAIN_MULTIPLIER : JOURNEY_EVENT_HP_GAIN_MULTIPLIER + 0.4;
+    return Math.round(amount * multiplier);
   }
   if (amount < 0) {
-    return -Math.round(Math.abs(amount) * JOURNEY_EVENT_HP_LOSS_MULTIPLIER);
+    const severity = Math.abs(amount);
+    const multiplier =
+      severity >= 12 ? JOURNEY_EVENT_HP_LOSS_MULTIPLIER
+      : severity >= 7 ? JOURNEY_EVENT_HP_LOSS_MULTIPLIER + 0.4
+      : JOURNEY_EVENT_HP_LOSS_MULTIPLIER + 1;
+    return -Math.round(severity * multiplier);
+  }
+  return 0;
+}
+
+function scaleJourneyEventHungerDelta(delta) {
+  const amount = Math.round(Number(delta) || 0);
+  if (amount > 0) {
+    const multiplier =
+      amount >= 10 ? JOURNEY_EVENT_HUNGER_GAIN_MULTIPLIER : JOURNEY_EVENT_HUNGER_GAIN_MULTIPLIER + 0.15;
+    return Math.round(amount * multiplier);
+  }
+  if (amount < 0) {
+    const severity = Math.abs(amount);
+    const multiplier =
+      severity >= 6 ? JOURNEY_EVENT_HUNGER_LOSS_MULTIPLIER : JOURNEY_EVENT_HUNGER_LOSS_MULTIPLIER + 0.5;
+    return -Math.round(severity * multiplier);
   }
   return 0;
 }
