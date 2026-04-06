@@ -19,6 +19,7 @@ import {
   escapeAttribute,
   escapeHtml,
   formatDate,
+  formatDateTime,
   formatMinutes,
   getCompletionTier,
   getCompletedStateText,
