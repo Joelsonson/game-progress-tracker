@@ -429,19 +429,77 @@
 }
 
 .completion-showcase-card {
-  border-radius: 24px;
-}
-
-.completion-showcase-card-inner {
+  border-radius: 22px;
   padding: 10px;
 }
 
+.completion-showcase-card-inner {
+  gap: 10px;
+  padding: 8px;
+  border-radius: 20px;
+}
+
+.completion-showcase-header {
+  gap: 10px;
+}
+
+.completion-showcase-nameplate {
+  gap: 4px;
+}
+
+.completion-showcase-nameplate h2 {
+  font-size: clamp(1.32rem, 5.4vw, 1.72rem);
+}
+
+.completion-showcase-tier {
+  padding: 5px 10px;
+  font-size: 0.62rem;
+}
+
+.completion-showcase-xp {
+  min-width: 78px;
+  gap: 3px;
+  padding: 8px 10px;
+  border-radius: 16px;
+}
+
+.completion-showcase-xp strong {
+  font-size: clamp(1.15rem, 3.8vw, 1.45rem);
+}
+
+.completion-showcase-art-shell {
+  gap: 8px;
+  padding: 8px;
+  border-radius: 20px;
+}
+
 .completion-showcase-art-frame {
-  min-height: min(38dvh, 255px);
+  min-height: min(30dvh, 198px);
+  border-radius: 16px;
+}
+
+.completion-showcase-meta-row {
+  gap: 6px;
+}
+
+.completion-showcase-chip {
+  min-height: 28px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
 }
 
 .completion-showcase-stats {
-  gap: 8px;
+  gap: 6px;
+}
+
+.completion-showcase-stat {
+  gap: 4px;
+  padding: 10px;
+  border-radius: 16px;
+}
+
+.completion-showcase-stat-value {
+  font-size: clamp(0.95rem, 3.8vw, 1.08rem);
 }
 
 .brand-title-main {
