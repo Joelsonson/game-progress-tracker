@@ -3719,11 +3719,11 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
         return {
           title: "A road healer finds you",
           teaser: grantsHealerStone
-            ? "She sees how close you are to dropping and reaches for an emerald wrapped in silver."
-            : "One look at you is enough for her to step in.",
+            ? "She sees you're near collapse, and the help she offers may earn more than recovery."
+            : "One look at you is enough for her to offer the help you clearly need.",
           detail: grantsHealerStone
-            ? "A healer reins in beside you, takes one hard look, and decides the road has had enough of you for one day. While she binds the worst of your injuries, she draws an emerald manastone from beneath her sleeve and says some blessings go to people who already know how much the road can hurt."
-            : "A healer reins in beside you, takes one hard look, and decides the road has had enough of you for one day. She starts patching you up before you can argue.",
+            ? "A healer reins in beside you, takes one hard look, and decides you are in no shape to keep pushing. If you accept the stop, you can recover before the road takes more out of you. While she binds the worst of your injuries, she draws an emerald manastone from beneath her sleeve and makes it clear this is also a test of whether you understand what real care costs."
+            : "A healer reins in beside you, takes one hard look, and decides you are in no shape to keep pushing. If you accept the stop, you can recover before the road takes more out of you.",
           createdAt: eventTime,
           choices: [
             createJourneyGuaranteedChoice({
@@ -3767,11 +3767,11 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
         return {
           title: "A traveling herbalist waves you over",
           teaser: grantsApothecaryStone
-            ? "She spots your exhaustion at once, and an amber stone glows in her braid."
-            : "She spots your exhaustion at once and already has remedies in hand.",
+            ? "She spots your exhaustion at once, and the amber in her braid suggests this stop could matter."
+            : "She spots your exhaustion at once and offers real recovery if you listen.",
           detail: grantsApothecaryStone
-            ? "An herbalist sorting roots by the roadside waves you over before you can pretend you are fine. She feeds you, mixes what your body needs most, and watches closely enough to see whether you respect the line between medicine and poison. When you do, she fingers the amber manastone knotted into her braid."
-            : "An herbalist sorting roots by the roadside waves you over before you can pretend you are fine. She feeds you, mixes what your body needs most, and starts issuing blunt instructions.",
+            ? "An herbalist sorting roots by the roadside waves you over before you can pretend you are fine. If you stay and follow her instructions, you can restore yourself and maybe earn more than a meal out of the stop. She watches closely enough to see whether you respect the line between medicine and poison, with the amber manastone in her braid as the real prize."
+            : "An herbalist sorting roots by the roadside waves you over before you can pretend you are fine. If you stay and follow her instructions, you can restore yourself and leave better supplied for the road.",
           createdAt: eventTime,
           choices: [
             createJourneyGuaranteedChoice({
@@ -3810,9 +3810,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
       5 + state.aidUrgency,
       () => ({
         title: "A glowing spring in the brush",
-        teaser: "Even in the shade, the water shines.",
+        teaser: "The water looks safe enough to risk, and you need what it might give.",
         detail:
-          "A spring bubbles up between roots and stone, clear as glass and strangely still. The air around it feels cooler and quieter than the rest of the woods.",
+          "A spring bubbles up between roots and stone, clear as glass and strangely still. It looks safe enough to risk, and the reward is obvious: drink, recover, and see whether you can carry any of its strange calm with you.",
         createdAt: eventTime,
         choices: [
           createJourneyGuaranteedChoice({
@@ -3839,9 +3839,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
       5 + state.aidUrgency,
       () => ({
         title: "A raider's camp beside a looted carriage",
-        teaser: "One raider is nodding off beside the stolen supplies.",
+        teaser: "One sleeping raider stands between you and the supplies.",
         detail:
-          "You spot the wrecked carriage first, sunk deep in the mud, then the camp beyond it. One raider is half-asleep by the tent with the wagon's best goods stacked within reach.",
+          "You spot the wrecked carriage first, sunk deep in the mud, then the camp beyond it. One raider is half-asleep by the tent with the wagon's best goods stacked within reach. If you move cleanly, you can turn someone else's laziness into food and medicine for your road.",
         createdAt: eventTime,
         choices: [
           createJourneyGuaranteedChoice({
@@ -3867,9 +3867,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (!state.storyFlags.foundWeapon) {
     pushCandidate("survival:weapon-cart", 4, () => ({
           title: "A broken cart in the thorns",
-          teaser: "There may be a weapon worth pulling free.",
+          teaser: "If you can salvage one weapon, you do not leave this stop empty-handed.",
           detail:
-            "An overturned cart lies tangled in thorn brush and roots. A cracked spear shaft, a rusted belt knife, and the remains of someone's travel kit still cling to the frame.",
+            "An overturned cart lies tangled in thorn brush and roots. A cracked spear shaft, a rusted belt knife, and the remains of someone's travel kit still cling to the frame. You need a weapon, and this wreck is your chance to leave with something worth fighting with.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -3954,9 +3954,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (state.bossIndex === 0) {
     pushCandidate("arrival:berries", 3, () => ({
           title: "A patch of wild berries",
-          teaser: "Some look safe. Some really do not.",
+          teaser: "There is food here if you can tell safe berries from poison.",
           detail:
-            "Dark berries cluster where sunlight cuts through the trees. Birds have pecked some branches clean and left others untouched.",
+            "Dark berries cluster where sunlight cuts through the trees. Birds have pecked some branches clean and left others untouched. You need food, but the goal is to leave fed without poisoning yourself.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4032,9 +4032,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
 
     pushCandidate("arrival:tracks", 3, () => ({
           title: "Heavy tracks by the creek",
-          teaser: "Whatever made them is still close.",
+          teaser: "Something dangerous is nearby, and you need a way past it.",
           detail:
-            "Fresh prints sink deep into the mud beside the creek. Water is still seeping back into them, and something heavy has pushed through the reeds ahead.",
+            "Fresh prints sink deep into the mud beside the creek. Water is still seeping back into them, and something heavy has pushed through the reeds ahead. You cannot just drift through blind now. The problem is close, and you need to decide whether to scout it, scare it off, or rush past it.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4107,9 +4107,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
 
     pushCandidate("arrival:watchtower", 2, () => ({
           title: "A watchtower sinking into the reeds",
-          teaser: "Rotten timber, old warnings, and a view if it holds.",
+          teaser: "Risk the ruin for a route, a stash, or a warning worth having.",
           detail:
-            "A watchtower leans at a sick angle above the marsh grass. The lower door is jammed, the ladder is splintered, and faded signal marks still scar the timber.",
+            "A watchtower leans at a sick angle above the marsh grass. The lower door is jammed, the ladder is splintered, and faded signal marks still scar the timber. The place might offer supplies or a safer route, but only if you can get what you need before the whole thing gives way.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4185,9 +4185,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
     if (currentBagRank < 1) {
       pushCandidate("arrival:forager-satchel", 4, () => ({
             title: "A satchel caught in the briars",
-            teaser: "The strap is snarled high in the thorns, but the bag still looks sound.",
+            teaser: "Get it down cleanly and the road gets lighter from here.",
             detail:
-              "A leather satchel hangs in the thicket where some traveler must have torn free in a hurry. It is within reach if you can get it down without ruining it.",
+              "A leather satchel hangs in the thicket where some traveler must have torn free in a hurry. It looks usable, and if you can get it down without ruining it, the road gets easier from here.",
             createdAt: eventTime,
             choices: [
               createJourneyStatChoice({
@@ -4265,9 +4265,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyPhase !== "frontier") {
     pushCandidate("weather:cold-rain", 2, () => ({
           title: "Cold rain at dusk",
-          teaser: "Stop and shelter, or keep walking wet.",
+          teaser: "The storm will take its price. You are choosing what it costs you.",
           detail:
-            "The weather turns in a rush. Cold rain slants through the trees, the air goes bitter, and the path starts to disappear beneath mud and wet leaves.",
+            "The weather turns in a rush. Cold rain slants through the trees, the air goes bitter, and the path starts to disappear beneath mud and wet leaves. The storm is going to cost you something either way, so the goal is to decide what you are willing to spend: time, comfort, or strength.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4350,9 +4350,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyPhase === "frontier" && currentBagRank < 2 && journeyLevel >= 3) {
     pushCandidate("frontier:abandoned-pack-mule", 4, () => ({
           title: "An abandoned pack frame by the road",
-          teaser: "The mule is gone, but the backpack may still be worth saving.",
+          teaser: "Free the backpack and every mile after this gets easier.",
           detail:
-            "Off the road, you find the wreck of a trader's pack rig: split straps, bent buckles, and a traveler's backpack pinned beneath a warped frame.",
+            "Off the road, you find the wreck of a trader's pack rig: split straps, bent buckles, and a traveler's backpack pinned beneath a warped frame. There is a better pack here if you can free it cleanly, and that would make every mile after this easier.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4430,9 +4430,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyPhase === "frontier" && currentBagRank < 3 && journeyLevel >= 6) {
     pushCandidate("frontier:field-kit-cache", 2, () => ({
           title: "A sealed supply niche in a ruined gate",
-          teaser: "Someone hid real expedition gear here and meant to come back.",
+          teaser: "If you can open it in time, the prize is real expedition gear.",
           detail:
-            "Inside a broken gatehouse, you find a fitted wall niche hidden behind a loose stone. A field kit wrapped in oilcloth sits inside, but the lock and crumbling masonry both look ready to fight you for it.",
+            "Inside a broken gatehouse, you find a fitted wall niche hidden behind a loose stone. A field kit wrapped in oilcloth sits inside, but the lock and crumbling masonry both look ready to fight you for it. The goal is simple: get the kit before the ruin, or the noise you make, ruins the chance.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4512,9 +4512,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyPhase === "frontier") {
     pushCandidate("frontier:waystone-cache", 3, () => ({
           title: "A waystone with a hidden cache",
-          teaser: "The road mark hides more than directions.",
+          teaser: "A hidden cache waits if you can read it, force it, or outthink it.",
           detail:
-            "At a fork in the road stands an old waystone scored with faded route marks. A seam near the base hints at a hidden compartment.",
+            "At a fork in the road stands an old waystone scored with faded route marks. A seam near the base hints at a hidden compartment. You are not just admiring it. You are deciding whether to read it, force it, or search around it for whatever useful thing past travelers left behind.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4591,9 +4591,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyLevel >= 3 && state.storyFlags.boarDefeated && !hasJourneyClassUnlocked(state, "soldier")) {
     pushCandidate("class:soldier-watchfire", 4, () => ({
           title: "A guard by the watchfire",
-          teaser: "He notices your stance before he notices your face.",
+          teaser: "He is not making conversation. He is deciding whether to test you.",
           detail:
-            "A tired local guard warms his hands beside a roadside fire. When he hears about the boar, he turns a cracked ruby in an iron signet and says stones like that once went to people who could hold the line without folding.",
+            "A tired local guard warms his hands beside a roadside fire. When he hears about the boar, he turns a cracked ruby in an iron signet and makes it clear this is not casual conversation. He is testing whether you deserve the stone and the kind of discipline it stands for.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4667,9 +4667,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyLevel >= 4 && state.storyFlags.boarDefeated && !hasJourneyClassUnlocked(state, "arcanist")) {
     pushCandidate("class:arcanist-shrine", 3, () => ({
           title: "A whispering shrine",
-          teaser: "The stones hum around a sapphire buried in springlight.",
+          teaser: "The sapphire is there for the taking only if the shrine accepts you.",
           detail:
-            "Half-buried stones circle a shallow spring. In the water rests a sapphire the size of a thumbnail, untouched by moss or silt. When you reach toward it, the whole ring of stone tightens around your hand as if waiting to see whether you can bear its attention.",
+            "Half-buried stones circle a shallow spring. In the water rests a sapphire the size of a thumbnail, untouched by moss or silt. The shrine is clearly testing anyone who reaches for it, so your real goal is not just to grab the gem. It is to prove you can claim it the right way.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4745,9 +4745,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyLevel >= 3 && state.storyFlags.foundWeapon && !hasJourneyClassUnlocked(state, "rogue")) {
     pushCandidate("class:rogue-forager", 4, () => ({
           title: "A quiet forager on the trail",
-          teaser: "You never heard her approach, and the onyx at her throat is quieter still.",
+          teaser: "She turns your surprise into a quiet test for the onyx at her throat.",
           detail:
-            "A local forager steps out from behind a fallen tree with a basket of roots and herbs. She looks amused that you never noticed her approach, then taps an onyx pendant and says some stones prefer people who understand silence before power.",
+            "A local forager steps out from behind a fallen tree with a basket of roots and herbs. She looks amused that you never noticed her approach, then taps an onyx pendant and makes it obvious this meeting is a test. If you can show the right kind of awareness, the stone is meant to change hands.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4819,9 +4819,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyPhase === "survival") {
     pushCandidate("survival:charcoal-burners", 3, () => ({
           title: "Smoke over a charcoal pit",
-          teaser: "Shelter is possible here if you earn it.",
+          teaser: "Win their trust tonight and you leave warmer, fed, and better guided.",
           detail:
-            "Toward dusk you come upon charcoal burners tending low earthen mounds and blackened stacks of cordwood. They do not wave you in like friends, but one jerks her chin toward the fire and says there is room to warm yourself if you make yourself useful before night closes in.",
+            "Toward dusk you come upon charcoal burners tending low earthen mounds and blackened stacks of cordwood. They do not wave you in like friends, but one jerks her chin toward the fire and says there is room for you if you make yourself useful before night closes in. The opportunity here is shelter, food, and maybe road knowledge, but only if you earn it.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4902,9 +4902,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyPhase === "frontier") {
     pushCandidate("frontier:rope-ferry", 3, () => ({
           title: "A rope ferry over black water",
-          teaser: "The crossing still works, barely.",
+          teaser: "You have to cross, and the river will punish the wrong approach.",
           detail:
-            "You come to a flat ferry platform tethered to a rope as thick as your wrist. The black water below is fast, mean, and loud enough to make every bad outcome feel possible.",
+            "You come to a flat ferry platform tethered to a rope as thick as your wrist. The black water below is fast, mean, and loud enough to make every bad outcome feel possible. You need to cross, and the question is how you want to beat the river: muscle, repair work, or timing.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -4981,9 +4981,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
 
     pushCandidate("frontier:pilgrim-lanterns", 2, () => ({
           title: "Lanterns for the dead",
-          teaser: "Someone still keeps this old roadside rite alive.",
+          teaser: "Treat the old rite carefully and it may give something back.",
           detail:
-            "At dusk you find small lanterns hanging from hooks and thorn branches, each one lit before an old roadside name. The hush around them feels like a chapel after the last prayer.",
+            "At dusk you find small lanterns hanging from hooks and thorn branches, each one lit before an old roadside name. The place offers something if you meet it the right way: comfort, guidance, or supplies. The real question is what you ask of it and how carefully you move through it.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -5057,9 +5057,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
     if (journeyLevel >= 5 && !hasJourneyClassUnlocked(state, "duelist")) {
       pushCandidate("class:duelist-lantern-vigil", 3, () => ({
             title: "A duelist's vigil among the lanterns",
-            teaser: "One lantern hangs beside a practice blade and a garnet no mourner claimed.",
+            teaser: "One lantern marks a trial, and the garnet waits for the right traveler.",
             detail:
-              "Set apart from the other memorials is a lantern hung beside a weather-stained dueling blade. Beneath the soot-dark glass rests a deep garnet manastone tied in red cord, with a brass strip etched in old script: let this pass to the next traveler who understands challenge without cruelty.",
+              "Set apart from the other memorials is a lantern hung beside a weather-stained dueling blade. Beneath the soot-dark glass rests a deep garnet manastone tied in red cord, with a brass strip etched in old script: let this pass to the next traveler who understands challenge without cruelty. This is not just a memorial. It is a trial left for whoever comes next, and if you can prove you understand restraint as well as skill, the garnet is yours.",
             createdAt: eventTime,
             choices: [
               createJourneyStatChoice({
@@ -5134,9 +5134,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyPhase === "frontier" && journeyLevel >= 5) {
     pushCandidate("legend:last-hearth", 1, () => ({
           title: "The Last Hearth Below the Hill",
-          teaser: "A ruined shrine still keeps one ember alive in the rain.",
+          teaser: "A blessing may still live here if you are willing to claim it.",
           detail:
-            "Beyond a tumble of leaning stones sits the shell of an old roadside shrine. Its roof is gone, its icons are broken, and yet one ember still glows in the drowned hearth at its center. A half-legible carving calls this place the Last Hearth, where travelers once swore what they would not let the dark take from them.",
+            "Beyond a tumble of leaning stones sits the shell of an old roadside shrine. Its roof is gone, its icons are broken, and yet one ember still glows in the drowned hearth at its center. A half-legible carving says travelers once came here to claim old road blessings. If you are willing to risk enough, you can try to leave with one of them.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -5232,9 +5232,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
     if (!hasJourneyClassUnlocked(state, "knight")) {
       pushCandidate("class:knight-oath-cairn", 2, () => ({
             title: "A sworn stone beneath the cairn",
-            teaser: "A diamond manastone waits where the first wardens left their hardest vows.",
+            teaser: "The diamond is meant for whoever proves worthy of its burden.",
             detail:
-              "Set beneath one of the iron oath-rings is a diamond manastone wrapped in blackened cord. The weather-soft inscription says the first wardens left certain blessings for those willing to carry duty longer than comfort, and to carry it without applause.",
+              "Set beneath one of the iron oath-rings is a diamond manastone wrapped in blackened cord. The weather-soft inscription says the first wardens left certain blessings for those willing to carry duty longer than comfort, and to carry it without applause. The cairn is keeping the diamond for someone specific, and you are here to prove you are that person.",
             createdAt: eventTime,
             choices: [
               createJourneyStatChoice({
@@ -5309,9 +5309,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
 
     pushCandidate("legend:oath-cairn", 1, () => ({
           title: "An oath-cairn of the first wardens",
-          teaser: "The stones are too massive to have been stacked by ordinary hands.",
+          teaser: "If you accept the wardens' test, you may leave harder than you came.",
           detail:
-            "You reach a wind-scoured rise crowned by a cairn built from slabs no farmer's cart could have moved. Iron rings, now red with age, are set into the stone at shoulder height. A weather-soft inscription says the first wardens came here to swear which burden they would carry for the frontier and which fear they would never carry home.",
+            "You reach a wind-scoured rise crowned by a cairn built from slabs no farmer's cart could have moved. Iron rings, now red with age, are set into the stone at shoulder height. A weather-soft inscription says the first wardens came here to harden themselves for the frontier. If you take the test seriously, you can leave stronger than you arrived.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
@@ -5406,9 +5406,9 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyPhase === "frontier" && journeyLevel >= 7) {
     pushCandidate("legend:mirror-spring", 1, () => ({
           title: "The mirror spring under moonlight",
-          teaser: "Its surface reflects more than the sky above it.",
+          teaser: "The spring promises a real gift, if you can survive what it asks.",
           detail:
-            "You find a spring hidden in folded stone, so still it reflects the moon twice: once above, once from some pale depth below the waterline. Old chalk marks on the surrounding rock suggest travelers came here seeking revelations and usually left with scars.",
+            "You find a spring hidden in folded stone, so still it reflects the moon twice: once above, once from some pale depth below the waterline. Old chalk marks on the surrounding rock suggest travelers came here to take something real from it, even when it hurt. The question is whether you can do the same without letting the place break you first.",
           createdAt: eventTime,
           choices: [
             createJourneyStatChoice({
