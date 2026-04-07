@@ -746,12 +746,16 @@ export async function handleJourneyEventModalClick(event) {
   }
 }
 
-export function handleJourneyOutcomeModalClick(event) {
+export async function handleJourneyOutcomeModalClick(event) {
   if (
     event.target instanceof HTMLElement &&
     event.target.dataset.closeJourneyOutcome !== undefined
   ) {
     closeJourneyOutcomeModal();
+    const nextEventId = String(appState.journeyOutcomeNextEventId || "").trim();
+    appState.journeyOutcomeNextEventId = "";
+    if (!nextEventId) return;
+    await openPendingJourneyEventById(nextEventId);
   }
 }
 
@@ -812,6 +816,7 @@ export async function handleJourneyEventDockClick(event) {
 
 export async function resolveJourneyEventChoice(eventId, choiceId) {
   try {
+    appState.journeyOutcomeNextEventId = "";
     const [gamesRaw, sessionsRaw, idleRaw] = await Promise.all([
       getAllGames(appState.db),
       getAllSessions(appState.db),
@@ -860,6 +865,7 @@ export async function resolveJourneyEventChoice(eventId, choiceId) {
       resolution = bossBattleResolution.resolution;
 
       if (!bossBattleResolution.finished) {
+        appState.journeyOutcomeNextEventId = "";
         await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
         await appState.renderApp();
         if (bossBattleResolution.updatedEvent) {
@@ -890,6 +896,7 @@ export async function resolveJourneyEventChoice(eventId, choiceId) {
       }
     }
 
+    appState.journeyOutcomeNextEventId = resolution?.nextEventId || "";
     const outcomeItems = buildJourneyOutcomeItems(beforeState, state, resolution);
 
     await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));

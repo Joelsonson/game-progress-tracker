@@ -22,6 +22,7 @@ export const appState = {
   showCharacterSkillModal: false,
   characterSkillModalScrollTop: 0,
   isJourneyEventResolving: false,
+  journeyOutcomeNextEventId: "",
   journeyEventDockExpanded: false,
   journeyEventDockEventId: "",
   journeyEventDockDismissedIds: [],

@@ -55,6 +55,13 @@ export function normalizeJourneyChoice(choice) {
   const minChance = Number(choice.minChance);
   const maxChance = Number(choice.maxChance);
   const difficultyClass = Number(choice.difficultyClass);
+  const nextEvent = normalizeJourneyChoiceEventTemplate(choice.nextEvent);
+  const successNextEvent = normalizeJourneyChoiceEventTemplate(
+    choice.successNextEvent
+  );
+  const failureNextEvent = normalizeJourneyChoiceEventTemplate(
+    choice.failureNextEvent
+  );
 
   return {
     id: String(choice.id || crypto.randomUUID()),
@@ -94,7 +101,15 @@ export function normalizeJourneyChoice(choice) {
       ? normalizeJourneyChoiceEffects(choice.failureEffects)
       : normalizeJourneyChoiceEffects(null),
     forceSuccess: Boolean(choice.forceSuccess),
+    nextEvent,
+    successNextEvent,
+    failureNextEvent,
   };
+}
+
+function normalizeJourneyChoiceEventTemplate(eventEntry) {
+  if (!eventEntry || typeof eventEntry !== "object") return null;
+  return normalizeJourneyEvent(eventEntry, new Date().toISOString());
 }
 
 function normalizeJourneyBattleState(rawBattle) {
