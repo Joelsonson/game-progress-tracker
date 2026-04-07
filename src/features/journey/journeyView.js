@@ -1305,7 +1305,50 @@ function renderJourneyEventPanel(eventEntry) {
 
   return `
     <div class="journey-event-panel">
+      ${renderJourneyEventOutcomeBridge(eventEntry?.previousOutcome)}
       <p>${escapeHtml(eventEntry?.detail || "")}</p>
+    </div>
+  `;
+}
+
+function renderJourneyEventOutcomeBridge(previousOutcome) {
+  if (!previousOutcome?.resultText) {
+    return "";
+  }
+
+  const tone =
+    previousOutcome.tone === "is-success" ||
+    previousOutcome.tone === "is-failure"
+      ? previousOutcome.tone
+      : "is-neutral";
+  const toneLabel =
+    tone === "is-success"
+      ? "Succeeded"
+      : tone === "is-failure"
+        ? "Failed"
+        : "What happened";
+
+  return `
+    <div class="journey-event-bridge">
+      <div class="journey-event-bridge-head">
+        <span class="journey-outcome-result ${escapeAttribute(tone)}">
+          ${escapeHtml(toneLabel)}
+        </span>
+      </div>
+      ${
+        previousOutcome.choiceLabel
+          ? `
+            <p class="journey-event-bridge-choice">
+              After choosing <span class="journey-event-bridge-choice-text">${escapeHtml(
+                previousOutcome.choiceLabel
+              )}</span>
+            </p>
+          `
+          : ""
+      }
+      <p class="journey-event-bridge-copy">${escapeHtml(
+        previousOutcome.resultText
+      )}</p>
     </div>
   `;
 }

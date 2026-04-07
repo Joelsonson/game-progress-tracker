@@ -896,15 +896,25 @@ export async function resolveJourneyEventChoice(eventId, choiceId) {
       }
     }
 
-    appState.journeyOutcomeNextEventId = resolution?.nextEventId || "";
+    const nextEventId = String(resolution?.nextEventId || "").trim();
+    appState.journeyOutcomeNextEventId = "";
     const outcomeItems = buildJourneyOutcomeItems(beforeState, state, resolution);
 
     await setMeta(appState.db, IDLE_JOURNEY_META_KEY, normalizeJourneyState(state));
-    closeJourneyEventModal();
-    openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeItems, beforeState, state);
+    await appState.renderApp();
     showJourneyRollToast(resolution);
     showJourneyFeedback(resolution.resultText);
-    await appState.renderApp();
+
+    if (nextEventId) {
+      const nextEvent = state.pendingEvents.find((entry) => entry.id === nextEventId);
+      if (nextEvent) {
+        openJourneyEventModal(nextEvent);
+        return;
+      }
+    }
+
+    closeJourneyEventModal();
+    openJourneyOutcomeModal(eventEntry, choice, resolution, outcomeItems, beforeState, state);
   } catch (error) {
     console.error("Failed to resolve journey event:", error);
     closeJourneyEventModal();

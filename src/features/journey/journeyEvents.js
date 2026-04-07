@@ -34,6 +34,7 @@ export function normalizeJourneyEvent(eventEntry, nowIso) {
     teaser: String(eventEntry.teaser || "A choice is waiting."),
     detail: String(eventEntry.detail || eventEntry.teaser || ""),
     createdAt: eventEntry.createdAt || nowIso,
+    previousOutcome: normalizeJourneyEventPreviousOutcome(eventEntry.previousOutcome),
     battle: normalizeJourneyBattleState(eventEntry.battle),
     choices,
   };
@@ -110,6 +111,32 @@ export function normalizeJourneyChoice(choice) {
 function normalizeJourneyChoiceEventTemplate(eventEntry) {
   if (!eventEntry || typeof eventEntry !== "object") return null;
   return normalizeJourneyEvent(eventEntry, new Date().toISOString());
+}
+
+function normalizeJourneyEventPreviousOutcome(rawPreviousOutcome) {
+  if (!rawPreviousOutcome || typeof rawPreviousOutcome !== "object") return null;
+
+  const resultText =
+    typeof rawPreviousOutcome.resultText === "string"
+      ? rawPreviousOutcome.resultText.trim()
+      : "";
+  if (!resultText) return null;
+
+  const choiceLabel =
+    typeof rawPreviousOutcome.choiceLabel === "string"
+      ? rawPreviousOutcome.choiceLabel.trim()
+      : "";
+  const tone =
+    rawPreviousOutcome.tone === "is-success" ||
+    rawPreviousOutcome.tone === "is-failure"
+      ? rawPreviousOutcome.tone
+      : "is-neutral";
+
+  return {
+    choiceLabel,
+    resultText,
+    tone,
+  };
 }
 
 function normalizeJourneyBattleState(rawBattle) {

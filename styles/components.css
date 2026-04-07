@@ -2627,6 +2627,43 @@
   margin: 0;
 }
 
+.journey-event-bridge {
+  display: grid;
+  gap: 10px;
+  padding: 14px 15px;
+  border-radius: 16px;
+  border: 1px solid rgba(var(--accent-rgb), 0.16);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.84), rgba(var(--surface-rgb), 0.7)),
+    rgba(var(--panel-rgb), 0.56);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.journey-event-bridge-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.journey-event-bridge-choice,
+.journey-event-bridge-copy {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.journey-event-bridge-choice {
+  color: var(--muted);
+}
+
+.journey-event-bridge-choice-text {
+  color: var(--accent-2);
+  font-weight: 700;
+}
+
+.journey-event-bridge-copy {
+  color: var(--accent-2);
+}
+
 .journey-battle-panel {
   gap: 16px;
 }

@@ -3677,7 +3677,12 @@ function getJourneyChoiceNextEventTemplate(choice, success) {
   return choice.nextEvent || null;
 }
 
-function queueJourneyFollowUpEvent(state, nextEventTemplate, atIso) {
+function queueJourneyFollowUpEvent(
+  state,
+  nextEventTemplate,
+  atIso,
+  previousOutcome = null
+) {
   if (!nextEventTemplate || typeof nextEventTemplate !== "object") {
     return null;
   }
@@ -3687,6 +3692,7 @@ function queueJourneyFollowUpEvent(state, nextEventTemplate, atIso) {
       ...nextEventTemplate,
       id: crypto.randomUUID(),
       createdAt: atIso,
+      previousOutcome,
     },
     atIso
   );
@@ -6372,13 +6378,30 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
     notes.push("The failed attempt still drained more out of you than you expected.");
   }
 
-  if (!sentToTown && nextEventTemplate) {
-    queuedNextEvent = queueJourneyFollowUpEvent(state, nextEventTemplate, atIso);
-  }
-
   const finalText = notes.length
     ? `${resultText} ${notes.join(" ")}`
     : resultText;
+
+  const previousOutcome = nextEventTemplate
+    ? {
+        choiceLabel: String(choice?.label || "").trim(),
+        resultText: finalText,
+        tone: choice?.forceSuccess
+          ? "is-neutral"
+          : success
+            ? "is-success"
+            : "is-failure",
+      }
+    : null;
+
+  if (!sentToTown && nextEventTemplate) {
+    queuedNextEvent = queueJourneyFollowUpEvent(
+      state,
+      nextEventTemplate,
+      atIso,
+      previousOutcome
+    );
+  }
 
   return {
     ...check,
