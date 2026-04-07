@@ -41,6 +41,10 @@ export function normalizeJourneyEvent(eventEntry, nowIso) {
       eventEntry.imageName,
       buildJourneyDefaultEventImageName(eventKey)
     ),
+    imageFallbackName: normalizeJourneyEventImageName(
+      eventEntry.imageFallbackName,
+      buildJourneyLegacyEventImageName(eventKey)
+    ),
     imageAlt: String(eventEntry.imageAlt || eventEntry.title || "Journey event art"),
     createdAt: eventEntry.createdAt || nowIso,
     previousOutcome: normalizeJourneyEventPreviousOutcome(eventEntry.previousOutcome),
@@ -123,6 +127,11 @@ function normalizeJourneyChoiceEventTemplate(eventEntry) {
 }
 
 function buildJourneyDefaultEventImageName(eventKey) {
+  const safeKey = String(eventKey || "").trim();
+  return safeKey ? `${safeKey}.png` : "";
+}
+
+function buildJourneyLegacyEventImageName(eventKey) {
   const safeKey = String(eventKey || "")
     .trim()
     .replace(/[^a-z0-9]+/gi, "-")

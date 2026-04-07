@@ -81,7 +81,6 @@ const JOURNEY_BOSS_NAMES_JA = [
 ];
 const JOURNEY_EVENT_MEDIA_OVERRIDES = {
   "class:arcanist-hamlet-hunt": {
-    imageName: "hamlet.png",
     imageAlt: "A worried hamlet mayor asking a traveler for help.",
     detailBeforeImage:
       "You come across a small hamlet where the pens are half-empty and the villagers look too tired to be angry anymore.",
@@ -89,7 +88,6 @@ const JOURNEY_EVENT_MEDIA_OVERRIDES = {
       "Their mayor says a goblin has been slipping through the farms at night, stealing livestock while everyone sleeps, and he is desperate enough to offer a sapphire manastone to whoever ends it. You can take the hunt, press for a better deal, or leave their trouble to the dark.",
   },
   "class:arcanist-hamlet-hunt:stakeout": {
-    imageName: "hamlet2.png",
     imageAlt: "A raided farm at dusk with the barn in view from the shadows.",
     detailBeforeImage:
       "It's dusk and you have set traps around the farm, hidden inside an unlit shed with one good view of the barn.",

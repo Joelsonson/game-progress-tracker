@@ -1328,7 +1328,12 @@ function renderJourneyEventArt(eventEntry) {
   const imageName = String(eventEntry?.imageName || "").trim();
   if (!imageName) return "";
 
-  const imageSrc = `./assets/journey/eventimages/${encodeURIComponent(imageName)}`;
+  const imageSrc = `./assets/journey/eventimages/${encodeURI(imageName)}`;
+  const fallbackName = String(eventEntry?.imageFallbackName || "").trim();
+  const fallbackSrc =
+    fallbackName && fallbackName !== imageName
+      ? `./assets/journey/eventimages/${encodeURI(fallbackName)}`
+      : "";
   const imageAlt = String(
     eventEntry?.imageAlt || eventEntry?.title || "Journey event art"
   ).trim();
@@ -1339,10 +1344,11 @@ function renderJourneyEventArt(eventEntry) {
         class="journey-event-art-image"
         src="${escapeAttribute(imageSrc)}"
         alt="${escapeAttribute(imageAlt)}"
+        data-fallback-src="${escapeAttribute(fallbackSrc)}"
         loading="lazy"
         decoding="async"
         onload="this.parentElement.hidden = false"
-        onerror="this.parentElement.remove()"
+        onerror="if(!this.dataset.fallbackTried && this.dataset.fallbackSrc){this.dataset.fallbackTried='true';this.src=this.dataset.fallbackSrc;return;} this.parentElement.remove()"
       />
     </figure>
   `;
