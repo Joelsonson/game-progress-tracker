@@ -1422,14 +1422,6 @@ export function rememberJourneyCompletedEventKey(state, eventKey) {
   ].slice(0, JOURNEY_COMPLETED_EVENT_LIMIT);
 }
 
-function hasJourneyCompletedEventKey(state, eventKey) {
-  const safeKey = String(eventKey || "").trim();
-  if (!safeKey) return false;
-  return (Array.isArray(state.completedEventKeys) ? state.completedEventKeys : []).includes(
-    safeKey
-  );
-}
-
 export function buildJourneyOutcomeItems(beforeState, afterState, resolution = null) {
   const items = [];
   const addDelta = (label, value) => {
@@ -3609,9 +3601,6 @@ function createJourneyStatChoice({
   failureText,
   successEffects,
   failureEffects,
-  nextEvent,
-  successNextEvent,
-  failureNextEvent,
   chanceBase = 0.24,
   chancePerStat = 0.08,
   minChance = 0.14,
@@ -3639,9 +3628,6 @@ function createJourneyStatChoice({
     failureText,
     successEffects,
     failureEffects,
-    nextEvent,
-    successNextEvent,
-    failureNextEvent,
   };
 }
 
@@ -3650,7 +3636,6 @@ function createJourneyGuaranteedChoice({
   preview,
   resultText,
   effects,
-  nextEvent,
 }) {
   return {
     label,
@@ -3666,607 +3651,6 @@ function createJourneyGuaranteedChoice({
     successEffects: effects,
     failureEffects: effects,
     forceSuccess: true,
-    nextEvent,
-  };
-}
-
-function getJourneyChoiceNextEventTemplate(choice, success) {
-  if (!choice || typeof choice !== "object") return null;
-  if (success && choice.successNextEvent) return choice.successNextEvent;
-  if (!success && choice.failureNextEvent) return choice.failureNextEvent;
-  return choice.nextEvent || null;
-}
-
-function queueJourneyFollowUpEvent(state, nextEventTemplate, atIso) {
-  if (!nextEventTemplate || typeof nextEventTemplate !== "object") {
-    return null;
-  }
-
-  const nextEvent = normalizeJourneyEvent(
-    {
-      ...nextEventTemplate,
-      id: crypto.randomUUID(),
-      createdAt: atIso,
-    },
-    atIso
-  );
-  if (!nextEvent) return null;
-
-  state.pendingEvents = [nextEvent, ...state.pendingEvents].slice(
-    0,
-    JOURNEY_PENDING_EVENT_LIMIT
-  );
-  return nextEvent;
-}
-
-function buildJourneyGlowcapHollowFollowUpEvent({
-  bonusRations = 0,
-  bonusTonics = 0,
-} = {}) {
-  return {
-    eventKey: "arrival:glowcap-hollow:inside",
-    title: "Blue light inside the hollow",
-    teaser: "The richest caps are deeper in, and the den-owner is back too soon.",
-    detail:
-      "Dusk settles before the foragers expected. You slip into the root-hollow with sacks and a shuttered lamp, only to hear claws scrape stone deeper in the den. Whatever lives here has come back early, and now you have one good chance to decide how greedy to be.",
-    choices: [
-      createJourneyStatChoice({
-        label: "Smoke the den and cut the richest caps",
-        preview: "Use the strange fumes and blue light against the creature.",
-        highlightWord: "Smoke",
-        statKey: "arcana",
-        chanceBase: 0.26,
-        chancePerStat: 0.08,
-        successText:
-          "You work the smoke low along the floor until the den-beast backs off coughing. That gives you just enough time to cut the fat glowcaps from the deepest shelf before everyone bolts for daylight.",
-        failureText:
-          "The smoke rolls wrong, the den-beast panics, and the scramble out of the hollow costs you blood and most of the best haul.",
-        successEffects: {
-          bonusRations: 2 + bonusRations,
-          bonusTonics: 1 + bonusTonics,
-          storyXp: 10,
-        },
-        failureEffects: {
-          hp: -4,
-          bonusRations: 1,
-          storyXp: 0,
-        },
-      }),
-      createJourneyStatChoice({
-        label: "Slide past it and harvest from the back wall",
-        preview: "Bet on quiet feet and one fast clean pass.",
-        highlightWord: "Slide",
-        statKey: "finesse",
-        chanceBase: 0.29,
-        chancePerStat: 0.08,
-        successText:
-          "You move around the den-beast's blind side, cut the best cluster free, and are already halfway out before it decides the hollow is suddenly too crowded.",
-        failureText:
-          "You almost make it cleanly, then loose stone turns the whole hollow against you. You get out with something to show for it, just not without claws at your heels.",
-        successEffects: {
-          bonusRations: 3 + bonusRations,
-          bonusTonics,
-          storyXp: 9,
-        },
-        failureEffects: {
-          hp: -5,
-          bonusRations: 1,
-          storyXp: 0,
-        },
-      }),
-      createJourneyGuaranteedChoice({
-        label: "Take only the caps near the mouth and get out",
-        preview: "Keep the haul modest and leave the deeper shelf alone.",
-        resultText:
-          "You wave the others back from the deep shelf, cut only the glowcaps nearest the entrance, and leave before the den-beast decides to test your caution.",
-        effects: {
-          bonusRations: 1 + bonusRations,
-          bonusTonics,
-          storyXp: 4,
-        },
-      }),
-    ],
-  };
-}
-
-function buildJourneyBrokenBridgeCrossingEvent({
-  bonusRations = 0,
-  bonusTonics = 0,
-} = {}) {
-  return {
-    eventKey: "survival:broken-bridge-merchant:crossing",
-    title: "The cart groans over the bridge",
-    teaser: "Dark is coming, and the bridge wants to fail before the road does.",
-    detail:
-      "By the time the cart starts across, the marsh road is already going dim. One span has gone soft, the axle keeps drifting toward the break, and lampglow flickers far back on the road where trouble might be following. You can save the merchant, the best of the cargo, or both if you are very good.",
-    choices: [
-      createJourneyStatChoice({
-        label: "Brace the span and shove the cart through",
-        preview: "Trust raw force before the bridge gives up entirely.",
-        highlightWord: "Brace",
-        statKey: "might",
-        chanceBase: 0.25,
-        chancePerStat: 0.08,
-        successText:
-          "You jam your shoulder under the sagging rail, force the span to hold one breath longer, and shove the cart across before the planks can decide otherwise.",
-        failureText:
-          "The span breaks under the strain and you only save the cart by eating most of the collapse yourself.",
-        successEffects: {
-          distance: 10,
-          bonusRations: 2 + bonusRations,
-          bonusTonics,
-          storyXp: 11,
-        },
-        failureEffects: {
-          hp: -7,
-          bonusRations: 1,
-          storyXp: 0,
-        },
-      }),
-      createJourneyStatChoice({
-        label: "Walk the axle by hand and keep the load balanced",
-        preview: "Treat every wheel turn like a trap you already know is there.",
-        highlightWord: "Walk",
-        statKey: "finesse",
-        chanceBase: 0.28,
-        chancePerStat: 0.08,
-        successText:
-          "You guide the wheels inch by inch, correct every lean before it becomes disaster, and get the cart over with both merchant and cargo still worth bragging about.",
-        failureText:
-          "You save the merchant, but a bad sway sends part of the load skidding into the marsh before you can steady it.",
-        successEffects: {
-          distance: 8,
-          bonusRations: 1 + bonusRations,
-          bonusTonics: 1 + bonusTonics,
-          storyXp: 12,
-        },
-        failureEffects: {
-          hp: -4,
-          distance: 4,
-          storyXp: 0,
-        },
-      }),
-      createJourneyGuaranteedChoice({
-        label: "Throw off the cheap crates and save the lockbox",
-        preview: "Give up the bulk of the load so the rest can cross cleanly.",
-        resultText:
-          "You heave the cheaper crates into the marsh, lighten the cart, and make sure the merchant and his lockbox reach the far side before the bridge can claim either.",
-        effects: {
-          distance: 5,
-          bonusRations,
-          bonusTonics: 1 + bonusTonics,
-          storyXp: 5,
-        },
-      }),
-    ],
-  };
-}
-
-function buildJourneyHamletNightHuntEvent({
-  bonusRations = 0,
-  bonusTonics = 0,
-  bonusWeaponName = "",
-} = {}) {
-  return {
-    eventKey: "class:arcanist-hamlet-hunt:stakeout",
-    title: "Dusk over the raided farm",
-    teaser: "The figure in the dark has seen enough to know the farm is waiting for it.",
-    detail:
-      "It's dusk and you have set traps around the farm, hidden inside an unlit shed with one good view of the barn. A shape slips over the fence, notices the disturbed earth at once, and avoids the traps with practiced caution. Whatever this thief is, it is no mindless goblin. It knows something is wrong and is still heading for the sleeping livestock.",
-    choices: [
-      createJourneyStatChoice({
-        label: "Channel fire spirits and burn every exit but one",
-        preview: "Force the intruder into the path you planned and pray the fire obeys.",
-        highlightWord: "fire",
-        statKey: "arcana",
-        chanceBase: 0.22,
-        chancePerStat: 0.1,
-        successText:
-          "The barn flares where you want it to and nowhere else. The intruder panics, bolts for the one clean gap, and runs straight into your burst of white fire. In the stunned heartbeat that follows, you drag them down and discover the truth under the green paint: not a goblin, just a desperate thief from the next hamlet.",
-        failureText:
-          "The fire takes more than the exits. By the time you beat the worst of it back, the thief and the livestock are both lost in the blaze, and the ugly truth reaches you too late: there was never any goblin here at all.",
-        successEffects: {
-          bonusRations: 1 + bonusRations,
-          bonusTonics,
-          weaponName: bonusWeaponName,
-          storyXp: 20,
-          manastoneKey: "sapphire_manastone",
-        },
-        failureEffects: {
-          hp: -4,
-          storyXp: 14,
-        },
-      }),
-      createJourneyStatChoice({
-        label: "Slip in close and take the thief alive",
-        preview: "Let the dark hide you until one clean hold ends the whole hunt.",
-        highlightWord: "Slip",
-        statKey: "finesse",
-        chanceBase: 0.26,
-        chancePerStat: 0.09,
-        successText:
-          "You move around the barn faster than the thief expects, hit from behind, and lock the choke in before they can even scream. When the green paint smears under your hands, the whole hunt changes shape at once.",
-        failureText:
-          "You almost have them. Then a loose board gives you away and the fight turns short, close, and messy before the thief tears free into the dark.",
-        successEffects: {
-          bonusRations: 1 + bonusRations,
-          bonusTonics,
-          weaponName: bonusWeaponName,
-          storyXp: 18,
-          manastoneKey: "sapphire_manastone",
-        },
-        failureEffects: {
-          hp: -8,
-          storyXp: 0,
-        },
-      }),
-      createJourneyGuaranteedChoice({
-        label: "Trigger the firecracker trap in the barn",
-        preview: "Use chaos, noise, and frightened livestock to make one opening.",
-        resultText:
-          "The firecracker snaps loud enough to wake every animal in the barn. In the chaos of hooves, bleating, and flying straw, you find your opening, knock the intruder flat, and learn what the hamlet never guessed: the 'goblin' is only a painted townsman from the next valley over.",
-        effects: {
-          bonusRations: 1 + bonusRations,
-          bonusTonics,
-          weaponName: bonusWeaponName,
-          storyXp: 13,
-          manastoneKey: "sapphire_manastone",
-        },
-      }),
-    ],
-  };
-}
-
-function buildJourneyCreekTracksFollowUpEvent({
-  bonusDistance = 0,
-  bonusStoryXp = 0,
-  failureHpPenalty = 0,
-} = {}) {
-  const hasEdge = bonusDistance > 0 || bonusStoryXp > 0;
-  const alerted = failureHpPenalty > 0;
-
-  return {
-    eventKey: "arrival:tracks:creek-bank",
-    title: "Something rises in the creek reeds",
-    teaser: alerted
-      ? "It already knows you are here, and the creek suddenly feels too narrow."
-      : hasEdge
-        ? "You bought yourself a half-step of advantage, but you still need a way past."
-        : "You have eyes on the predator now. That does not make the crossing safe.",
-    detail: alerted
-      ? "A broad river-lizard lifts out of the reeds with water running off its jaw, already keyed to your scent and movement. It is too large to fight cleanly, too close to ignore, and now the creek is a problem you can no longer solve from a distance."
-      : hasEdge
-        ? "A broad river-lizard hauls itself out of the reeds, but your earlier setup has left it slightly wrong-footed at the bank. It is still too large to fight cleanly and too close to ignore. You have a narrow opening to get past before it settles again."
-        : "A broad river-lizard lifts out of the reeds with water streaming off its jaw. It is too large to fight cleanly and too close to ignore. The crossing is still there, but only if you make the next few breaths count.",
-    choices: [
-      createJourneyStatChoice({
-        label: "Slip past while it circles the muddy bank",
-        preview: "Use the water, reeds, and its own turning body against it.",
-        highlightWord: "Slip",
-        statKey: "finesse",
-        chanceBase: 0.27,
-        chancePerStat: 0.08,
-        successText:
-          "You move while it turns, keeping reeds and shallow water between you until the far bank is suddenly under your boots instead of somewhere you hoped to reach.",
-        failureText:
-          "You almost ghost past it, then mud sucks at the wrong step and the lizard snaps hard enough to leave pain behind even after you tear free.",
-        successEffects: {
-          distance: 10 + bonusDistance,
-          storyXp: 12 + bonusStoryXp,
-        },
-        failureEffects: {
-          hp: -(8 + failureHpPenalty),
-          distance: 4,
-          storyXp: 0,
-        },
-      }),
-      createJourneyStatChoice({
-        label: "Stand tall and drive it off the crossing",
-        preview: "Make the beast doubt the meal before it commits.",
-        highlightWord: "Drive",
-        statKey: "might",
-        chanceBase: 0.24,
-        chancePerStat: 0.09,
-        successText:
-          "You meet the charge with noise, stone, and a refusal to break first. The lizard gives ground one angry step at a time until the crossing is yours.",
-        failureText:
-          "You try to own the bank by force, but the river-lizard hits too fast and too low. You get out alive, though not before it reminds you whose hunting ground this was.",
-        successEffects: {
-          distance: 8 + bonusDistance,
-          storyXp: 13 + bonusStoryXp,
-        },
-        failureEffects: {
-          hp: -(10 + failureHpPenalty),
-          distance: 3,
-          storyXp: 0,
-        },
-      }),
-      createJourneyStatChoice({
-        label: "Sprint the ford before it can coil and launch",
-        preview: "Trust speed and stubbornness more than clean technique.",
-        highlightWord: "Sprint",
-        statKey: "vitality",
-        chanceBase: 0.31,
-        chancePerStat: 0.07,
-        successText:
-          "You explode through the ford in one ugly burst, taking cold water and flying mud over elegance. By the time the lizard commits, you are already out of the line it wanted.",
-        failureText:
-          "You beat the first lunge and lose the second. Teeth rake you on the way through, but momentum still carries you clear of the worst place to fall.",
-        successEffects: {
-          distance: 12 + bonusDistance,
-          storyXp: 11 + bonusStoryXp,
-        },
-        failureEffects: {
-          hp: -(9 + failureHpPenalty),
-          distance: 7,
-          storyXp: 0,
-        },
-      }),
-    ],
-  };
-}
-
-function buildJourneyWatchtowerInteriorEvent({
-  bonusDistance = 0,
-  collapsePenalty = 0,
-} = {}) {
-  const foundStableLine = bonusDistance > 0;
-  const unstable = collapsePenalty > 0;
-
-  return {
-    eventKey: "arrival:watchtower:inside",
-    title: "Inside the leaning watchtower",
-    teaser: unstable
-      ? "You made it in, but now the whole ruin feels one bad step from finishing the collapse."
-      : foundStableLine
-        ? "You found a clean line in, but the tower still offers only one good chance."
-        : "You are inside now, and the ruin will only let you chase one real prize before it shifts again.",
-    detail: unstable
-      ? "Inside the tower, every board creaks like a warning. A cracked signal ladder still leads upward, an old watcher's locker sits jammed beneath a fallen beam, and faded route marks cling to the inner wall. You probably have time for one real attempt before the place decides it has had enough of you."
-      : "Inside the leaning tower, you find three things worth wanting: a surviving route to the signal ledge, a watcher's locker wedged beneath a fallen beam, and faded warning marks still clinging to the inside wall. You probably have time for one real attempt before more of the ruin gives way.",
-    choices: [
-      createJourneyStatChoice({
-        label: "Climb to the signal ledge for a view of the road",
-        preview: "Spend your one good chance on a line through the next stretch.",
-        highlightWord: "Climb",
-        statKey: "vitality",
-        chanceBase: 0.26,
-        chancePerStat: 0.08,
-        successText:
-          "You climb through the groaning frame, reach the signal ledge, and come down with a route clear enough to matter.",
-        failureText:
-          "The tower drops half a complaint beneath your weight and nearly throws you back out into the reeds. You still salvage a glimpse, but it costs you.",
-        successEffects: {
-          distance: 10 + bonusDistance,
-          storyXp: 11,
-        },
-        failureEffects: {
-          hp: -(7 + collapsePenalty),
-          distance: 4,
-          storyXp: 0,
-        },
-      }),
-      createJourneyStatChoice({
-        label: "Break open the watcher's locker",
-        preview: "Trade noise and splinters for whatever supplies survived inside.",
-        highlightWord: "Locker",
-        statKey: "might",
-        chanceBase: 0.29,
-        chancePerStat: 0.08,
-        successText:
-          "You wrench the locker wide before the beam can settle harder over it. Inside are dry trail food, an old tonic, and just enough useful order to feel worth the trouble.",
-        failureText:
-          "You force the locker, but the beam shifts with it and spoils most of what was left dry. You still scrape together something before backing out.",
-        successEffects: {
-          bonusRations: 1,
-          bonusTonics: 1,
-          storyXp: 10,
-        },
-        failureEffects: {
-          hp: -(4 + collapsePenalty),
-          bonusRations: 1,
-          storyXp: 0,
-        },
-      }),
-      createJourneyStatChoice({
-        label: "Read the warning marks left on the inner wall",
-        preview: "Let the old watchers tell you what the road still remembers.",
-        highlightWord: "Read",
-        statKey: "arcana",
-        chanceBase: 0.24,
-        chancePerStat: 0.09,
-        successText:
-          "The chalk, cuts, and old shorthand finally resolve into a warning route and a safer one. You leave with a better line and a sharper sense for how road signs hide meaning.",
-        failureText:
-          "You piece together only part of the message before dust and bad light beat you out of the rest. The lesson is incomplete, but not useless.",
-        successEffects: {
-          distance: 7 + bonusDistance,
-          bonusSkillPoints: 1,
-          storyXp: 12,
-        },
-        failureEffects: {
-          distance: 2,
-          storyXp: 0,
-        },
-      }),
-    ],
-  };
-}
-
-function buildJourneyWaystoneCacheFollowUpEvent({
-  bonusDistance = 0,
-  bonusRations = 0,
-  failureHpPenalty = 0,
-} = {}) {
-  const hasRead = bonusDistance > 0 || bonusRations > 0;
-  const disturbed = failureHpPenalty > 0;
-
-  return {
-    eventKey: "frontier:waystone-cache:opened",
-    title: "The waystone gives up its secret",
-    teaser: disturbed
-      ? "You found the cache, but the stone has shifted against you and will not forgive clumsy hands."
-      : hasRead
-        ? "You have the better line on the hidden cache. Now you need to claim it before luck changes."
-        : "The hidden compartment is there. The real question is how you mean to take it.",
-    detail: disturbed
-      ? "With the true seam finally exposed, the old waystone feels more like a trap than a marker. The hidden panel is half-wedged, the blind side still hides a smaller stash, and the route marks have just enough sense in them to suggest there was a cleaner way to do this. You have one more decision before the road takes the choice back."
-      : "Once you know where to look, the waystone stops being a monument and starts looking like a stubborn old cache. The seam at the base can be forced, the route marks might still release it properly, and the blind side hides enough loose stone to suggest a smaller stash tucked behind. You have one real shot at the prize you want most.",
-    choices: [
-      createJourneyStatChoice({
-        label: "Unlock the hidden panel through the route glyphs",
-        preview: "Treat the waystone like a message, not a box.",
-        highlightWord: "glyphs",
-        statKey: "arcana",
-        chanceBase: 0.25,
-        chancePerStat: 0.09,
-        successText:
-          "You follow the route marks in the right sequence until the hidden catch yields with a dry old click. Inside is a tonic case and a better line through the road ahead.",
-        failureText:
-          "You almost catch the pattern before the markings blur into weathering and guesswork again. You leave with only a partial read and less time than you wanted.",
-        successEffects: {
-          distance: 8 + bonusDistance,
-          bonusTonics: 1,
-          storyXp: 12,
-        },
-        failureEffects: {
-          distance: 2,
-          storyXp: 0,
-        },
-      }),
-      createJourneyStatChoice({
-        label: "Pry the base open before it settles again",
-        preview: "Take the cache by force and accept what that means for your fingers.",
-        highlightWord: "Pry",
-        statKey: "might",
-        chanceBase: 0.24,
-        chancePerStat: 0.09,
-        successText:
-          "You wrench the panel wide enough to drag out the real prize: trail food, a wrapped hatchet, and the satisfaction of beating old stone at its own patience.",
-        failureText:
-          "The waystone shifts against you at the worst possible moment. You tear your hand free with bruises and crumbs, but not the full cache.",
-        successEffects: {
-          bonusRations: 2 + bonusRations,
-          weaponName: "Traveler's hatchet",
-          storyXp: 11,
-        },
-        failureEffects: {
-          hp: -(5 + failureHpPenalty),
-          bonusRations: 1,
-          storyXp: 0,
-        },
-      }),
-      createJourneyStatChoice({
-        label: "Reach the blind-side stash and leave the rest sealed",
-        preview: "Take the hidden traveler's compromise instead of the whole prize.",
-        highlightWord: "blind",
-        statKey: "finesse",
-        chanceBase: 0.29,
-        chancePerStat: 0.08,
-        successText:
-          "You find the smaller stash tucked where a hurried traveler could reach it without opening the true compartment. It is not everything, but it is clean profit and a useful route note besides.",
-        failureText:
-          "Loose stone gives under your footing and turns a careful search into a noisy little disaster. Whatever was tucked there, you reach it too late or not at all.",
-        successEffects: {
-          bonusRations: 1 + bonusRations,
-          distance: 7 + bonusDistance,
-          storyXp: 10,
-        },
-        failureEffects: {
-          hunger: -3,
-          storyXp: 0,
-        },
-      }),
-    ],
-  };
-}
-
-function buildJourneyRopeFerryCrossingEvent({
-  bonusDistance = 0,
-  failureHpPenalty = 0,
-} = {}) {
-  const improvedRig = bonusDistance > 0;
-  const unstableRig = failureHpPenalty > 0;
-
-  return {
-    eventKey: "frontier:rope-ferry:crossing",
-    title: "Midstream on the black water",
-    teaser: unstableRig
-      ? "The ferry is moving, but the rig feels one hard jerk from coming apart under you."
-      : improvedRig
-        ? "Your prep bought the ferry a cleaner line, but the crossing is still no gift."
-        : "You are committed now, and the river only gets louder away from shore.",
-    detail: unstableRig
-      ? "Once the ferry pulls away from the bank, every weakness in the rig shows itself at once. The guide rope shudders, the platform drifts broadside if you let it, and the black water below keeps looking like it knows exactly how this could end. You still have time to choose how you mean to survive the middle of the crossing."
-      : "Halfway out, the ferry platform starts reminding you how temporary all of this really is. The guide rope groans, the pulleys complain, and the current keeps trying to take the platform broadside. You still have time to decide what kind of crossing this becomes.",
-    choices: [
-      createJourneyStatChoice({
-        label: "Haul the ferry hand over hand",
-        preview: "Beat the current with stubborn muscle before the river gets clever.",
-        highlightWord: "Haul",
-        statKey: "might",
-        chanceBase: 0.25,
-        chancePerStat: 0.08,
-        successText:
-          "You drag the ferry across inch by inch, shoulders burning, but the far bank comes under your boots before the river can make a better argument.",
-        failureText:
-          "The rope jerks, your footing goes wild, and the crossing turns into a bruising fight for balance before you scrape through to shore.",
-        successEffects: {
-          distance: 12 + bonusDistance,
-          storyXp: 12,
-        },
-        failureEffects: {
-          hp: -(9 + failureHpPenalty),
-          distance: 5,
-          storyXp: 1,
-        },
-      }),
-      createJourneyStatChoice({
-        label: "Work the pulleys and knots while the ferry drifts",
-        preview: "Let clever hands fix the problem before the river owns it.",
-        highlightWord: "knots",
-        statKey: "finesse",
-        chanceBase: 0.29,
-        chancePerStat: 0.08,
-        successText:
-          "You free the jammed guide ring, re-seat the slipping knots, and turn a doomed crossing into one that almost looks intentional.",
-        failureText:
-          "You fix part of the rig and miss the rest. The ferry still gets you across, just with a savage lurch that nearly throws you overboard.",
-        successEffects: {
-          distance: 14 + bonusDistance,
-          bonusTonics: 1,
-          storyXp: 11,
-        },
-        failureEffects: {
-          hp: -(4 + failureHpPenalty),
-          distance: 6,
-          storyXp: 1,
-        },
-      }),
-      createJourneyStatChoice({
-        label: "Listen to the current and pull with its rhythm",
-        preview: "Treat the river like a mind that can be timed, not beaten.",
-        highlightWord: "Listen",
-        statKey: "arcana",
-        chanceBase: 0.23,
-        chancePerStat: 0.09,
-        successText:
-          "You catch the strange rhythm hidden under the noise and pull when the water is almost willing to help you. The far bank arrives fast enough to feel stolen.",
-        failureText:
-          "You think you have the river's timing until it breaks under you halfway out. The crossing still ends on the far bank, though not kindly.",
-        successEffects: {
-          distance: 13 + bonusDistance,
-          bonusRations: 1,
-          storyXp: 13,
-        },
-        failureEffects: {
-          hp: -(5 + failureHpPenalty),
-          hunger: -3,
-          distance: 6,
-          storyXp: 1,
-        },
-      }),
-    ],
   };
 }
 
@@ -4540,62 +3924,6 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   }
 
   if (state.bossIndex === 0) {
-    pushCandidate("arrival:glowcap-hollow", 2, () => ({
-          title: "Foragers whisper over a glowcap hollow",
-          teaser: "There is good food under the roots, but something hungry lives there too.",
-          detail:
-            "Two roadside foragers crouch beside a root-split hollow where blue glowcaps shine from the dark. They know the caps can fill a pack with good food and medicine, but the den belongs to something mean that hunts at dusk and sometimes comes back early. They offer to split the haul if you are willing to help.",
-          createdAt: eventTime,
-          choices: [
-            createJourneyGuaranteedChoice({
-              label: "Help them wait for the right moment",
-              preview: "Take the ordinary share and go in when the hollow gives you one chance.",
-              resultText:
-                "You share their small cookfire, listen for the den-beast to slip out into the dark, and settle in to make one careful pass at the cave when the moment comes.",
-              effects: {
-                bonusRations: 1,
-                storyXp: 3,
-              },
-              nextEvent: buildJourneyGlowcapHollowFollowUpEvent(),
-            }),
-            createJourneyStatChoice({
-              label: "Help, but only for a better share",
-              preview: "Press them for the best caps before you risk the den with them.",
-              highlightWord: "better",
-              statKey: "resolve",
-              chanceBase: 0.31,
-              chancePerStat: 0.07,
-              successText:
-                "You make it clear you are not crawling into a hungry den for scraps. The older forager scowls, then agrees to sweeten the split and hands you a tonic to prove the bargain is real.",
-              failureText:
-                "You push too hard and the mood goes brittle. They still let you join the harvest, but the better share disappears before it is ever really on the table.",
-              successEffects: {
-                bonusTonics: 1,
-                storyXp: 4,
-              },
-              failureEffects: {
-                storyXp: 1,
-              },
-              successNextEvent: buildJourneyGlowcapHollowFollowUpEvent({
-                bonusRations: 1,
-                bonusTonics: 1,
-              }),
-              failureNextEvent: buildJourneyGlowcapHollowFollowUpEvent(),
-            }),
-            createJourneyGuaranteedChoice({
-              label: "Leave the hollow to them and take their offered supper",
-              preview: "Skip the den entirely and accept a warm meal for the road.",
-              resultText:
-                "You decide the glowcaps can stay where they are. The foragers share their stew, you warm your hands by the fire a while longer, and the road feels less sharp when you leave.",
-              effects: {
-                hunger: 7,
-                storyXp: 4,
-              },
-            }),
-          ],
-        })
-    );
-
     pushCandidate("arrival:berries", 3, () => ({
           title: "A patch of unfamiliar berries",
           teaser: "There is food here, but only greed turns it dangerous.",
@@ -4664,55 +3992,71 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
 
     pushCandidate("arrival:tracks", 3, () => ({
           title: "You spot some heavy tracks near the creek",
-          teaser: "Something large is hunting this bank, and the crossing is no longer simple.",
+          teaser: "Something dangerous is close, and you need a way past it.",
           detail:
-            "You find fresh prints cut deep into the mud beside the creek. The reeds ahead are flattened, the bank is churned, and something heavy has been using this place as a feeding ground. You still need to get past the water, but first you have to decide whether to set up the encounter, provoke it, or give the whole bank a wider berth.",
+            "You find fresh prints cut deep into the mud beside the water. They are too wide to ignore and too recent to feel safe. You cannot just drift through blind now. The problem is close, and you need to decide whether to scout it, scare it off, or rush past it.",
           createdAt: eventTime,
           choices: [
-            createJourneyGuaranteedChoice({
-              label: "Shadow the bank and set up a better look",
-              preview: "Get close enough to understand the danger before you commit.",
-              resultText:
-                "You move along the creek at a crouch, marking where the reeds bend and where the bank narrows. By the time you pick your ground, you know where the creature is most likely to surface.",
-              effects: {
-                storyXp: 3,
-              },
-              nextEvent: buildJourneyCreekTracksFollowUpEvent(),
-            }),
             createJourneyStatChoice({
-              label: "Flush it from cover with stones and noise",
-              preview: "Force the thing to show itself before it chooses the moment.",
-              highlightWord: "Flush",
-              statKey: "might",
-              chanceBase: 0.24,
+              label: "Stalk the trail a little farther",
+              preview: "Keep low and quiet, try not to get caught.",
+              highlightWord: "Stalk",
+              statKey: "finesse",
+              chanceBase: 0.25,
               chancePerStat: 0.09,
               successText:
-                "Your stones and shouting send the creature breaking cover upstream instead of behind you. It is ugly, fast, and very real, but now you know where it hates to stand.",
+                "You safely pass the large lizard like creature, moving lightly yet swiftly enough to not get noticed.",
               failureText:
-                "The noise goes wrong. The reeds explode too close, and the river-lizard learns your scent and your shape before you have chosen a proper line past it.",
+                "A snapped branch gives you away and the the lizard spots you and immediately darts your way. You barely dodge his attack and manage to escape, but not elegantly.",
               successEffects: {
-                storyXp: 4,
+                distance: 10,
+                storyXp: 13,
               },
               failureEffects: {
-                hp: -3,
+                hp: -8,
+                distance: 5,
                 storyXp: 1,
               },
-              successNextEvent: buildJourneyCreekTracksFollowUpEvent({
-                bonusDistance: 2,
-                bonusStoryXp: 1,
-              }),
-              failureNextEvent: buildJourneyCreekTracksFollowUpEvent({
-                failureHpPenalty: 3,
-              }),
             }),
-            createJourneyGuaranteedChoice({
-              label: "Ford upstream and leave the creek to it",
-              preview: "Take the slower ground and deny the predator its easy chance.",
-              resultText:
-                "You give the hunted bank a wide berth, find a colder crossing upstream, and leave the heavy tracks behind without ever seeing what made them.",
-              effects: {
-                distance: 4,
-                storyXp: 4,
+            createJourneyStatChoice({
+              label: "Roar as loud as you can to drive it from the creek",
+              preview: "Channel your inner animal",
+              highlightWord: "Roar",
+              statKey: "might",
+              chanceBase: 0.23,
+              chancePerStat: 0.09,
+              successText:
+                "You jump through the reeds and scream your loudest. Scaring the lizard creature and making him flee.",
+              failureText:
+                "You attempt to scream but a sudden cough catches your throat. A lizard creature spots you and attempts to bite your head off but you manage to block it with your arm. You manage to scramble your way out of a tussle and escape wounded.",
+              successEffects: {
+                distance: 5,
+                storyXp: 14,
+              },
+              failureEffects: {
+                hp: -20,
+                storyXp: 0,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Push past before your nerves win",
+              preview: "Use momentum to outrun whatever lies behind those reeds.",
+              highlightWord: "Push",
+              statKey: "vitality",
+              chanceBase: 0.33,
+              chancePerStat: 0.07,
+              successText:
+                "You keep moving at a hard pace until the creek and the tracks are both behind you. You managed to outrun whatever was back there.",
+              failureText:
+                "You push through and spot a lizard creature. He snaps at your legs as you try to run past him and he manages to bite a chunk into your waist. You shrug it off and keep running, managing to escape the strange beast while in pain.",
+              successEffects: {
+                distance: 10,
+                storyXp: 10,
+              },
+              failureEffects: {
+                distance: 10,
+                hp: -10,
+                storyXp: 2,
               },
             }),
           ],
@@ -4723,54 +4067,73 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
 
     pushCandidate("arrival:watchtower", 2, () => ({
           title: "A collapsed watchtower in the reeds",
-          teaser: "There may still be a route, a locker, or a warning inside, but first you need a way in.",
+          teaser: "Risk the ruin for a route, a stash, or a warning worth having.",
           detail:
-            "You come across a watchtower leaning at an ugly angle above the marsh grass. The lower door is jammed, the ladder is splintered, and old signal marks still cling to the timber. The place might still offer a better route, supplies, or useful warnings, but only if you can first find a way into the part of the ruin that still matters.",
+            "You come across a watchtower leaning at an ugly angle above the marsh grass. The lower door is jammed, the ladder is splintered, and old signal marks still cling to the timber. The place might still offer supplies or a safer route, but only if you can get what you need before more of it gives way.",
           createdAt: eventTime,
           choices: [
-            createJourneyGuaranteedChoice({
-              label: "Probe the frame and find a way inside",
-              preview: "Take the cautious line in and see what the tower still holds.",
-              resultText:
-                "You test the beams one by one, avoid the worst of the rot, and find a way into the part of the tower that has not quite given up yet.",
-              effects: {
-                storyXp: 3,
-              },
-              nextEvent: buildJourneyWatchtowerInteriorEvent(),
-            }),
             createJourneyStatChoice({
-              label: "Thread the broken ladder before the tower settles",
-              preview: "If you move lightly enough, you can claim the best line in first.",
-              highlightWord: "Thread",
-              statKey: "finesse",
-              chanceBase: 0.28,
+              label: "Climb the frame before it gives way",
+              preview: "Risk the old height for a better read of the road.",
+              highlightWord: "Climb",
+              statKey: "vitality",
+              chanceBase: 0.26,
               chancePerStat: 0.08,
               successText:
-                "You slip through the broken ladderwork and find a cleaner line into the tower before the whole ruin remembers it is supposed to fall down.",
+                "You reach the upper ledge, catch a long view of the route ahead, and come down with a clearer line through the next stretch.",
               failureText:
-                "A rotten rung breaks under you and sends a shudder through the whole frame. You still get inside, but now the tower is complaining under every breath you take.",
+                "Halfway up, the frame shudders and drops you back into the reeds. You salvage a glimpse, but not without pain.",
               successEffects: {
-                storyXp: 4,
+                distance: 12,
+                storyXp: 10,
+              },
+              failureEffects: {
+                hp: -7,
+                distance: 4,
+                storyXp: 0,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Force the lower door open",
+              preview: "The quiet route is ruined anyway, so lean into it.",
+              highlightWord: "Force",
+              statKey: "might",
+              chanceBase: 0.3,
+              chancePerStat: 0.08,
+              successText:
+                "The rotten latch gives under your shoulder. Inside, you find a dry corner with a little food and an old watchman's tonic.",
+              failureText:
+                "You batter the door apart, but most of what waited inside has already gone bad. Only scraps remain worth taking.",
+              successEffects: {
+                bonusRations: 1,
+                bonusTonics: 1,
+                storyXp: 9,
               },
               failureEffects: {
                 hp: -3,
-                storyXp: 1,
-              },
-              successNextEvent: buildJourneyWatchtowerInteriorEvent({
-                bonusDistance: 2,
-              }),
-              failureNextEvent: buildJourneyWatchtowerInteriorEvent({
-                collapsePenalty: 2,
-              }),
-            }),
-            createJourneyGuaranteedChoice({
-              label: "Strip the easy salvage from below and move on",
-              preview: "Take the safe scraps and leave the tower its secrets.",
-              resultText:
-                "You pull a little dry food and scrap cord from the lower wreckage, then back away before the tower can make you pay curiosity tax.",
-              effects: {
                 bonusRations: 1,
-                storyXp: 3,
+                storyXp: 0,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Trace the old signal marks",
+              preview: "Let the people who built this place tell you what they saw.",
+              highlightWord: "Trace",
+              statKey: "arcana",
+              chanceBase: 0.24,
+              chancePerStat: 0.09,
+              successText:
+                "The chalk and carved lines resolve into a warning route and a safer one. You leave with a strange little confidence about where to step next.",
+              failureText:
+                "You find a pattern in the marks, but it is only half the truth. The detour helps less than expected, though the lesson stays with you.",
+              successEffects: {
+                distance: 8,
+                bonusSkillPoints: 1,
+                storyXp: 12,
+              },
+              failureEffects: {
+                distance: 3,
+                storyXp: 0,
               },
             }),
           ],
@@ -4919,65 +4282,6 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
     );
   }
 
-  if (state.bossIndex === 1) {
-    pushCandidate("survival:broken-bridge-merchant", 3, () => ({
-          title: "A merchant stranded at a broken bridge",
-          teaser: "He can save the cart or the cargo alone, but not both before dark.",
-          detail:
-            "A marsh-road merchant waves you down beside a half-collapsed plank bridge. His cart is loaded with dried meat, tonic cases, and one lockbox he refuses to abandon. If he cannot move before full dark, raiders will see his lantern and finish the job the bridge started. He offers supplies for help, and more if you can get him moving fast.",
-          createdAt: eventTime,
-          choices: [
-            createJourneyGuaranteedChoice({
-              label: "Help him lighten the cart and plan the crossing",
-              preview: "Take the ordinary pay and get the work moving before dark wins.",
-              resultText:
-                "You help him shift the load, mark the weakest planks, and plan one hard crossing before the road behind you fills with the wrong kind of light.",
-              effects: {
-                bonusRations: 1,
-                storyXp: 3,
-              },
-              nextEvent: buildJourneyBrokenBridgeCrossingEvent(),
-            }),
-            createJourneyStatChoice({
-              label: "Help, but only if he pays better",
-              preview: "Use his fear of the dark road to squeeze a richer deal out of him.",
-              highlightWord: "better",
-              statKey: "resolve",
-              chanceBase: 0.3,
-              chancePerStat: 0.07,
-              successText:
-                "You make him say out loud what the cart and lockbox are really worth. He curses, then agrees to a better split if you get the crossing done tonight.",
-              failureText:
-                "You push for more and get nowhere useful. The merchant agrees to your help, but only on the same thin terms he started with.",
-              successEffects: {
-                bonusRations: 1,
-                storyXp: 4,
-              },
-              failureEffects: {
-                storyXp: 1,
-              },
-              successNextEvent: buildJourneyBrokenBridgeCrossingEvent({
-                bonusRations: 1,
-                bonusTonics: 1,
-              }),
-              failureNextEvent: buildJourneyBrokenBridgeCrossingEvent(),
-            }),
-            createJourneyGuaranteedChoice({
-              label: "Share his fire, then leave him to his crossing",
-              preview: "Rest a little, eat a little, and refuse the cart before it becomes your problem.",
-              resultText:
-                "You share a hot meal by the bridge, let the merchant grumble through his own plans, and leave with more warmth in you than when you arrived.",
-              effects: {
-                hp: 4,
-                hunger: 8,
-                storyXp: 4,
-              },
-            }),
-          ],
-        })
-    );
-  }
-
   if (journeyPhase === "frontier" && currentBagRank < 2 && journeyLevel >= 3) {
     pushCandidate("frontier:abandoned-pack-mule", 4, () => ({
           title: "An abandoned pack frame by the road",
@@ -5118,54 +4422,73 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyPhase === "frontier") {
     pushCandidate("frontier:waystone-cache", 3, () => ({
           title: "A waystone with a hidden compartment",
-          teaser: "There is a cache here, but first you need to work out how earlier travelers hid it.",
+          teaser: "There is a cache here if you can read it, force it, or outthink it.",
           detail:
-            "You come to an old waystone at a fork in the road, etched with faded route marks and a seam near the base where a hidden compartment might once have been tucked away. You are not here to admire it. You are here to decide whether to study the fork, reason out where frightened travelers would hide their best supplies, or take the route clue and keep moving.",
+            "You come to an old waystone at a fork in the road, etched with faded route marks and a seam near the base where a hidden compartment might once have been tucked away. You are not here to admire it. You are deciding whether to read it, force it, or circle around it for whatever useful thing earlier travelers hid behind.",
           createdAt: eventTime,
           choices: [
-            createJourneyGuaranteedChoice({
-              label: "Read the fork and hunt for the hidden seam",
-              preview: "Take the patient approach and find where the stone really opens.",
-              resultText:
-                "You work around the fork slowly, tracing the route marks and the weathering until the false lines stop mattering and the true seam finally gives itself away.",
-              effects: {
-                storyXp: 3,
-              },
-              nextEvent: buildJourneyWaystoneCacheFollowUpEvent(),
-            }),
             createJourneyStatChoice({
-              label: "Think like a frightened traveler and guess the hiding side",
-              preview: "Reason out where someone in a hurry would trust their last good supplies.",
-              highlightWord: "guess",
-              statKey: "resolve",
-              chanceBase: 0.29,
-              chancePerStat: 0.07,
+              label: "Trace the old marks until they mean something",
+              preview: "Let the stone tell you more than distance.",
+              highlightWord: "Trace",
+              statKey: "arcana",
+              chanceBase: 0.25,
+              chancePerStat: 0.09,
               successText:
-                "You stop reading the fork like a sign and start reading it like a decision made under pressure. Once you do, the hiding place feels almost embarrassingly obvious.",
+                "The marks resolve into more than directions: a warning line, a safer turn, and a clue to where travelers once hid supplies.",
               failureText:
-                "You overthink the fork, chase the wrong side first, and disturb more stone than you meant to. You still find the true seam, but now the cache feels touchier than it should.",
+                "You follow the patterns too far into your own guesses and only come away with a partial read and lost time.",
               successEffects: {
-                storyXp: 4,
+                distance: 8,
+                bonusTonics: 1,
+                storyXp: 11,
               },
               failureEffects: {
-                storyXp: 1,
+                distance: 2,
+                storyXp: 0,
               },
-              successNextEvent: buildJourneyWaystoneCacheFollowUpEvent({
-                bonusDistance: 2,
-                bonusRations: 1,
-              }),
-              failureNextEvent: buildJourneyWaystoneCacheFollowUpEvent({
-                failureHpPenalty: 2,
-              }),
             }),
-            createJourneyGuaranteedChoice({
-              label: "Take the route clue and leave the cache sealed",
-              preview: "Use the waystone for guidance, not plunder.",
-              resultText:
-                "You copy the part of the route marks that still make sense, leave the hidden seam unopened, and move on with cleaner direction than you had when you arrived.",
-              effects: {
-                distance: 5,
-                storyXp: 4,
+            createJourneyStatChoice({
+              label: "Pry the base open before the road notices you",
+              preview: "If there is a cache, force will find it faster than patience.",
+              highlightWord: "Pry",
+              statKey: "might",
+              chanceBase: 0.24,
+              chancePerStat: 0.09,
+              successText:
+                "You crack the hidden panel wide enough to pull out a small cache of trail food and a wrapped blade.",
+              failureText:
+                "The stone shifts against you and nearly traps your hand. You wrench it free with only bruises and a few crumbs to show for it.",
+              successEffects: {
+                bonusRations: 2,
+                weaponName: "Traveler's hatchet",
+                storyXp: 10,
+              },
+              failureEffects: {
+                hp: -5,
+                bonusRations: 1,
+                storyXp: 0,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Circle behind the hedgerow and search the blind side",
+              preview: "Use the road's habits against it.",
+              highlightWord: "Circle",
+              statKey: "finesse",
+              chanceBase: 0.29,
+              chancePerStat: 0.08,
+              successText:
+                "You find the stash where most eyes would never look: tucked into the blind side with dry food and a route note worth following.",
+              failureText:
+                "You misjudge the footing on the far side and announce yourself with loose stone. Whatever was hidden there, someone gets to it before you do.",
+              successEffects: {
+                bonusRations: 1,
+                distance: 7,
+                storyXp: 9,
+              },
+              failureEffects: {
+                hunger: -3,
+                storyXp: 0,
               },
             }),
           ],
@@ -5252,141 +4575,81 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   }
 
   if (journeyLevel >= 4 && state.storyFlags.boarDefeated && !hasJourneyClassUnlocked(state, "arcanist")) {
-    if (!hasJourneyCompletedEventKey(state, "class:arcanist-hamlet-hunt")) {
-      pushCandidate("class:arcanist-hamlet-hunt", 4, () => ({
-            title: "A hamlet begs for a night hunt",
-            teaser: "The mayor swears a goblin is raiding the farms and offers a sapphire for help.",
-            detail:
-              "You come across a small hamlet where the pens are half-empty and the villagers look too tired to be angry anymore. Their mayor says a goblin has been slipping through the farms at night, stealing livestock while everyone sleeps, and he is desperate enough to offer a sapphire manastone to whoever ends it. You can take the hunt, press for a better deal, or leave their trouble to the dark.",
-            createdAt: eventTime,
-            choices: [
-              createJourneyGuaranteedChoice({
-                label: "Accept the hunt and prepare the ambush",
-                preview: "Take the mayor's offer, wait for dark, and set the farm for one clean trap.",
-                resultText:
-                  "The mayor presses a tonic into your hand, shows you the raided pens, and helps you set the farm for an ambush before the last light bleeds out of the fields.",
-                effects: {
-                  bonusTonics: 1,
-                  storyXp: 4,
-                },
-                nextEvent: buildJourneyHamletNightHuntEvent(),
-              }),
-              createJourneyStatChoice({
-                label: "Accept the hunt, but only for better pay",
-                preview: "Use the hamlet's fear to squeeze more out of the bargain before you risk your neck.",
-                highlightWord: "better",
-                statKey: "resolve",
-                chanceBase: 0.29,
-                chancePerStat: 0.08,
-                successText:
-                  "You make it plain that a sapphire alone is not enough to buy a night hunt. The mayor hates it, but he sweetens the bargain with extra supplies, a serviceable hatchet, and a tonic before the villagers help you prepare the trapline.",
-                failureText:
-                  "You push for more and find the edge of the mayor's patience. He keeps the offer where it was and sees no reason to hand you even the welcome tonic, but the hunt is still yours if you want it.",
-                successEffects: {
-                  bonusTonics: 1,
-                  storyXp: 5,
-                },
-                failureEffects: {
-                  storyXp: 1,
-                },
-                successNextEvent: buildJourneyHamletNightHuntEvent({
-                  bonusRations: 2,
-                  bonusTonics: 1,
-                  bonusWeaponName: "Traveler's hatchet",
-                }),
-                failureNextEvent: buildJourneyHamletNightHuntEvent(),
-              }),
-              createJourneyGuaranteedChoice({
-                label: "Decline the hunt and stay the night instead",
-                preview: "Their trouble is real, but so is your exhaustion.",
-                resultText:
-                  "You leave the farms to their own dark and take the hamlet's spare cot, hot meal, and washbasin instead. By morning you feel more like yourself, even if the mayor looks through you on the way out.",
-                effects: {
-                  hp: 6,
-                  hunger: 10,
-                  storyXp: 4,
-                },
-              }),
-            ],
-          })
-      );
-    } else {
-      pushCandidate("class:arcanist-shrine", 3, () => ({
-            title: "A whispering shrine",
-            teaser: "The stones hum around a sapphire hidden in the springlight.",
-            detail:
-              "You find half-buried stones circling a shallow spring. In the water rests a sapphire the size of a thumbnail, untouched by moss or silt. When you reach toward it, the whole ring of stone tightens around your hand as if waiting to see whether you can bear the attention.",
-            createdAt: eventTime,
-            choices: [
-              createJourneyStatChoice({
-                label: "Trace the current around the sapphire",
-                preview: "Follow the shrine's strange logic until the stone answers.",
-                highlightWord: "Trace",
-                statKey: "arcana",
-                chanceBase: 0.22,
-                chancePerStat: 0.1,
-                successText:
-                  "You stop fighting the sensation and let the shrine's strange logic pass through you. When you lift the sapphire free, it feels less like treasure and more like a sealed instruction.",
-                failureText:
-                  "You brush the edge of understanding before the current slips away. The sapphire remains beyond you, but even the incomplete lesson changes how the air feels around your hands.",
-                successEffects: {
-                  hunger: -3,
-                  storyXp: 22,
-                  bonusTonics: 1,
-                  manastoneKey: "sapphire_manastone",
-                },
-                failureEffects: {
-                  hp: -2,
-                  storyXp: 0,
-                  bonusTonics: 1,
-                },
-              }),
-              createJourneyStatChoice({
-                label: "Endure the pressure and close your hand around it",
-                preview: "Survive the shrine's refusal until it lets you keep the gem.",
-                highlightWord: "Endure",
-                statKey: "vitality",
-                chanceBase: 0.24,
-                chancePerStat: 0.09,
-                successText:
-                  "The force of the shrine presses through you like cold iron, but you hold on until the pattern settles. When the pain finally loosens, the sapphire is waiting in your palm.",
-                failureText:
-                  "The pressure throws you back before the stone will yield. You recover, shaken but empty-handed.",
-                successEffects: {
-                  hp: 6,
-                  storyXp: 19,
-                  manastoneKey: "sapphire_manastone",
-                },
-                failureEffects: {
-                  hp: -4,
-                  storyXp: 0,
-                },
-              }),
-              createJourneyStatChoice({
-                label: "Center your breath and let the shrine choose",
-                preview: "Meet the place with patience until the stone decides whether to trust you.",
-                highlightWord: "Center",
-                statKey: "resolve",
-                chanceBase: 0.27,
-                chancePerStat: 0.08,
-                successText:
-                  "You quiet yourself until the shrine stops feeling distant. The sapphire rises through the water without splash or ripple and settles into your waiting hand.",
-                failureText:
-                  "You find stillness for a moment, then lose it. The shrine gives you only a passing blessing before the silence breaks.",
-                successEffects: {
-                  hp: 8,
-                  storyXp: 18,
-                  manastoneKey: "sapphire_manastone",
-                },
-                failureEffects: {
-                  hp: 2,
-                  storyXp: 0,
-                },
-              }),
-            ],
-          })
-      );
-    }
+    pushCandidate("class:arcanist-shrine", 3, () => ({
+          title: "A whispering shrine",
+          teaser: "The stones hum around a sapphire hidden in the springlight.",
+          detail:
+            "You find half-buried stones circling a shallow spring. In the water rests a sapphire the size of a thumbnail, untouched by moss or silt. When you reach toward it, the whole ring of stone tightens around your hand as if waiting to see whether you can bear the attention.",
+          createdAt: eventTime,
+          choices: [
+            createJourneyStatChoice({
+              label: "Trace the current around the sapphire",
+              preview: "Follow the shrine's strange logic until the stone answers.",
+              highlightWord: "Trace",
+              statKey: "arcana",
+              chanceBase: 0.22,
+              chancePerStat: 0.1,
+              successText:
+                "You stop fighting the sensation and let the shrine's strange logic pass through you. When you lift the sapphire free, it feels less like treasure and more like a sealed instruction.",
+              failureText:
+                "You brush the edge of understanding before the current slips away. The sapphire remains beyond you, but even the incomplete lesson changes how the air feels around your hands.",
+              successEffects: {
+                hunger: -3,
+                storyXp: 22,
+                bonusTonics: 1,
+                manastoneKey: "sapphire_manastone",
+              },
+              failureEffects: {
+                hp: -2,
+                storyXp: 0,
+                bonusTonics: 1,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Endure the pressure and close your hand around it",
+              preview: "Survive the shrine's refusal until it lets you keep the gem.",
+              highlightWord: "Endure",
+              statKey: "vitality",
+              chanceBase: 0.24,
+              chancePerStat: 0.09,
+              successText:
+                "The force of the shrine presses through you like cold iron, but you hold on until the pattern settles. When the pain finally loosens, the sapphire is waiting in your palm.",
+              failureText:
+                "The pressure throws you back before the stone will yield. You recover, shaken but empty-handed.",
+              successEffects: {
+                hp: 6,
+                storyXp: 19,
+                manastoneKey: "sapphire_manastone",
+              },
+              failureEffects: {
+                hp: -4,
+                storyXp: 0,
+              },
+            }),
+            createJourneyStatChoice({
+              label: "Center your breath and let the shrine choose",
+              preview: "Meet the place with patience until the stone decides whether to trust you.",
+              highlightWord: "Center",
+              statKey: "resolve",
+              chanceBase: 0.27,
+              chancePerStat: 0.08,
+              successText:
+                "You quiet yourself until the shrine stops feeling distant. The sapphire rises through the water without splash or ripple and settles into your waiting hand.",
+              failureText:
+                "You find stillness for a moment, then lose it. The shrine gives you only a passing blessing before the silence breaks.",
+              successEffects: {
+                hp: 8,
+                storyXp: 18,
+                manastoneKey: "sapphire_manastone",
+              },
+              failureEffects: {
+                hp: 2,
+                storyXp: 0,
+              },
+            }),
+          ],
+        })
+    );
   }
 
   if (journeyLevel >= 3 && state.storyFlags.foundWeapon && !hasJourneyClassUnlocked(state, "rogue")) {
@@ -5538,56 +4801,75 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
   if (journeyPhase === "frontier") {
     pushCandidate("frontier:rope-ferry", 3, () => ({
           title: "A rope ferry over black water",
-          teaser: "The crossing is still usable, but first you need to decide how you are going to commit to it.",
+          teaser: "The crossing is still usable, but only just.",
           detail:
-            "You come to a flat ferry platform tethered to a rope as thick as your wrist. The black water below is fast, mean, and loud enough to make every bad outcome feel possible. You can prepare the crossing properly, gamble on a quick repair before you shove off, or wait for better light and refuse the river for now.",
+            "You come to a flat ferry platform tethered to a rope as thick as your wrist. The black water below is fast, mean, and loud enough to make every bad outcome feel possible.",
           createdAt: eventTime,
           choices: [
-            createJourneyGuaranteedChoice({
-              label: "Lighten your load and push off before dark",
-              preview: "Commit to the crossing cleanly and deal with the river midstream.",
-              resultText:
-                "You shift your pack, test the plank underfoot, and shove off while there is still enough light to hate what the water is doing.",
-              effects: {
-                storyXp: 3,
+            createJourneyStatChoice({
+              label: "Haul the ferry hand over hand",
+              preview: "Beat the current with stubborn muscle.",
+              highlightWord: "Haul",
+              statKey: "might",
+              chanceBase: 0.25,
+              chancePerStat: 0.08,
+              successText:
+                "You drag the ferry across inch by inch, shoulders burning, but you reach the far side with your gear and pride both intact.",
+              failureText:
+                "The rope jerks, your footing goes wild, and the crossing turns into a bruising, ugly fight for balance before you scrape through.",
+              successEffects: {
+                distance: 12,
+                storyXp: 12,
               },
-              nextEvent: buildJourneyRopeFerryCrossingEvent(),
+              failureEffects: {
+                hp: -9,
+                distance: 5,
+                storyXp: 1,
+              },
             }),
             createJourneyStatChoice({
-              label: "Re-rig the guide rope before you board",
-              preview: "A cleaner crossing starts with admitting the ferry is half-broken.",
-              highlightWord: "Re-rig",
+              label: "Work the pulleys and knots first",
+              preview: "Let clever hands do what brute force cannot.",
+              highlightWord: "knots",
               statKey: "finesse",
               chanceBase: 0.29,
               chancePerStat: 0.08,
               successText:
-                "You free the jammed guide ring, re-seat the worst of the knots, and recover a ferryman's tonic tin from under the rail while you work. The crossing still looks ugly, just less doomed than it did a minute ago.",
+                "You re-seat the slipping knots, free the jammed guide ring, and make the whole crossing almost respectable before you trust it with your life.",
               failureText:
-                "You improve part of the rig and make another part worse without meaning to. The ferry is still your only way over, but now it feels meaner than before.",
+                "You fix part of the rig and miss the worst of it. The ferry still gets you across, just with one sudden lurch that nearly throws you to the water.",
               successEffects: {
+                distance: 14,
                 bonusTonics: 1,
-                storyXp: 4,
+                storyXp: 11,
               },
               failureEffects: {
-                hp: -3,
+                hp: -4,
+                distance: 6,
                 storyXp: 1,
               },
-              successNextEvent: buildJourneyRopeFerryCrossingEvent({
-                bonusDistance: 2,
-              }),
-              failureNextEvent: buildJourneyRopeFerryCrossingEvent({
-                failureHpPenalty: 3,
-              }),
             }),
-            createJourneyGuaranteedChoice({
-              label: "Camp on the bank and cross at first light",
-              preview: "Refuse the river tonight and take the steadier road tomorrow.",
-              resultText:
-                "You build a mean little camp above the bank, eat while the river snarls in the dark, and wait for morning light before trusting the crossing with your body.",
-              effects: {
-                hp: 4,
-                hunger: 6,
-                storyXp: 4,
+            createJourneyStatChoice({
+              label: "Listen to the current before committing",
+              preview: "Find the crossing rhythm hidden under the noise.",
+              highlightWord: "Listen",
+              statKey: "arcana",
+              chanceBase: 0.23,
+              chancePerStat: 0.09,
+              successText:
+                "You catch a strange pattern in the current and time the pull with it, as though the water is willing to lend you one careful favor.",
+              failureText:
+                "You think you hear a pattern, but it breaks under you halfway out. The far bank still takes you, though not gently.",
+              successEffects: {
+                distance: 13,
+                bonusRations: 1,
+                storyXp: 13,
+              },
+              failureEffects: {
+                hp: -5,
+                hunger: -3,
+                distance: 6,
+                storyXp: 1,
               },
             }),
           ],
@@ -6272,9 +5554,7 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
   const check = resolveJourneyChoiceCheck(choice, journeyStats);
   const success = check.success;
   const effects = success ? choice.successEffects : choice.failureEffects;
-  const nextEventTemplate = getJourneyChoiceNextEventTemplate(choice, success);
   const notes = [];
-  let queuedNextEvent = null;
   const hpDelta = scaleJourneyEventHpDelta(effects.hp);
   const storyXpDelta = success
     ? scaleJourneyEventStoryXp(effects.storyXp, state.bossIndex)
@@ -6338,7 +5618,6 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
   const resultText = success ? choice.successText : choice.failureText;
   addJourneyLog(state, resultText, atIso);
 
-  let sentToTown = false;
   if (
     state.currentHp <= journeyStats.maxHp * 0.12 ||
     state.currentHunger <= journeyStats.maxHunger * 0.08
@@ -6352,12 +5631,10 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
       journeyStats.level,
       journeyStats
     );
-    sentToTown = true;
   }
 
   if (
     !success &&
-    !nextEventTemplate &&
     effects.hp >= 0 &&
     effects.hunger >= 0 &&
     effects.distance >= 0 &&
@@ -6372,10 +5649,6 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
     notes.push("The failed attempt still drained more out of you than you expected.");
   }
 
-  if (!sentToTown && nextEventTemplate) {
-    queuedNextEvent = queueJourneyFollowUpEvent(state, nextEventTemplate, atIso);
-  }
-
   const finalText = notes.length
     ? `${resultText} ${notes.join(" ")}`
     : resultText;
@@ -6384,8 +5657,6 @@ export function applyJourneyChoiceEffects(state, choice, journeyStats, atIso) {
     ...check,
     resultText: finalText,
     showRollSummary: !choice.forceSuccess,
-    nextEventId: queuedNextEvent?.id || "",
-    nextEventTitle: queuedNextEvent?.title || "",
   };
 }
 
