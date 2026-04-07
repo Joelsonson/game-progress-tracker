@@ -583,12 +583,37 @@ function withJourneyChoiceDifficultyContext(roadIndex, build) {
   }
 }
 
-function getJourneyTierDifficultyBand(roadIndex) {
-  const normalizedRoadIndex = Math.max(0, Math.floor(Number(roadIndex) || 0));
-  const bandMin = 8 + Math.floor((normalizedRoadIndex + 1) / 2);
+function getJourneyStretchNumber(roadIndex) {
+  return Math.max(1, Math.floor(Number(roadIndex) || 0) + 1);
+}
+
+function getJourneyStretchLevelDelta(roadIndex, journeyLevel) {
+  return (
+    Math.max(1, Math.floor(Number(journeyLevel) || 1)) -
+    getJourneyStretchNumber(roadIndex)
+  );
+}
+
+function getJourneyTierDifficultyBand(roadIndex, journeyLevel = 1) {
+  const stretchLevelDelta = getJourneyStretchLevelDelta(roadIndex, journeyLevel);
+
+  if (stretchLevelDelta < 0) {
+    return {
+      min: 13,
+      max: 18,
+    };
+  }
+
+  if (stretchLevelDelta === 0) {
+    return {
+      min: 10,
+      max: 14,
+    };
+  }
+
   return {
-    min: bandMin,
-    max: bandMin + 4,
+    min: 7,
+    max: 10,
   };
 }
 
@@ -597,9 +622,10 @@ function getJourneyGeneratedDifficultyClass({
   minChance = 0.14,
   maxChance = 0.9,
   roadIndex = journeyChoiceDifficultyRoadIndex,
+  journeyLevel = 1,
   bossCheck = false,
 } = {}) {
-  const band = getJourneyTierDifficultyBand(roadIndex);
+  const band = getJourneyTierDifficultyBand(roadIndex, journeyLevel);
   const normalizedChanceBase = clamp(
     Number.isFinite(Number(chanceBase)) ? Number(chanceBase) : 0.24,
     0.05,
@@ -617,7 +643,7 @@ function getJourneyGeneratedDifficultyClass({
     difficultyBias += 0.08;
   }
 
-  const cappedMax = band.max + (difficultyBias >= 0.9 ? 1 : 0);
+  const cappedMax = band.max;
   const scaledDc =
     band.min + Math.round(clamp(difficultyBias, 0, 1) * (cappedMax - band.min));
 
@@ -749,6 +775,10 @@ export function buildJourneySupplies(games, sessions, state) {
 
 export function buildJourneyStretchChallenge(state, journeyStats) {
   const boss = getJourneyBoss(state.bossIndex);
+  const stretchLevelDelta = getJourneyStretchLevelDelta(
+    state.bossIndex,
+    journeyStats.level
+  );
   const hpRatio = journeyStats.maxHp
     ? clamp(state.currentHp / journeyStats.maxHp, 0, 1)
     : 0;
@@ -769,12 +799,18 @@ export function buildJourneyStretchChallenge(state, journeyStats) {
   const earlyStretchGrace =
     state.bossIndex === 0 ? 0.07 : state.bossIndex === 1 ? 0.03 : 0;
   const laterStretchPressure = Math.min(0.18, state.bossIndex * 0.015);
+  const stretchLevelAdjustment =
+    stretchLevelDelta < 0
+      ? Math.max(-0.18, stretchLevelDelta * 0.08)
+      : stretchLevelDelta > 0
+        ? Math.min(0.12, stretchLevelDelta * 0.04)
+        : 0;
   const healthPenalty = (1 - hpRatio) * 0.24;
   const hungerPenalty = (1 - hungerRatio) * 0.09;
   const successChance = clamp(
     0.1 +
       powerRatio * 0.5 +
-      Math.max(0, journeyStats.level - state.bossIndex) * 0.016 +
+      stretchLevelAdjustment +
       earlyStretchGrace -
       laterStretchPressure -
       healthPenalty -
@@ -2163,13 +2199,7 @@ function buildJourneyStretchBossBattleEvent(
         bossCheck: true,
         difficultyClass: Number.isFinite(Number(move.difficultyClass))
           ? Math.round(Number(move.difficultyClass))
-          : getJourneyGeneratedDifficultyClass({
-              chanceBase: move.chanceBase,
-              minChance: move.minChance,
-              maxChance: move.maxChance,
-              roadIndex: state.bossIndex,
-              bossCheck: true,
-            }),
+          : undefined,
         chanceBase: move.chanceBase,
         chancePerStat: move.chancePerStat,
         minChance: move.minChance,
@@ -3617,11 +3647,7 @@ function createJourneyStatChoice({
     difficultyClass:
       Number.isFinite(Number(difficultyClass))
         ? Math.round(Number(difficultyClass))
-        : getJourneyGeneratedDifficultyClass({
-            chanceBase,
-            minChance,
-            maxChance,
-          }),
+        : undefined,
     chanceBase,
     chancePerStat,
     minChance,
@@ -5510,7 +5536,11 @@ export function maybeAddAmbientJourneyLog(state, atDate) {
   );
 }
 
-export function getJourneyChoiceSuccessChance(choice, journeyStats) {
+export function getJourneyChoiceSuccessChance(
+  choice,
+  journeyStats,
+  journeyLevel = journeyStats?.level
+) {
   if (!choice?.statKey || !JOURNEY_STAT_META[choice.statKey] || choice.forceSuccess) {
     return 1;
   }
@@ -5518,14 +5548,14 @@ export function getJourneyChoiceSuccessChance(choice, journeyStats) {
   const rollModifier = Math.round(
     Number(journeyStats?.statBreakdown?.[choice.statKey]?.rollModifier) || 0
   );
-  const difficultyClass = getJourneyChoiceDifficultyClass(choice);
+  const difficultyClass = getJourneyChoiceDifficultyClass(choice, journeyLevel);
   const successChance =
     (21 - (difficultyClass - rollModifier)) / 20;
 
   return clamp(successChance, 0.05, 0.95);
 }
 
-export function getJourneyChoiceDifficultyClass(choice) {
+export function getJourneyChoiceDifficultyClass(choice, journeyLevel = 1) {
   if (!choice?.statKey || !JOURNEY_STAT_META[choice.statKey] || choice.forceSuccess) {
     return 0;
   }
@@ -5549,11 +5579,16 @@ export function getJourneyChoiceDifficultyClass(choice) {
     minChance: choice.minChance,
     maxChance: choice.maxChance,
     roadIndex: choice.roadIndex,
+    journeyLevel,
     bossCheck: choice.bossCheck,
   });
 }
 
-function resolveJourneyChoiceCheck(choice, journeyStats) {
+function resolveJourneyChoiceCheck(
+  choice,
+  journeyStats,
+  journeyLevel = journeyStats?.level
+) {
   const statKey = JOURNEY_STAT_META[choice?.statKey] ? choice.statKey : "resolve";
   const statLabel = JOURNEY_STAT_META[statKey].label;
   const statValue = Math.max(1, Math.round(Number(journeyStats?.stats?.[statKey]) || 0));
@@ -5561,8 +5596,12 @@ function resolveJourneyChoiceCheck(choice, journeyStats) {
     Number(journeyStats?.statBreakdown?.[statKey]?.rollModifier) ||
       getJourneyRollModifier(statValue)
   );
-  const difficultyClass = getJourneyChoiceDifficultyClass(choice);
-  const successChance = getJourneyChoiceSuccessChance(choice, journeyStats);
+  const difficultyClass = getJourneyChoiceDifficultyClass(choice, journeyLevel);
+  const successChance = getJourneyChoiceSuccessChance(
+    choice,
+    journeyStats,
+    journeyLevel
+  );
 
   if (choice?.forceSuccess || !choice?.statKey || !JOURNEY_STAT_META[choice.statKey]) {
     return {
