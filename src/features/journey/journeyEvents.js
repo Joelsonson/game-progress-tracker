@@ -9,6 +9,10 @@ import {
 export function normalizeJourneyEvent(eventEntry, nowIso) {
   if (!eventEntry || typeof eventEntry !== "object") return null;
 
+  const eventKey = String(
+    eventEntry.eventKey || eventEntry.key || eventEntry.title || "journey-event"
+  );
+
   const choices = Array.isArray(eventEntry.choices)
     ? eventEntry.choices
         .map((choice) => normalizeJourneyChoice(choice))
@@ -19,9 +23,7 @@ export function normalizeJourneyEvent(eventEntry, nowIso) {
 
   return {
     id: String(eventEntry.id || crypto.randomUUID()),
-    eventKey: String(
-      eventEntry.eventKey || eventEntry.key || eventEntry.title || "journey-event"
-    ),
+    eventKey,
     kind:
       eventEntry.kind === "aid"
         ? "aid"
@@ -33,6 +35,13 @@ export function normalizeJourneyEvent(eventEntry, nowIso) {
     title: String(eventEntry.title || "Journey event"),
     teaser: String(eventEntry.teaser || "A choice is waiting."),
     detail: String(eventEntry.detail || eventEntry.teaser || ""),
+    detailBeforeImage: String(eventEntry.detailBeforeImage || ""),
+    detailAfterImage: String(eventEntry.detailAfterImage || ""),
+    imageName: normalizeJourneyEventImageName(
+      eventEntry.imageName,
+      buildJourneyDefaultEventImageName(eventKey)
+    ),
+    imageAlt: String(eventEntry.imageAlt || eventEntry.title || "Journey event art"),
     createdAt: eventEntry.createdAt || nowIso,
     previousOutcome: normalizeJourneyEventPreviousOutcome(eventEntry.previousOutcome),
     battle: normalizeJourneyBattleState(eventEntry.battle),
@@ -111,6 +120,22 @@ export function normalizeJourneyChoice(choice) {
 function normalizeJourneyChoiceEventTemplate(eventEntry) {
   if (!eventEntry || typeof eventEntry !== "object") return null;
   return normalizeJourneyEvent(eventEntry, new Date().toISOString());
+}
+
+function buildJourneyDefaultEventImageName(eventKey) {
+  const safeKey = String(eventKey || "")
+    .trim()
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
+  return safeKey ? `${safeKey}.png` : "";
+}
+
+function normalizeJourneyEventImageName(imageName, fallback = "") {
+  const explicitName =
+    typeof imageName === "string" ? imageName.trim() : "";
+  if (explicitName) return explicitName;
+  return typeof fallback === "string" ? fallback.trim() : "";
 }
 
 function normalizeJourneyEventPreviousOutcome(rawPreviousOutcome) {

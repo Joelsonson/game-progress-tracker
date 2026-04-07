@@ -2664,6 +2664,26 @@
   color: var(--accent-2);
 }
 
+.journey-event-art {
+  margin: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(var(--accent-rgb), 0.16);
+  background:
+    linear-gradient(180deg, rgba(var(--panel-rgb), 0.76), rgba(var(--surface-rgb), 0.62)),
+    rgba(var(--panel-rgb), 0.48);
+  box-shadow:
+    0 12px 24px rgba(var(--ink-rgb), 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.journey-event-art-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
 .journey-battle-panel {
   gap: 16px;
 }

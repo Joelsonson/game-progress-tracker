@@ -1306,8 +1306,45 @@ function renderJourneyEventPanel(eventEntry) {
   return `
     <div class="journey-event-panel">
       ${renderJourneyEventOutcomeBridge(eventEntry?.previousOutcome)}
-      <p>${escapeHtml(eventEntry?.detail || "")}</p>
+      ${renderJourneyEventStoryBody(eventEntry)}
     </div>
+  `;
+}
+
+function renderJourneyEventStoryBody(eventEntry) {
+  const leadText = String(
+    eventEntry?.detailBeforeImage || eventEntry?.detail || ""
+  ).trim();
+  const trailText = String(eventEntry?.detailAfterImage || "").trim();
+
+  return `
+    ${leadText ? `<p>${escapeHtml(leadText)}</p>` : ""}
+    ${renderJourneyEventArt(eventEntry)}
+    ${trailText ? `<p>${escapeHtml(trailText)}</p>` : ""}
+  `;
+}
+
+function renderJourneyEventArt(eventEntry) {
+  const imageName = String(eventEntry?.imageName || "").trim();
+  if (!imageName) return "";
+
+  const imageSrc = `./assets/journey/eventimages/${encodeURIComponent(imageName)}`;
+  const imageAlt = String(
+    eventEntry?.imageAlt || eventEntry?.title || "Journey event art"
+  ).trim();
+
+  return `
+    <figure class="journey-event-art" hidden>
+      <img
+        class="journey-event-art-image"
+        src="${escapeAttribute(imageSrc)}"
+        alt="${escapeAttribute(imageAlt)}"
+        loading="lazy"
+        decoding="async"
+        onload="this.parentElement.hidden = false"
+        onerror="this.parentElement.remove()"
+      />
+    </figure>
   `;
 }
 
@@ -1358,7 +1395,7 @@ function renderJourneyBossBattlePanel(eventEntry) {
   if (!battle) {
     return `
       <div class="journey-event-panel">
-        <p>${escapeHtml(eventEntry?.detail || "")}</p>
+        ${renderJourneyEventStoryBody(eventEntry)}
       </div>
     `;
   }
@@ -1397,7 +1434,7 @@ function renderJourneyBossBattlePanel(eventEntry) {
         </div>
       </div>
       <div class="journey-battle-copy">
-        <p>${escapeHtml(eventEntry.detail)}</p>
+        ${renderJourneyEventStoryBody(eventEntry)}
       </div>
     </div>
   `;

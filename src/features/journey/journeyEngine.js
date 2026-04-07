@@ -79,9 +79,66 @@ const JOURNEY_BOSS_NAMES_JA = [
   "門楼の亡霊",
   "灰降りのキメラ",
 ];
+const JOURNEY_EVENT_MEDIA_OVERRIDES = {
+  "class:arcanist-hamlet-hunt": {
+    imageName: "hamlet.png",
+    imageAlt: "A worried hamlet mayor asking a traveler for help.",
+    detailBeforeImage:
+      "You come across a small hamlet where the pens are half-empty and the villagers look too tired to be angry anymore.",
+    detailAfterImage:
+      "Their mayor says a goblin has been slipping through the farms at night, stealing livestock while everyone sleeps, and he is desperate enough to offer a sapphire manastone to whoever ends it. You can take the hunt, press for a better deal, or leave their trouble to the dark.",
+  },
+  "class:arcanist-hamlet-hunt:stakeout": {
+    imageName: "hamlet2.png",
+    imageAlt: "A raided farm at dusk with the barn in view from the shadows.",
+    detailBeforeImage:
+      "It's dusk and you have set traps around the farm, hidden inside an unlit shed with one good view of the barn.",
+    detailAfterImage:
+      "A shape slips over the fence, notices the disturbed earth at once, and avoids the traps with practiced caution. Whatever this thief is, it is no mindless goblin. It knows something is wrong and is still heading for the sleeping livestock.",
+  },
+};
 
 function isJourneyJapaneseLocale() {
   return getCurrentLocale() === "ja";
+}
+
+function applyJourneyEventMedia(eventEntry) {
+  if (!eventEntry || typeof eventEntry !== "object") return eventEntry;
+
+  const eventKey = String(
+    eventEntry.eventKey || eventEntry.key || eventEntry.title || ""
+  ).trim();
+  const mediaOverride = JOURNEY_EVENT_MEDIA_OVERRIDES[eventKey] || {};
+
+  return {
+    ...eventEntry,
+    imageName:
+      typeof eventEntry.imageName === "string" && eventEntry.imageName.trim()
+        ? eventEntry.imageName.trim()
+        : typeof mediaOverride.imageName === "string"
+          ? mediaOverride.imageName.trim()
+          : "",
+    imageAlt:
+      typeof eventEntry.imageAlt === "string" && eventEntry.imageAlt.trim()
+        ? eventEntry.imageAlt.trim()
+        : typeof mediaOverride.imageAlt === "string"
+          ? mediaOverride.imageAlt.trim()
+          : "",
+    detailBeforeImage:
+      typeof eventEntry.detailBeforeImage === "string" &&
+      eventEntry.detailBeforeImage.trim()
+        ? eventEntry.detailBeforeImage.trim()
+        : typeof mediaOverride.detailBeforeImage === "string"
+          ? mediaOverride.detailBeforeImage.trim()
+          : "",
+    detailAfterImage:
+      typeof eventEntry.detailAfterImage === "string" &&
+      eventEntry.detailAfterImage.trim()
+        ? eventEntry.detailAfterImage.trim()
+        : typeof mediaOverride.detailAfterImage === "string"
+          ? mediaOverride.detailAfterImage.trim()
+          : "",
+  };
 }
 
 export async function syncJourneyState(rawState, games, sessions, xpSummary) {
@@ -351,7 +408,7 @@ export function normalizeJourneyState(rawState = null) {
     pendingEvents: Array.isArray(source.pendingEvents)
       ? source.pendingEvents
           .slice(0, JOURNEY_PENDING_EVENT_LIMIT)
-          .map((entry) => normalizeJourneyEvent(entry, nowIso))
+          .map((entry) => normalizeJourneyEvent(applyJourneyEventMedia(entry), nowIso))
           .filter(Boolean)
       : [],
     recentEventKeys: Array.isArray(source.recentEventKeys)
@@ -3576,12 +3633,12 @@ export function maybeQueueJourneyEvent(state, atDate, journeyLevel, journeyConte
   }
 
   const nextEvent = normalizeJourneyEvent(
-    {
+    applyJourneyEventMedia({
       ...selected.build(),
       eventKey: selected.key,
       kind: selected.kind,
       repeatable: selected.repeatable,
-    },
+    }),
     atDate.toISOString()
   );
   if (!nextEvent) return;
@@ -3688,12 +3745,12 @@ function queueJourneyFollowUpEvent(
   }
 
   const nextEvent = normalizeJourneyEvent(
-    {
+    applyJourneyEventMedia({
       ...nextEventTemplate,
       id: crypto.randomUUID(),
       createdAt: atIso,
       previousOutcome,
-    },
+    }),
     atIso
   );
   if (!nextEvent) return null;
