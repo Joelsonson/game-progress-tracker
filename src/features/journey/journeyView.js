@@ -1328,11 +1328,11 @@ function renderJourneyEventArt(eventEntry) {
   const imageName = String(eventEntry?.imageName || "").trim();
   if (!imageName) return "";
 
-  const imageSrc = `./assets/journey/eventimages/${encodeURI(imageName)}`;
+  const imageSrc = `./assets/journey/eventimages/${encodeURIComponent(imageName)}`;
   const fallbackName = String(eventEntry?.imageFallbackName || "").trim();
   const fallbackSrc =
     fallbackName && fallbackName !== imageName
-      ? `./assets/journey/eventimages/${encodeURI(fallbackName)}`
+      ? `./assets/journey/eventimages/${encodeURIComponent(fallbackName)}`
       : "";
   const imageAlt = String(
     eventEntry?.imageAlt || eventEntry?.title || "Journey event art"
