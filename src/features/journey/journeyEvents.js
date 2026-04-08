@@ -12,6 +12,12 @@ export function normalizeJourneyEvent(eventEntry, nowIso) {
   const eventKey = String(
     eventEntry.eventKey || eventEntry.key || eventEntry.title || "journey-event"
   );
+  const resolvedDetail = String(eventEntry.detail || eventEntry.teaser || "");
+  const splitDetail = splitJourneyEventDetailForImage({
+    detail: resolvedDetail,
+    detailBeforeImage: eventEntry.detailBeforeImage,
+    detailAfterImage: eventEntry.detailAfterImage,
+  });
 
   const choices = Array.isArray(eventEntry.choices)
     ? eventEntry.choices
@@ -34,9 +40,9 @@ export function normalizeJourneyEvent(eventEntry, nowIso) {
     autoResolve: Boolean(eventEntry.autoResolve),
     title: String(eventEntry.title || "Journey event"),
     teaser: String(eventEntry.teaser || "A choice is waiting."),
-    detail: String(eventEntry.detail || eventEntry.teaser || ""),
-    detailBeforeImage: String(eventEntry.detailBeforeImage || ""),
-    detailAfterImage: String(eventEntry.detailAfterImage || ""),
+    detail: splitDetail.detail,
+    detailBeforeImage: splitDetail.detailBeforeImage,
+    detailAfterImage: splitDetail.detailAfterImage,
     imageName: normalizeJourneyEventImageName(
       eventEntry.imageName,
       buildJourneyDefaultEventImageName(eventKey)
@@ -126,6 +132,50 @@ function normalizeJourneyChoiceEventTemplate(eventEntry) {
   return normalizeJourneyEvent(eventEntry, new Date().toISOString());
 }
 
+function splitJourneyEventDetailForImage({
+  detail = "",
+  detailBeforeImage = "",
+  detailAfterImage = "",
+} = {}) {
+  const explicitLead =
+    typeof detailBeforeImage === "string" ? detailBeforeImage.trim() : "";
+  const explicitTrail =
+    typeof detailAfterImage === "string" ? detailAfterImage.trim() : "";
+  const detailText =
+    typeof detail === "string" ? stripJourneyEventImageMarker(detail) : "";
+
+  if (explicitLead || explicitTrail) {
+    return {
+      detail: detailText,
+      detailBeforeImage: explicitLead,
+      detailAfterImage: explicitTrail,
+    };
+  }
+
+  const rawDetail = typeof detail === "string" ? detail : "";
+  const markerMatch = /\[image\]/i.exec(rawDetail);
+  if (!markerMatch) {
+    return {
+      detail: detailText,
+      detailBeforeImage: "",
+      detailAfterImage: "",
+    };
+  }
+
+  const leadText = stripJourneyEventImageMarker(
+    rawDetail.slice(0, markerMatch.index)
+  );
+  const trailText = stripJourneyEventImageMarker(
+    rawDetail.slice(markerMatch.index + markerMatch[0].length)
+  );
+
+  return {
+    detail: [leadText, trailText].filter(Boolean).join(" ").trim(),
+    detailBeforeImage: leadText,
+    detailAfterImage: trailText,
+  };
+}
+
 function buildJourneyDefaultEventImageName(eventKey) {
   const safeKey = String(eventKey || "").trim();
   return safeKey ? `${safeKey}.png` : "";
@@ -145,6 +195,13 @@ function normalizeJourneyEventImageName(imageName, fallback = "") {
     typeof imageName === "string" ? imageName.trim() : "";
   if (explicitName) return explicitName;
   return typeof fallback === "string" ? fallback.trim() : "";
+}
+
+function stripJourneyEventImageMarker(text) {
+  return String(text || "")
+    .replace(/\s*\[image\]\s*/gi, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 function normalizeJourneyEventPreviousOutcome(rawPreviousOutcome) {

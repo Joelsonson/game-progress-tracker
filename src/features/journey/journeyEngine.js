@@ -80,6 +80,12 @@ const JOURNEY_BOSS_NAMES_JA = [
   "灰降りのキメラ",
 ];
 const JOURNEY_EVENT_MEDIA_OVERRIDES = {
+  "arrival:tracks": {
+    imageAlt: "Fresh predator tracks along a churned creek bank.",
+  },
+  "arrival:watchtower": {
+    imageAlt: "A collapsed watchtower leaning over marsh reeds.",
+  },
   "class:arcanist-hamlet-hunt": {
     imageAlt: "A worried hamlet mayor asking a traveler for help.",
     detailBeforeImage:
@@ -4727,7 +4733,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
           title: "You spot some heavy tracks near the creek",
           teaser: "Something large is hunting this bank, and the crossing is no longer simple.",
           detail:
-            "You find fresh prints cut deep into the mud beside the creek. The reeds ahead are flattened, the bank is churned, and something heavy has been using this place as a feeding ground. You still need to get past the water, but first you have to decide whether to set up the encounter, provoke it, or give the whole bank a wider berth.",
+            "You find fresh prints cut deep into the mud beside the creek. The reeds ahead are flattened, the bank is churned, and something heavy has been using this place as a feeding ground. [image] You still need to get past the water, but first you have to decide whether to set up the encounter, provoke it, or give the whole bank a wider berth.",
           createdAt: eventTime,
           choices: [
             createJourneyGuaranteedChoice({
@@ -4786,7 +4792,7 @@ export function getJourneyEventCandidates(state, journeyLevel, atDate, _journeyC
           title: "A collapsed watchtower in the reeds",
           teaser: "There may still be a route, a locker, or a warning inside, but first you need a way in.",
           detail:
-            "You come across a watchtower leaning at an ugly angle above the marsh grass. The lower door is jammed, the ladder is splintered, and old signal marks still cling to the timber. The place might still offer a better route, supplies, or useful warnings, but only if you can first find a way into the part of the ruin that still matters.",
+            "You come across a watchtower leaning at an ugly angle above the marsh grass. The lower door is jammed, the ladder is splintered, and old signal marks still cling to the timber. [image] The place might still offer a better route, supplies, or useful warnings, but only if you can first find a way into the part of the ruin that still matters.",
           createdAt: eventTime,
           choices: [
             createJourneyGuaranteedChoice({

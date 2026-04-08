@@ -2666,6 +2666,9 @@
 
 .journey-event-art {
   margin: 0;
+  width: clamp(156px, 56%, 224px);
+  max-width: 100%;
+  justify-self: center;
   overflow: hidden;
   border-radius: 18px;
   border: 1px solid rgba(var(--accent-rgb), 0.16);
