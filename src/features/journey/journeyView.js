@@ -1339,15 +1339,14 @@ function renderJourneyEventArt(eventEntry) {
   ).trim();
 
   return `
-    <figure class="journey-event-art" hidden>
+    <figure class="journey-event-art">
       <img
         class="journey-event-art-image"
         src="${escapeAttribute(imageSrc)}"
         alt="${escapeAttribute(imageAlt)}"
         data-fallback-src="${escapeAttribute(fallbackSrc)}"
-        loading="lazy"
+        loading="eager"
         decoding="async"
-        onload="this.parentElement.hidden = false"
         onerror="if(!this.dataset.fallbackTried && this.dataset.fallbackSrc){this.dataset.fallbackTried='true';this.src=this.dataset.fallbackSrc;return;} this.parentElement.remove()"
       />
     </figure>
