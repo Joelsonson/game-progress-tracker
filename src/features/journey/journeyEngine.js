@@ -82,9 +82,17 @@ const JOURNEY_BOSS_NAMES_JA = [
 const JOURNEY_EVENT_MEDIA_OVERRIDES = {
   "arrival:tracks": {
     imageAlt: "Fresh predator tracks along a churned creek bank.",
+    detailBeforeImage:
+      "You find fresh prints cut deep into the mud beside the creek. The reeds ahead are flattened, the bank is churned, and something heavy has been using this place as a feeding ground.",
+    detailAfterImage:
+      "You still need to get past the water, but first you have to decide whether to set up the encounter, provoke it, or give the whole bank a wider berth.",
   },
   "arrival:watchtower": {
     imageAlt: "A collapsed watchtower leaning over marsh reeds.",
+    detailBeforeImage:
+      "You come across a watchtower leaning at an ugly angle above the marsh grass. The lower door is jammed, the ladder is splintered, and old signal marks still cling to the timber.",
+    detailAfterImage:
+      "The place might still offer a better route, supplies, or useful warnings, but only if you can first find a way into the part of the ruin that still matters.",
   },
   "class:arcanist-hamlet-hunt": {
     imageAlt: "A worried hamlet mayor asking a traveler for help.",
