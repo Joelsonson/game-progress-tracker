@@ -9,6 +9,7 @@ import {
   JOURNEY_BASE_STAT_SCORE,
   JOURNEY_BOSS_DISTANCE,
   JOURNEY_BOSS_NAMES,
+  JOURNEY_CHOICE_MAX_DC,
   JOURNEY_CLASS_META,
   JOURNEY_DEBUG_HISTORY_LIMIT,
   JOURNEY_FLAG_KEYS,
@@ -651,12 +652,16 @@ function withJourneyChoiceDifficultyContext(roadIndex, build) {
 }
 
 function getJourneyTierDifficultyBand(roadIndex) {
-  const normalizedRoadIndex = Math.max(0, Math.floor(Number(roadIndex) || 0));
-  const bandMin = 8 + Math.floor((normalizedRoadIndex + 1) / 2);
+  const stretchTargetLevel = getJourneyStretchTargetLevel(roadIndex);
+  const bandMin = 7 + stretchTargetLevel;
   return {
     min: bandMin,
     max: bandMin + 4,
   };
+}
+
+function getJourneyStretchTargetLevel(roadIndex) {
+  return Math.max(1, Math.floor(Number(roadIndex) || 0) + 1);
 }
 
 function getJourneyGeneratedDifficultyClass({
@@ -684,11 +689,18 @@ function getJourneyGeneratedDifficultyClass({
     difficultyBias += 0.08;
   }
 
-  const cappedMax = band.max + (difficultyBias >= 0.9 ? 1 : 0);
+  const cappedMin = Math.min(band.min, JOURNEY_CHOICE_MAX_DC);
+  const cappedMax = Math.max(
+    cappedMin,
+    Math.min(
+      band.max + (difficultyBias >= 0.9 ? 1 : 0),
+      JOURNEY_CHOICE_MAX_DC
+    )
+  );
   const scaledDc =
-    band.min + Math.round(clamp(difficultyBias, 0, 1) * (cappedMax - band.min));
+    cappedMin + Math.round(clamp(difficultyBias, 0, 1) * (cappedMax - cappedMin));
 
-  return clamp(scaledDc, band.min, cappedMax);
+  return clamp(scaledDc, cappedMin, cappedMax);
 }
 
 export function getJourneyRollModifier(score) {
@@ -816,6 +828,8 @@ export function buildJourneySupplies(games, sessions, state) {
 
 export function buildJourneyStretchChallenge(state, journeyStats) {
   const boss = getJourneyBoss(state.bossIndex);
+  const stretchTargetLevel = getJourneyStretchTargetLevel(state.bossIndex);
+  const stretchLevelGap = journeyStats.level - stretchTargetLevel;
   const hpRatio = journeyStats.maxHp
     ? clamp(state.currentHp / journeyStats.maxHp, 0, 1)
     : 0;
@@ -836,12 +850,13 @@ export function buildJourneyStretchChallenge(state, journeyStats) {
   const earlyStretchGrace =
     state.bossIndex === 0 ? 0.07 : state.bossIndex === 1 ? 0.03 : 0;
   const laterStretchPressure = Math.min(0.18, state.bossIndex * 0.015);
+  const stretchLevelAdjustment = clamp(stretchLevelGap * 0.04, -0.16, 0.14);
   const healthPenalty = (1 - hpRatio) * 0.24;
   const hungerPenalty = (1 - hungerRatio) * 0.09;
   const successChance = clamp(
     0.1 +
       powerRatio * 0.5 +
-      Math.max(0, journeyStats.level - state.bossIndex) * 0.016 +
+      stretchLevelAdjustment +
       earlyStretchGrace -
       laterStretchPressure -
       healthPenalty -
@@ -6231,7 +6246,7 @@ export function getJourneyChoiceDifficultyClass(choice) {
       ? Number.NaN
       : Number(choice.difficultyClass);
   if (Number.isFinite(explicitDifficultyClass)) {
-    return clamp(Math.round(explicitDifficultyClass), 5, 25);
+    return clamp(Math.round(explicitDifficultyClass), 5, JOURNEY_CHOICE_MAX_DC);
   }
 
   const baseChance = clamp(

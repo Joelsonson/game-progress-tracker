@@ -1,5 +1,6 @@
 import {
   JOURNEY_BAG_META,
+  JOURNEY_CHOICE_MAX_DC,
   JOURNEY_CLASS_META,
   JOURNEY_FLAG_KEYS,
   JOURNEY_MANASTONE_META,
@@ -94,7 +95,7 @@ export function normalizeJourneyChoice(choice) {
     bossCheck: Boolean(choice.bossCheck),
     difficultyClass:
       hasExplicitOutcomeBranches && Number.isFinite(difficultyClass)
-        ? Math.max(5, Math.min(25, Math.round(difficultyClass)))
+        ? Math.max(5, Math.min(JOURNEY_CHOICE_MAX_DC, Math.round(difficultyClass)))
         : undefined,
     chanceBase: hasExplicitOutcomeBranches
       ? (Number.isFinite(chanceBase) ? chanceBase : 0.24)

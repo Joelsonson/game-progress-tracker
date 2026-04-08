@@ -201,7 +201,9 @@ export const JOURNEY_STORY_XP_GROWTH = 16;
 export const JOURNEY_STORY_XP_CURVE_STEP = 4;
 export const JOURNEY_BASE_CLASS = "stranded";
 export const JOURNEY_BASE_STAT_SCORE = 8;
+export const JOURNEY_MAX_STAT_SCORE = 60;
 export const JOURNEY_STARTING_SKILL_POINTS = 4;
+export const JOURNEY_CHOICE_MAX_DC = 45;
 export const JOURNEY_STAT_KEYS = ["might", "finesse", "arcana", "vitality", "resolve"];
 export const JOURNEY_FLAG_KEYS = ["foundWeapon", "boarDefeated", "slimeSapped"];
 

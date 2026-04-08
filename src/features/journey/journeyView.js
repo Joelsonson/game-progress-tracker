@@ -24,6 +24,7 @@ import {
   JOURNEY_BASE_CLASS,
   JOURNEY_CLASS_META,
   JOURNEY_MANASTONE_META,
+  JOURNEY_MAX_STAT_SCORE,
   JOURNEY_STAT_KEYS,
   JOURNEY_STAT_META,
   JOURNEY_WEAPON_META,
@@ -3363,7 +3364,7 @@ function renderJourneyRadarChart(journeyStats) {
       breakdown,
     };
   });
-  const maxValue = Math.max(20, ...entries.map((entry) => entry.value), 1);
+  const maxValue = JOURNEY_MAX_STAT_SCORE;
   const center = 130;
   const radius = 76;
   const ringFractions = [0.25, 0.5, 0.75, 1];
@@ -3402,7 +3403,7 @@ function renderJourneyRadarChart(journeyStats) {
                 index,
                 entries.length,
                 center,
-                radius * (entry.value / maxValue)
+                radius * getJourneyRadarValueRatio(entry.value, maxValue)
               );
               return `<circle cx="${point.x}" cy="${point.y}" r="4" style="color: ${escapeAttribute(
                 getJourneyRadarPointColor(entry.value, maxValue)
@@ -3529,7 +3530,7 @@ function renderJourneyModifierSourceNotes(breakdown) {
 }
 
 function getJourneyRadarPointColor(value, maxValue) {
-  const ratio = clamp(value / Math.max(1, maxValue), 0, 1);
+  const ratio = getJourneyRadarValueRatio(value, maxValue);
   const hue = 205 + ratio * 14;
   const saturation = 82;
   const lightness = 74 - ratio * 22;
@@ -3543,11 +3544,15 @@ function buildRadarPolygon(entries, center, radius, maxValue) {
         index,
         entries.length,
         center,
-        radius * (entry.value / maxValue)
+        radius * getJourneyRadarValueRatio(entry.value, maxValue)
       );
       return `${point.x},${point.y}`;
     })
     .join(" ");
+}
+
+function getJourneyRadarValueRatio(value, maxValue) {
+  return clamp((Number(value) || 0) / Math.max(1, maxValue), 0, 1);
 }
 
 function buildRadarRing(pointCount, center, radius) {
